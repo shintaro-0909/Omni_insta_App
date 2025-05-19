@@ -1,0 +1,67 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+<!--
+  Cursor Rules: Instagram予約投稿ツール
+  Place this file at `.cursor/rules/instagram-scheduler.mdc`
+  Cursor will read every `.mdc` file under `.cursor/rules/`.
+-->
+
+# Project Context
+We are developing an **Instagram予約投稿 SaaS** using Firebase Cloud Functions, Firestore, and Stripe.  
+All high‑level specs live under `docs/`:
+
+| Doc | Purpose |
+|-----|---------|
+| `docs/one_pager_instagram_tool.md` | Vision / PRD |
+| `docs/user_stories_moscow.md`      | MoSCoW user stories |
+| `docs/system_architecture_mermaid.md` | System architecture diagram |
+| `docs/firestore_schema.md`         | Firestore data model + security |
+| `docs/dev_tasks_userstories.md`    | Development backlog |
+
+When generating or refactoring code, **always reference these docs** for types, paths, and acceptance criteria.
+
+# Directory Conventions
+```text
+root/
+├─ functions/            # Firebase Cloud Functions (Node20, TypeScript)
+│   ├─ src/
+│   │   ├─ scheduler.ts  # 1‑min cron -> task runner
+│   │   ├─ postMedia.ts  # IG Graph API flow
+│   │   └─ stripeWebhook.ts
+│   └─ package.json
+├─ web/                  # Frontend SPA (React + Vite + TypeScript)
+│   ├─ src/
+│   │   ├─ components/
+│   │   └─ pages/
+│   └─ vite.config.ts
+├─ docs/                 # Markdown spec files
+└─ .cursor/rules/        # ← このフォルダ
+```
+
+# Coding Guidelines
+1. **TypeScript** 4.9+ に統一。`functions` は `esbuild`、`web` は Vite。
+2. Cloud Functions は **第2世代**: declare memory 256 MB, timeout 60 s。
+3. `firestore_schema.md` の型を **Type Alias** に起こす。  
+   例: `type ScheduleStatus = 'active' | 'paused' | 'error';`
+4. **No secrets in repo** — use `.env` & Firebase Secret Manager.
+5. Use **async/await**, no `.then()` chaining.
+6. Keep functions ≤200 LOC; extract helpers under `utils/`.
+7. Lint with ESLint + Prettier (Airbnb base).
+
+# Commit Message Style
+```
+feat(schedule): add repeatRule parser
+fix(auth): ensure token refresh before expiry
+docs(firestore): update index notes
+```
+
+# How Cursor Should Behave
+- **When asked to create a new file**, propose full path under the conventions above.
+- **When asked a question about schema or business logic**, first look into `/docs/` before suggesting code.
+- Prefer **Type‑safe** Firestore queries (`collection().withConverter()`).
+- When generating tests, use **Jest** for Functions and **React Testing Library** for web.
+
+---
