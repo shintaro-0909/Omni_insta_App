@@ -1,0 +1,83 @@
+{
+  "name": "Omniy Instagram Scheduler - Claude Code Sandbox",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "mounts": [
+    "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached"
+  ],
+  "workspaceFolder": "/workspace",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.vscode-typescript-next",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "Vue.volar",
+        "bradlc.vscode-tailwindcss",
+        "ms-vscode.vscode-json",
+        "ms-vscode-remote.remote-containers"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "[typescript]": {
+          "editor.defaultFormatter": "ms-vscode.vscode-typescript-next"
+        },
+        "[vue]": {
+          "editor.defaultFormatter": "Vue.volar"
+        },
+        "eslint.validate": [
+          "javascript",
+          "javascriptreact",
+          "typescript",
+          "typescriptreact",
+          "vue"
+        ]
+      }
+    }
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"
+    },
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "forwardPorts": [
+    4000,
+    5000,
+    5001,
+    8080,
+    9099
+  ],
+  "portsAttributes": {
+    "4000": {
+      "label": "Firebase Emulator UI",
+      "onAutoForward": "notify"
+    },
+    "5000": {
+      "label": "Frontend (Vite)",
+      "onAutoForward": "notify"
+    },
+    "5001": {
+      "label": "Cloud Functions",
+      "onAutoForward": "notify"
+    },
+    "8080": {
+      "label": "Firestore Emulator",
+      "onAutoForward": "ignore"
+    },
+    "9099": {
+      "label": "Auth Emulator",
+      "onAutoForward": "ignore"
+    }
+  },
+  "postCreateCommand": "npm install -g firebase-tools @anthropic-ai/claude-code && cd frontend && npm install && cd ../functions && npm install",
+  "postStartCommand": ".devcontainer/init-firewall.sh",
+  "remoteUser": "node",
+  "containerEnv": {
+    "SHELL": "/bin/zsh"
+  }
+}

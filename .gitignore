@@ -153,3 +153,4 @@ stripe-cli.log
 # Backup files
 *.bak
 *.backup 
+**/.claude/settings.local.json

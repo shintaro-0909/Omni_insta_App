@@ -1,0 +1,121 @@
+name: Claude Code Assistant
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  issues:
+    types: [opened, assigned]
+  pull_request_review:
+    types: [submitted]
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  claude-response:
+    # Only run when @claude is mentioned or issue is assigned to claude
+    if: |
+      github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude') ||
+      github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude') ||
+      github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude') ||
+      github.event_name == 'issues' && github.event.action == 'assigned' && github.event.assignee.login == 'claude' ||
+      github.event_name == 'issues' && github.event.action == 'opened' && contains(github.event.issue.body, '@claude') ||
+      github.event_name == 'pull_request' && contains(github.event.pull_request.body, '@claude')
+    
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      
+    steps:
+      - name: Claude Code Action
+        uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          
+          # Security: Explicitly define allowed tools for this project
+          allowed_tools: |
+            Bash(npm install),
+            Bash(npm run build),
+            Bash(npm run test),
+            Bash(npm run lint),
+            Bash(npm run type-check),
+            Bash(firebase --help),
+            Bash(git status),
+            Bash(git diff),
+            Bash(git log),
+            Edit,
+            MultiEdit,
+            Read,
+            Write,
+            Glob,
+            Grep,
+            LS
+          
+          # Security: Prevent potentially dangerous operations
+          disallowed_tools: |
+            Bash(rm -rf),
+            Bash(sudo),
+            Bash(curl),
+            Bash(wget),
+            TaskOutput,
+            KillTask
+          
+          # Custom trigger phrases (optional)
+          # trigger_phrase: "/claude"
+          # assignee_trigger: "claude"
+          
+        env:
+          # Additional environment variables for the action
+          NODE_ENV: development
+          
+  # Optional: Run basic checks after Claude makes changes
+  validate-changes:
+    needs: claude-response
+    if: success()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: |
+            frontend/package-lock.json
+            functions/package-lock.json
+            
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+          
+      - name: Install functions dependencies  
+        run: |
+          cd functions
+          npm ci
+          
+      - name: Run TypeScript checks
+        run: |
+          cd frontend && npm run type-check
+          cd ../functions && npm run build
+          
+      - name: Run linting
+        run: |
+          cd frontend && npm run lint
+          cd ../functions && npm run lint
+          
+      - name: Run tests (if available)
+        run: |
+          cd frontend && npm run test --if-present
+          cd ../functions && npm run test --if-present
+        continue-on-error: true
