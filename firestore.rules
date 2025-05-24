@@ -1,0 +1,163 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ヘルパー関数
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.admin == true;
+    }
+    
+    function isEmailVerified() {
+      return isAuthenticated() && request.auth.token.email_verified == true;
+    }
+    
+    function isAccountActive() {
+      return isAuthenticated() && 
+        (request.auth.token.accountStatus == null || request.auth.token.accountStatus == "active");
+    }
+    
+    function isValidUserData() {
+      return request.resource.data.keys().hasAll(['profile', 'currentPlan', 'settings', 'usage']) &&
+        request.resource.data.profile.keys().hasAll(['displayName', 'email']) &&
+        request.resource.data.currentPlan.keys().hasAll(['planId', 'status']) &&
+        request.resource.data.settings.keys().hasAll(['timeZone']) &&
+        request.resource.data.usage.keys().hasAll(['monthlyPostCount']);
+    }
+
+    // ユーザードキュメント - 自分のデータのみアクセス可能
+    match /users/{userId} {
+      allow read: if isOwner(userId) && isAccountActive();
+      allow create: if isOwner(userId) && isEmailVerified() && isValidUserData();
+      allow update: if isOwner(userId) && isAccountActive() && 
+        // 重要フィールドの変更を制限
+        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['currentPlan.planId', 'currentPlan.status']) ||
+         isAdmin());
+      allow delete: if isAdmin(); // 管理者のみ削除可能
+      
+      // Instagramアカウント管理
+      match /igAccounts/{igAccountId} {
+        allow read: if isOwner(userId) && isAccountActive();
+        allow create: if isOwner(userId) && isAccountActive() && isEmailVerified() &&
+          // IGアカウント作成時の必須フィールドチェック
+          request.resource.data.keys().hasAll(['instagramUserId', 'username', 'accessToken', 'tokenExpiresAt']);
+        allow update: if isOwner(userId) && isAccountActive();
+        allow delete: if isOwner(userId) && isAccountActive();
+        
+        // 予約投稿スケジュール - 読み取りのみ（書き込みはCloud Functionsが担当）
+        match /schedules/{scheduleId} {
+          allow read: if isOwner(userId) && isAccountActive();
+          allow write: if false; // Cloud Functionsのみが書き込み可能
+        }
+        
+        // 実行ログ - 読み取りのみ
+        match /logs/{logId} {
+          allow read: if isOwner(userId) && isAccountActive();
+          allow write: if false; // Cloud Functionsのみが書き込み可能
+        }
+      }
+      
+      // ユーザー専用プロキシ設定（Should機能）
+      match /proxies/{proxyId} {
+        allow read, write: if isOwner(userId) && isAccountActive();
+      }
+      
+      // セッション情報 - 読み取りのみ
+      match /sessions/{sessionId} {
+        allow read: if isOwner(userId);
+        allow write: if false; // Cloud Functionsのみが書き込み可能
+      }
+      
+      // 通知 - 読み取り・更新のみ
+      match /notifications/{notificationId} {
+        allow read: if isOwner(userId) && isAccountActive();
+        allow update: if isOwner(userId) && isAccountActive() &&
+          // 既読状態の更新のみ許可
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read', 'readAt']);
+        allow create, delete: if false; // Cloud Functionsのみ
+      }
+      
+      // FCMトークン管理
+      match /fcmTokens/{tokenId} {
+        allow read, write: if isOwner(userId) && isAccountActive();
+      }
+    }
+    
+    // 投稿コンテンツライブラリ - 所有者のみアクセス可能
+    match /posts/{postId} {
+      allow read: if isAuthenticated() && isAccountActive() &&
+        request.auth.uid == resource.data.ownerUid;
+      allow create: if isAuthenticated() && isAccountActive() && isEmailVerified() &&
+        request.auth.uid == request.resource.data.ownerUid &&
+        // 必須フィールドの検証
+        request.resource.data.keys().hasAll(['ownerUid', 'mediaUrls', 'caption']) &&
+        request.resource.data.mediaUrls is list &&
+        request.resource.data.mediaUrls.size() > 0 &&
+        request.resource.data.mediaUrls.size() <= 10;
+      allow update: if isAuthenticated() && isAccountActive() &&
+        request.auth.uid == resource.data.ownerUid &&
+        // ownerUidの変更を禁止
+        request.resource.data.ownerUid == resource.data.ownerUid;
+      allow delete: if isAuthenticated() && isAccountActive() &&
+        request.auth.uid == resource.data.ownerUid;
+    }
+    
+    // スケジュール（グローバル） - Cloud Functionsのみアクセス可能
+    match /schedules/{scheduleId} {
+      allow read: if isAuthenticated() && isAccountActive() &&
+        request.auth.uid == resource.data.ownerUid;
+      allow write: if false; // Cloud Functionsのみが書き込み可能
+    }
+    
+    // 実行ログ（グローバル） - Cloud Functionsのみ書き込み、所有者は読み取り可能
+    match /executionLogs/{logId} {
+      allow read: if isAuthenticated() && isAccountActive() &&
+        (request.auth.uid == resource.data.ownerUid || isAdmin());
+      allow write: if false; // Cloud Functionsのみが書き込み可能
+    }
+    
+    // 料金プラン - 全ユーザー読み取り可能
+    match /plans/{planId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin(); // 管理者のみが更新
+    }
+    
+    // プロキシプール - 管理者のみアクセス可能
+    match /proxyPool/{proxyId} {
+      allow read, write: if isAdmin();
+    }
+    
+    // グローバルログ - 管理者のみアクセス可能
+    match /globalLogs/{day}/{logId} {
+      allow read, write: if isAdmin();
+    }
+    
+    // 管理ログ - 管理者のみアクセス可能
+    match /adminLogs/{logId} {
+      allow read, write: if isAdmin();
+    }
+    
+    // メールログ - システムのみアクセス可能
+    match /emailLogs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false; // Cloud Functionsのみ
+    }
+    
+    // Stripe Webhook ログ - システムのみアクセス可能
+    match /stripeWebhook/{eventId} {
+      allow read: if isAdmin();
+      allow write: if false; // Cloud Functionsのみ
+    }
+    
+    // デフォルト拒否
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+} 

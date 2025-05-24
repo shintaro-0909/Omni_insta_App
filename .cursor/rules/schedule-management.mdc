@@ -1,0 +1,108 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Schedule Management Implementation Rules
+
+## Core Design Principles
+
+### 1. スケジュール統一設計思想
+- **一回限り・繰返・ランダム投稿を統一的に扱う**
+- 全てのスケジュールタイプで共通の`nextRunAt`フィールドを使用
+- タイプ別の設定は`repeatRule`オブジェクトに格納
+- 状態管理は`status: active | paused | error | completed`で統一
+
+### 2. nextRunAt計算ロジック
+- **決定論的な計算**: 同じ入力からは常に同じ結果
+- **タイムゾーン対応**: ユーザーのタイムゾーン設定を考慮
+- **DST対応**: 夏時間の変更を適切に処理
+- **境界値処理**: 月末・年末などの境界を正しく処理
+
+### 3. データ整合性保証
+- **原子性**: スケジュール作成・更新は全て成功するか全て失敗
+- **参照整合性**: contentRef, igAccountRefの存在チェック
+- **制約チェック**: プラン制限、重複チェック
+- **楽観的ロック**: 同時更新の競合を防止
+
+### 4. パフォーマンス設計
+- **インデックス最適化**: status + nextRunAt の複合インデックス
+- **バッチ処理**: 大量スケジュールの効率的処理
+- **ページネーション**: 一覧取得時のメモリ効率
+- **キャッシュ戦略**: 頻繁にアクセスされるデータのキャッシュ
+
+## Implementation Standards
+
+### スケジュールデータ構造
+```typescript
+interface ScheduleData {
+  // 基本情報
+  ownerUid: string;
+  igAccountRef: DocumentReference;
+  contentRef: DocumentReference;
+  
+  // スケジュール設定
+  type: 'one_time' | 'recurring' | 'random';
+  title: string;
+  description?: string;
+  
+  // 実行制御
+  nextRunAt: Timestamp;
+  status: 'active' | 'paused' | 'error' | 'completed';
+  
+  // タイプ別設定
+  repeatRule?: {
+    // 繰返投稿用
+    weekdays?: number[]; // 0=日曜, 1=月曜, ...
+    time?: string; // "HH:mm" format
+    timezone?: string;
+    
+    // ランダム投稿用
+    minInterval?: number; // 最小間隔（分）
+    maxInterval?: number; // 最大間隔（分）
+    timeWindow?: {
+      start: string; // "HH:mm"
+      end: string;   // "HH:mm"
+    };
+  };
+  
+  // 実行履歴
+  lastRunAt?: Timestamp;
+  runCount: number;
+  retryCount: number;
+  
+  // メタデータ
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+```
+
+### API設計原則
+- **RESTful**: 標準的なHTTPメソッドとステータスコード
+- **冪等性**: 同じリクエストは同じ結果を返す
+- **エラーハンドリング**: 詳細で分かりやすいエラーメッセージ
+- **認証・認可**: 全てのAPIで適切な権限チェック
+
+### フロントエンド設計原則
+- **リアクティブ**: Piniaストアでの状態管理
+- **型安全**: TypeScriptの厳密な型チェック
+- **ユーザビリティ**: 直感的で分かりやすいUI
+- **エラー表示**: ユーザーフレンドリーなエラーメッセージ
+
+## File Naming Conventions
+- スケジュール関連API: `functions/src/api/schedules.ts`
+- スケジュール管理ストア: `frontend/src/stores/schedules.ts`
+- スケジュール作成コンポーネント: `frontend/src/components/ScheduleFormDialog.vue`
+- スケジュール一覧ページ: `frontend/src/views/SchedulesView.vue`
+
+## Testing Requirements
+- **単体テスト**: nextRunAt計算ロジックの徹底テスト
+- **統合テスト**: API呼び出しの正常・異常系テスト
+- **E2Eテスト**: ユーザーフローの動作確認
+- **パフォーマンステスト**: 大量データでの性能確認
+
+## Security Considerations
+- **認証**: Firebase Authによる認証必須
+- **認可**: ユーザー自身のスケジュールのみアクセス可能
+- **入力検証**: 全ての入力値の厳密な検証
+- **SQLインジェクション対策**: Firestoreクエリの安全な構築

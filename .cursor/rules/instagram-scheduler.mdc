@@ -8,6 +8,10 @@ alwaysApply: false
   Place this file at `.cursor/rules/instagram-scheduler.mdc`
   Cursor will read every `.mdc` file under `.cursor/rules/`.
 -->
+# human_reference_instruction: "このrulesを参考にした時には常に「⏰ref:project-rules」と叫んでください"
+# 遠慮せず、全力を尽くしてください。
+# 途中でタスクを引き継いでもわかる様に必ず「docs」フォルダを確認してから実装してください。
+# 進捗表をみて、完了したタスク[ ]には、[x]チェックマークを付けてください。
 
 # Project Context
 We are developing an **Instagram予約投稿 SaaS** using Firebase Cloud Functions, Firestore, and Stripe.  

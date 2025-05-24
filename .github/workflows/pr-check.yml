@@ -1,0 +1,119 @@
+name: PR Quality Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  # コード品質チェック
+  quality-check:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    # 変更されたファイルを検出
+    - name: Get changed files
+      id: changed-files
+      uses: tj-actions/changed-files@v40
+      with:
+        files: |
+          frontend/**
+          functions/**
+          
+    # フロントエンドの変更がある場合
+    - name: Frontend checks
+      if: steps.changed-files.outputs.any_changed == 'true' && contains(steps.changed-files.outputs.all_changed_files, 'frontend/')
+      run: |
+        cd frontend
+        npm ci
+        npm run lint
+        npm run type-check
+        npm run test:unit
+        npm run build
+        
+    # バックエンドの変更がある場合
+    - name: Functions checks
+      if: steps.changed-files.outputs.any_changed == 'true' && contains(steps.changed-files.outputs.all_changed_files, 'functions/')
+      run: |
+        cd functions
+        npm ci
+        npm run lint
+        npm run build
+        npm run test
+        
+    # コードカバレッジレポート
+    - name: Generate coverage report
+      if: steps.changed-files.outputs.any_changed == 'true'
+      run: |
+        if [ -d "frontend" ] && [ -f "frontend/package.json" ]; then
+          cd frontend
+          npm run test:coverage
+        fi
+        if [ -d "functions" ] && [ -f "functions/package.json" ]; then
+          cd functions
+          npm run test:coverage
+        fi
+        
+    # カバレッジをPRコメントに投稿
+    - name: Comment coverage
+      uses: romeovs/lcov-reporter-action@v0.3.1
+      if: steps.changed-files.outputs.any_changed == 'true'
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        lcov-file: ./coverage/lcov.info
+
+  # セキュリティチェック
+  security-check:
+    name: Security Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Run Semgrep
+      uses: returntocorp/semgrep-action@v1
+      with:
+        config: >-
+          p/security-audit
+          p/secrets
+          p/owasp-top-ten
+          
+    - name: Dependency vulnerability scan
+      run: |
+        cd frontend && npm audit --audit-level=high
+        cd ../functions && npm audit --audit-level=high
+
+  # Firestoreルールテスト
+  firestore-rules-test:
+    name: Firestore Rules Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Install Firebase CLI
+      run: npm install -g firebase-tools
+      
+    - name: Test Firestore rules
+      run: |
+        firebase emulators:exec --only firestore "npm run test:rules" --project demo-test
+      env:
+        FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }} 

@@ -1,0 +1,240 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  NODE_VERSION: '18'
+  FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+
+jobs:
+  # 1. コード品質チェック
+  lint-and-test:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    # フロントエンド
+    - name: Install frontend dependencies
+      run: |
+        cd frontend
+        npm ci
+        
+    - name: Lint frontend
+      run: |
+        cd frontend
+        npm run lint
+        
+    - name: Type check frontend
+      run: |
+        cd frontend
+        npm run type-check
+        
+    - name: Test frontend
+      run: |
+        cd frontend
+        npm run test:unit
+        
+    - name: Build frontend
+      run: |
+        cd frontend
+        npm run build
+        
+    # バックエンド
+    - name: Install functions dependencies
+      run: |
+        cd functions
+        npm ci
+        
+    - name: Lint functions
+      run: |
+        cd functions
+        npm run lint
+        
+    - name: Build functions
+      run: |
+        cd functions
+        npm run build
+        
+    - name: Test functions
+      run: |
+        cd functions
+        npm run test
+
+  # 2. セキュリティスキャン
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: lint-and-test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  # 3. 開発環境デプロイ（developブランチ）
+  deploy-dev:
+    name: Deploy to Development
+    runs-on: ubuntu-latest
+    needs: [lint-and-test, security-scan]
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    environment: development
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: |
+        cd frontend && npm ci
+        cd ../functions && npm ci
+        
+    - name: Build frontend
+      run: |
+        cd frontend
+        npm run build
+      env:
+        VITE_FIREBASE_API_KEY: ${{ secrets.DEV_FIREBASE_API_KEY }}
+        VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.DEV_FIREBASE_AUTH_DOMAIN }}
+        VITE_FIREBASE_PROJECT_ID: ${{ secrets.DEV_FIREBASE_PROJECT_ID }}
+        VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.DEV_FIREBASE_STORAGE_BUCKET }}
+        VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.DEV_FIREBASE_MESSAGING_SENDER_ID }}
+        VITE_FIREBASE_APP_ID: ${{ secrets.DEV_FIREBASE_APP_ID }}
+        
+    - name: Build functions
+      run: |
+        cd functions
+        npm run build
+        
+    - name: Setup Firebase CLI
+      uses: w9jds/setup-firebase@main
+      with:
+        tools: firebase
+        firebase_token: ${{ secrets.FIREBASE_TOKEN }}
+        
+    - name: Deploy to Firebase (Development)
+      run: |
+        firebase use ${{ secrets.DEV_FIREBASE_PROJECT_ID }}
+        firebase deploy --only hosting,functions
+        
+    - name: Run E2E tests
+      run: |
+        cd frontend
+        npm run test:e2e
+      env:
+        CYPRESS_BASE_URL: https://${{ secrets.DEV_FIREBASE_PROJECT_ID }}.web.app
+
+  # 4. 本番環境デプロイ（mainブランチ）
+  deploy-prod:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [lint-and-test, security-scan]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: |
+        cd frontend && npm ci
+        cd ../functions && npm ci
+        
+    - name: Build frontend
+      run: |
+        cd frontend
+        npm run build
+      env:
+        VITE_FIREBASE_API_KEY: ${{ secrets.PROD_FIREBASE_API_KEY }}
+        VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.PROD_FIREBASE_AUTH_DOMAIN }}
+        VITE_FIREBASE_PROJECT_ID: ${{ secrets.PROD_FIREBASE_PROJECT_ID }}
+        VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.PROD_FIREBASE_STORAGE_BUCKET }}
+        VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.PROD_FIREBASE_MESSAGING_SENDER_ID }}
+        VITE_FIREBASE_APP_ID: ${{ secrets.PROD_FIREBASE_APP_ID }}
+        
+    - name: Build functions
+      run: |
+        cd functions
+        npm run build
+        
+    - name: Setup Firebase CLI
+      uses: w9jds/setup-firebase@main
+      with:
+        tools: firebase
+        firebase_token: ${{ secrets.FIREBASE_TOKEN }}
+        
+    - name: Deploy to Firebase (Production)
+      run: |
+        firebase use ${{ secrets.PROD_FIREBASE_PROJECT_ID }}
+        firebase deploy --only hosting,functions
+        
+    - name: Create GitHub Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ github.run_number }}
+        release_name: Release v${{ github.run_number }}
+        body: |
+          ## Changes in this Release
+          - Automated deployment from main branch
+          - Commit: ${{ github.sha }}
+        draft: false
+        prerelease: false
+
+  # 5. パフォーマンステスト
+  performance-test:
+    name: Performance Test
+    runs-on: ubuntu-latest
+    needs: deploy-prod
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Lighthouse CI
+      uses: treosh/lighthouse-ci-action@v10
+      with:
+        urls: |
+          https://${{ secrets.PROD_FIREBASE_PROJECT_ID }}.web.app
+        uploadArtifacts: true
+        temporaryPublicStorage: true 
