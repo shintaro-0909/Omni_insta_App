@@ -1,7 +1,7 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
-import axios from "axios";
 import { canExecutePostForAccount, incrementPostUsageForAccount } from "../utils/planLimits";
+import { proxyFetch, getAccountProxyConfig } from "../utils/proxyFetch";
 
 const db = admin.firestore();
 
@@ -46,6 +46,8 @@ async function uploadMediaToInstagram(
   accessToken: string,
   instagramUserId: string,
   mediaUrl: string,
+  userId: string,
+  igAccountId: string,
   caption?: string,
   isCarouselItem: boolean = false
 ): Promise<string> {
@@ -62,13 +64,20 @@ async function uploadMediaToInstagram(
       params.caption = caption;
     }
 
-    const response = await axios.post(endpoint, null, { params });
+    // プロキシ設定を取得
+    const proxyConfig = await getAccountProxyConfig(userId, igAccountId);
     
-    if (response.data.error) {
-      throw new Error(`Instagram API Error: ${response.data.error.message}`);
+    // プロキシを使用してAPIリクエストを実行
+    const response = await proxyFetch(endpoint, proxyConfig, {
+      method: 'POST',
+      params: params,
+    });
+    
+    if (response.error) {
+      throw new Error(`Instagram API Error: ${response.error.message}`);
     }
 
-    return response.data.id;
+    return response.id;
   } catch (error: any) {
     console.error("Media upload error:", error.response?.data || error.message);
     
@@ -88,7 +97,9 @@ async function createCarouselPost(
   accessToken: string,
   instagramUserId: string,
   mediaIds: string[],
-  caption: string
+  caption: string,
+  userId: string,
+  igAccountId: string
 ): Promise<string> {
   try {
     const endpoint = `${INSTAGRAM_API_BASE}/${instagramUserId}/media`;
@@ -100,13 +111,20 @@ async function createCarouselPost(
       access_token: accessToken,
     };
 
-    const response = await axios.post(endpoint, null, { params });
+    // プロキシ設定を取得
+    const proxyConfig = await getAccountProxyConfig(userId, igAccountId);
     
-    if (response.data.error) {
-      throw new Error(`Instagram API Error: ${response.data.error.message}`);
+    // プロキシを使用してAPIリクエストを実行
+    const response = await proxyFetch(endpoint, proxyConfig, {
+      method: 'POST',
+      params: params,
+    });
+    
+    if (response.error) {
+      throw new Error(`Instagram API Error: ${response.error.message}`);
     }
 
-    return response.data.id;
+    return response.id;
   } catch (error: any) {
     console.error("Carousel creation error:", error.response?.data || error.message);
     
@@ -125,7 +143,9 @@ async function createCarouselPost(
 async function publishMedia(
   accessToken: string,
   instagramUserId: string,
-  creationId: string
+  creationId: string,
+  userId: string,
+  igAccountId: string
 ): Promise<string> {
   try {
     const endpoint = `${INSTAGRAM_API_BASE}/${instagramUserId}/media_publish`;
@@ -135,13 +155,20 @@ async function publishMedia(
       access_token: accessToken,
     };
 
-    const response = await axios.post(endpoint, null, { params });
+    // プロキシ設定を取得
+    const proxyConfig = await getAccountProxyConfig(userId, igAccountId);
     
-    if (response.data.error) {
-      throw new Error(`Instagram API Error: ${response.data.error.message}`);
+    // プロキシを使用してAPIリクエストを実行
+    const response = await proxyFetch(endpoint, proxyConfig, {
+      method: 'POST',
+      params: params,
+    });
+    
+    if (response.error) {
+      throw new Error(`Instagram API Error: ${response.error.message}`);
     }
 
-    return response.data.id;
+    return response.id;
   } catch (error: any) {
     console.error("Media publish error:", error.response?.data || error.message);
     
@@ -229,6 +256,8 @@ export const postToInstagram = functions.https.onCall(async (data: InstagramPost
         accessToken,
         instagramUserId,
         mediaUrls[0],
+        context.auth.uid,
+        igAccountId,
         caption,
         false
       );
@@ -242,6 +271,8 @@ export const postToInstagram = functions.https.onCall(async (data: InstagramPost
           accessToken,
           instagramUserId,
           mediaUrl,
+          context.auth.uid,
+          igAccountId,
           undefined,
           true
         );
@@ -253,7 +284,9 @@ export const postToInstagram = functions.https.onCall(async (data: InstagramPost
         accessToken,
         instagramUserId,
         mediaIds,
-        caption
+        caption,
+        context.auth.uid,
+        igAccountId
       );
     }
 
@@ -261,7 +294,9 @@ export const postToInstagram = functions.https.onCall(async (data: InstagramPost
     const publishedId = await publishMedia(
       accessToken,
       instagramUserId,
-      creationId
+      creationId,
+      context.auth.uid,
+      igAccountId
     );
 
     // 投稿成功をログに記録
@@ -344,16 +379,23 @@ export const checkInstagramPostStatus = functions.https.onCall(async (data: { cr
       access_token: accessToken,
     };
 
-    const response = await axios.get(endpoint, { params });
+    // プロキシ設定を取得
+    const proxyConfig = await getAccountProxyConfig(context.auth.uid, igAccountId);
+    
+    // プロキシを使用してAPIリクエストを実行
+    const response = await proxyFetch(endpoint, proxyConfig, {
+      method: 'GET',
+      params: params,
+    });
 
-    if (response.data.error) {
-      throw new Error(`Instagram API Error: ${response.data.error.message}`);
+    if (response.error) {
+      throw new Error(`Instagram API Error: ${response.error.message}`);
     }
 
     return {
       success: true,
-      status: response.data.status,
-      statusCode: response.data.status_code,
+      status: response.status,
+      statusCode: response.status_code,
       creationId: creationId,
     };
 
@@ -421,10 +463,17 @@ export const deleteInstagramPost = functions.https.onCall(async (data: { postId:
       access_token: accessToken,
     };
 
-    const response = await axios.delete(endpoint, { params });
+    // プロキシ設定を取得
+    const proxyConfig = await getAccountProxyConfig(context.auth.uid, igAccountId);
+    
+    // プロキシを使用してAPIリクエストを実行
+    const response = await proxyFetch(endpoint, proxyConfig, {
+      method: 'DELETE',
+      params: params,
+    });
 
-    if (response.data.error) {
-      throw new Error(`Instagram API Error: ${response.data.error.message}`);
+    if (response.error) {
+      throw new Error(`Instagram API Error: ${response.error.message}`);
     }
 
     return {

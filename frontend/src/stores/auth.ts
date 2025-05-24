@@ -28,6 +28,14 @@ export const useAuthStore = defineStore('auth', () => {
       const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
         user.value = firebaseUser
         isInitialized.value = true
+        
+        // 認証状態の変更をログ出力
+        if (firebaseUser) {
+          console.log('🔐 認証状態: ログイン済み -', firebaseUser.email)
+        } else {
+          console.log('🔓 認証状態: 未ログイン')
+        }
+        
         unsubscribe()
         resolve()
       })
@@ -78,6 +86,65 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
   }
 
+  // ユーザートークンを取得
+  const getUserToken = async () => {
+    if (!user.value) {
+      throw new Error('ユーザーがログインしていません')
+    }
+    
+    try {
+      const token = await user.value.getIdToken()
+      return token
+    } catch (err: any) {
+      error.value = 'トークンの取得に失敗しました'
+      throw err
+    }
+  }
+
+  // ユーザートークンを強制更新
+  const refreshUserToken = async () => {
+    if (!user.value) {
+      throw new Error('ユーザーがログインしていません')
+    }
+    
+    try {
+      const token = await user.value.getIdToken(true) // forceRefresh = true
+      console.log('🔄 ユーザートークンを更新しました')
+      return token
+    } catch (err: any) {
+      error.value = 'トークンの更新に失敗しました'
+      throw err
+    }
+  }
+
+  // セッション情報を取得
+  const getSessionInfo = () => {
+    if (!user.value) return null
+    
+    return {
+      uid: user.value.uid,
+      email: user.value.email,
+      displayName: user.value.displayName,
+      photoURL: user.value.photoURL,
+      emailVerified: user.value.emailVerified,
+      creationTime: user.value.metadata.creationTime,
+      lastSignInTime: user.value.metadata.lastSignInTime
+    }
+  }
+
+  // 認証状態をリアルタイム監視（永続化）
+  const watchAuthState = () => {
+    return onAuthStateChanged(auth, (firebaseUser) => {
+      user.value = firebaseUser
+      
+      if (firebaseUser) {
+        console.log('🔐 認証状態変更: ログイン -', firebaseUser.email)
+      } else {
+        console.log('🔓 認証状態変更: ログアウト')
+      }
+    })
+  }
+
   return {
     // State
     user,
@@ -93,6 +160,10 @@ export const useAuthStore = defineStore('auth', () => {
     initializeAuth,
     loginWithGoogle,
     logout,
-    clearError
+    clearError,
+    getUserToken,
+    refreshUserToken,
+    getSessionInfo,
+    watchAuthState
   }
 }) 

@@ -5,11 +5,14 @@ alwaysApply: false
 ---
 # 進捗管理ルール（必須実行）
 
-## 🎯 タスク完了時の必須手順
+## 🎯 タスク完了時の必須手順（⚠️ CRITICAL）
 
 ### 1. 進捗表更新（必須）
+**完了した項目については、必ず `docs/dev_tasks_userstories.md` でチェックマーク（`[x]`）をつける**
+
 - **ファイル**: `docs/dev_tasks_userstories.md`
 - **完了項目**: `[ ]` → `[x]` に変更
+- **完了セクション**: タイトルに `✅` マークを追加
 - **詳細記載**: 実装した具体的な内容を記載
 - **進捗率更新**: Sprint進捗率を再計算
 
@@ -65,4 +68,28 @@ alwaysApply: false
 3. **課題記録**: 未解決の課題や注意点を記載
 4. **次回指針**: 次回作業の開始点を明確化
 
-この進捗管理ルールは、開発効率と品質向上のため必須実行とする。
+## 📝 実際の完了例（T14: プロキシベースフェッチ機能実装）
+
+```markdown
+### T14: CF: Proxy経由Fetch ✅
+- [x] NodeFetch + Proxy実装
+  - [x] functions/src/utils/proxyFetch.ts作成
+  - [x] proxyFetch, createProxyAgent, getAccountProxyConfig関数実装
+  - [x] HTTP/HTTPS/SOCKS5プロトコル対応
+- [x] IP確認テスト
+  - [x] testProxyConnection関数でHTTPBin API使用
+  - [x] レスポンス時間測定機能実装
+- [x] プロキシローテーション
+  - [x] ProxyRotator クラス実装
+  - [x] ProxyUsageTracker で使用量追跡
+- [x] Instagram API統合
+  - [x] functions/src/api/instagram.ts更新
+  - [x] functions/src/schedulers/postExecutor.ts更新
+  - [x] functions/src/api/proxies.ts新規作成
+- [x] フロントエンド連携
+  - [x] frontend/src/stores/proxies.ts更新
+  - [x] Firebase Functions連携実装
+```
+
+**この進捗管理ルールは、開発効率と品質向上のため必須実行とする。**
+**完了した項目については、必ず `[x]` マークを付けることを忘れずに！**

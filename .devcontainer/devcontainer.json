@@ -78,6 +78,8 @@
   "postStartCommand": ".devcontainer/init-firewall.sh",
   "remoteUser": "node",
   "containerEnv": {
-    "SHELL": "/bin/zsh"
+    "SHELL": "/bin/zsh",
+    "CLAUDE_SKIP_PERMISSIONS": "true",
+    "CLAUDE_SANDBOX_MODE": "true"
   }
 }

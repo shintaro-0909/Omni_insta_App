@@ -1,0 +1,143 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop, feature/* ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  frontend-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Type check
+      run: npm run type-check
+    
+    - name: Lint check
+      run: npm run lint:check
+    
+    - name: Run tests
+      run: npm run test:unit
+    
+    - name: Build
+      run: npm run build
+
+  backend-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./functions
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: functions/package-lock.json
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Type check and build
+      run: npm run build
+    
+    - name: Lint check
+      run: npm run lint
+    
+    - name: Run tests
+      run: npm run test
+
+  progress-tracking:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Check Progress Updates
+      run: |
+        echo "🔍 Checking progress tracking updates..."
+        
+        # Check if progress file exists and has been updated
+        if [ -f "docs/dev_tasks_userstories.md" ]; then
+          echo "✅ Progress tracking file found"
+          
+          # Count completed tasks
+          completed_count=$(grep -c '\[x\]' docs/dev_tasks_userstories.md || echo "0")
+          total_count=$(grep -c '\[ \]' docs/dev_tasks_userstories.md || echo "0")
+          total_count=$((total_count + completed_count))
+          
+          echo "📊 Progress: $completed_count/$total_count tasks completed"
+          
+          # Check for recent updates in commit
+          if git diff --name-only HEAD~1 | grep -q "docs/dev_tasks_userstories.md"; then
+            echo "✅ Progress tracking file was updated in this commit"
+          else
+            echo "⚠️ Progress tracking file was not updated in this commit"
+          fi
+        else
+          echo "❌ Progress tracking file not found"
+          exit 1
+        fi
+
+  security-check:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Run security audit
+      run: |
+        cd frontend && npm audit --audit-level=moderate
+        cd ../functions && npm audit --audit-level=moderate
+
+  deploy-preview:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    needs: [frontend-tests, backend-tests]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+    
+    - name: Install dependencies
+      working-directory: ./frontend
+      run: npm ci
+    
+    - name: Build for preview
+      working-directory: ./frontend
+      run: npm run build
+    
+    - name: Deploy to Firebase Hosting Preview
+      uses: FirebaseExtended/action-hosting-deploy@v0
+      with:
+        repoToken: ${{ secrets.GITHUB_TOKEN }}
+        firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_OMNIY_DEV }}
+        projectId: omniy-dev
+        entryPoint: ./frontend
+      env:
+        FIREBASE_CLI_EXPERIMENTS: webframeworks

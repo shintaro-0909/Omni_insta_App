@@ -37,6 +37,14 @@ firebase deploy --only functions  # Deploy functions only
 firebase deploy --only hosting   # Deploy frontend only
 ```
 
+### Claude Code Operations
+```bash
+./scripts/start-claude.sh        # Start Claude Code (auto-detects environment)
+./scripts/start-claude.sh -c     # Force devcontainer mode
+./scripts/start-claude.sh -d     # Direct start (if in container)
+claude --dangerously-skip-permissions  # Direct command (in secure container)
+```
+
 ### Emulator Ports
 - UI Dashboard: http://localhost:4000
 - Hosting: http://localhost:5000

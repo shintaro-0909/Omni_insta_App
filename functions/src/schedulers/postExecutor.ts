@@ -3,6 +3,7 @@ import * as admin from "firebase-admin";
 // import { postToInstagram } from "../api/instagram"; // 直接実装のため未使用
 import { updateNextRunAfterExecution } from "../utils/scheduleUtils";
 import { sendPostSuccessNotification, sendPostFailureNotification } from "../utils/notifications";
+import { proxyFetch, getAccountProxyConfig } from "../utils/proxyFetch";
 
 const db = admin.firestore();
 
@@ -158,17 +159,20 @@ async function executeInstagramPost(
   const instagramUserId = igAccountData.instagramUserId;
 
   // Instagram Graph APIを直接呼び出し
-  const axios = require("axios");
   const INSTAGRAM_API_BASE = "https://graph.facebook.com/v18.0";
+  
+  // プロキシ設定を取得
+  const proxyConfig = await getAccountProxyConfig(ownerUid, igAccountId);
 
   let creationId: string;
 
   if (mediaUrls.length === 1) {
     // 単一メディア投稿
-    const uploadResponse = await axios.post(
+    const uploadResponse = await proxyFetch(
       `${INSTAGRAM_API_BASE}/${instagramUserId}/media`,
-      null,
+      proxyConfig,
       {
+        method: 'POST',
         params: {
           image_url: mediaUrls[0],
           caption: caption,
@@ -177,21 +181,22 @@ async function executeInstagramPost(
       }
     );
 
-    if (uploadResponse.data.error) {
-      throw new Error(`Instagram API Error: ${uploadResponse.data.error.message}`);
+    if (uploadResponse.error) {
+      throw new Error(`Instagram API Error: ${uploadResponse.error.message}`);
     }
 
-    creationId = uploadResponse.data.id;
+    creationId = uploadResponse.id;
   } else {
     // カルーセル投稿
     const mediaIds: string[] = [];
 
     // 各メディアをアップロード
     for (const mediaUrl of mediaUrls) {
-      const uploadResponse = await axios.post(
+      const uploadResponse = await proxyFetch(
         `${INSTAGRAM_API_BASE}/${instagramUserId}/media`,
-        null,
+        proxyConfig,
         {
+          method: 'POST',
           params: {
             image_url: mediaUrl,
             access_token: accessToken,
@@ -199,18 +204,19 @@ async function executeInstagramPost(
         }
       );
 
-      if (uploadResponse.data.error) {
-        throw new Error(`Instagram API Error: ${uploadResponse.data.error.message}`);
+      if (uploadResponse.error) {
+        throw new Error(`Instagram API Error: ${uploadResponse.error.message}`);
       }
 
-      mediaIds.push(uploadResponse.data.id);
+      mediaIds.push(uploadResponse.id);
     }
 
     // カルーセルを作成
-    const carouselResponse = await axios.post(
+    const carouselResponse = await proxyFetch(
       `${INSTAGRAM_API_BASE}/${instagramUserId}/media`,
-      null,
+      proxyConfig,
       {
+        method: 'POST',
         params: {
           media_type: "CAROUSEL",
           children: mediaIds.join(","),
@@ -220,18 +226,19 @@ async function executeInstagramPost(
       }
     );
 
-    if (carouselResponse.data.error) {
-      throw new Error(`Instagram API Error: ${carouselResponse.data.error.message}`);
+    if (carouselResponse.error) {
+      throw new Error(`Instagram API Error: ${carouselResponse.error.message}`);
     }
 
-    creationId = carouselResponse.data.id;
+    creationId = carouselResponse.id;
   }
 
   // メディアを公開
-  const publishResponse = await axios.post(
+  const publishResponse = await proxyFetch(
     `${INSTAGRAM_API_BASE}/${instagramUserId}/media_publish`,
-    null,
+    proxyConfig,
     {
+      method: 'POST',
       params: {
         creation_id: creationId,
         access_token: accessToken,
@@ -239,11 +246,11 @@ async function executeInstagramPost(
     }
   );
 
-  if (publishResponse.data.error) {
-    throw new Error(`Instagram API Error: ${publishResponse.data.error.message}`);
+  if (publishResponse.error) {
+    throw new Error(`Instagram API Error: ${publishResponse.error.message}`);
   }
 
-  return { postId: publishResponse.data.id };
+  return { postId: publishResponse.id };
 }
 
 /**

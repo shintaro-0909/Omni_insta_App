@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "instagram-api": {
+      "command": "node",
+      "args": ["./mcp-servers/instagram-api/dist/index.js"],
+      "env": {
+        "NODE_ENV": "development"
+      }
+    },
+    "firebase-admin": {
+      "command": "node", 
+      "args": ["./mcp-servers/firebase-admin/dist/index.js"],
+      "env": {
+        "NODE_ENV": "development",
+        "FIREBASE_PROJECT_ID": "omniy-dev"
+      }
+    }
+  }
+}

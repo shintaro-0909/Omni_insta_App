@@ -155,11 +155,48 @@ firebase emulators:start
 - 入力値検証・サニタイゼーション
 - アクセストークン暗号化
 
+## 🤖 Claude Code AI支援
+
+このプロジェクトはClaude Code GitHub Actions統合により、AI支援開発が可能です。
+
+### 使用方法
+任意のIssue、PR、Commentで `@claude` をメンションして指示：
+
+```
+@claude implement T15 account grouping feature
+- Create group management UI
+- Add group assignment functionality  
+- Follow existing design patterns
+- Update progress tracking when complete
+```
+
+### 設定手順
+1. **GitHub Secrets設定**: `.github/SETUP.md` を参照
+2. **Claude GitHub App インストール**: https://github.com/apps/claude
+3. **API Key取得**: https://console.anthropic.com
+
+## 🔄 自動化機能
+
+### CI/CD Pipeline
+- ✅ TypeScript type checking
+- ✅ ESLint analysis  
+- ✅ Unit tests
+- ✅ Security audit
+- ✅ Progress tracking validation
+
+### 進捗管理自動チェック
+**重要**: 完了した項目については、必ず `docs/dev_tasks_userstories.md` でチェックマーク（`[x]`）をつける
+
+### Firebase Preview Deployment
+PR作成時に自動プレビューデプロイを実行
+
 ## 📞 サポート
 
 開発に関する質問や問題については、GitHubのIssuesをご利用ください。
+`@claude` メンションでAI支援も利用可能です。
 
 ---
 
-**開発開始日**: 2024年12月
-**想定リリース**: 2025年Q1 
+**開発開始日**: 2024年12月  
+**想定リリース**: 2025年Q1  
+**GitHub**: https://github.com/shintaro-0909/Omni_insta_App 

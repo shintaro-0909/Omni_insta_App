@@ -95,6 +95,17 @@ export {
   incrementUserPostUsageForAccount,
 } from "./api/planLimits";
 
+// Proxies API
+export {
+  getProxies,
+  createProxy,
+  updateProxy,
+  deleteProxy,
+  testProxy,
+  assignProxyToAccount,
+  removeProxyFromAccount,
+} from "./api/proxies";
+
 // 基本的なヘルスチェック関数
 export const healthCheck = functions.https.onRequest((req, res) => {
   res.status(200).json({
