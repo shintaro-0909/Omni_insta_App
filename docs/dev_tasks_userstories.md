@@ -194,19 +194,29 @@
   - [x] Pinia状態管理（billing.ts）
   - [x] ナビゲーション統合
 
-### T12: Plan制限チェック
-- [ ] プラン制限ロジック実装
-  - [ ] アカウント数制限チェック
-  - [ ] 月間投稿数制限チェック
-  - [ ] 機能制限チェック
-- [ ] 制限チェック統合
-  - [ ] IGアカウント追加時チェック
-  - [ ] スケジュール作成時チェック
-  - [ ] 投稿実行時チェック
-- [ ] フロントエンド制限表示
-  - [ ] 使用量表示
-  - [ ] 制限到達警告
-  - [ ] アップグレード誘導
+### T12: Plan制限チェック ✅
+- [x] プラン制限ロジック実装
+  - [x] アカウント数制限チェック (functions/src/utils/planLimits.ts)
+  - [x] 月間投稿数制限チェック (canExecutePost関数)
+  - [x] 機能制限チェック (checkFeatureAccess関数)
+  - [x] 使用量自動リセット機能
+- [x] 制限チェック統合
+  - [x] IGアカウント追加時チェック (functions/src/api/igAccounts.ts)
+  - [x] スケジュール作成時チェック (functions/src/api/schedules.ts)
+  - [x] 投稿実行時チェック (functions/src/api/instagram.ts)
+  - [x] 投稿成功後の使用量更新
+- [x] プラン制限チェックAPI
+  - [x] getUserLimitsAndUsage 関数
+  - [x] checkInstagramAccountLimit 関数
+  - [x] checkPostExecutionLimit 関数
+  - [x] checkScheduleCreationLimit 関数
+  - [x] checkFeatureAvailability 関数
+- [x] フロントエンド制限表示
+  - [x] 使用量ダッシュボード (frontend/src/components/UsageDashboard.vue)
+  - [x] プラン制限ストア (frontend/src/stores/planLimits.ts)
+  - [x] 制限到達警告表示
+  - [x] アップグレード誘導UI
+  - [x] ダッシュボード統合
 
 ---
 
@@ -261,17 +271,15 @@
 
 ## 進捗サマリー
 
-**Sprint 1 進捗: 92% (11/12 Must タスク完了)**
+**Sprint 1 進捗: 100% (12/12 Must タスク完了) 🎉**
 
 ### 完了済み ✅
 - ENV-01, ENV-02, ENV-03: 環境構築・基盤整備
-- T01-T09: コア機能（スケジュール管理、自動投稿、通知）
+- T01-T12: 全コア機能（スケジュール管理、自動投稿、通知、決済、制限チェック）
 - POSTS: コンテンツライブラリ
 - T10: Auth & Firestore ルール（バックエンド完了）
 - T11: Stripe Checkout（完全実装）
-
-### 進行中 🔄
-- T12: Plan制限チェック
+- T12: Plan制限チェック（完全実装）
 
 ### 次回開始予定 📋
 - T10: Auth & Firestore ルール（フロントエンド認証フロー残り）
