@@ -336,6 +336,13 @@ const menuItems = [
     badge: false
   },
   { 
+    title: 'グループ管理', 
+    subtitle: 'アカウントグループ', 
+    icon: 'mdi-account-group', 
+    to: '/groups',
+    badge: false
+  },
+  { 
     title: '料金プラン', 
     subtitle: 'プラン・使用量', 
     icon: 'mdi-crown', 

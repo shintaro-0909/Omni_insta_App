@@ -347,7 +347,7 @@ onMounted(async () => {
     billingStore.fetchSubscription()
   ])
   
-  if (!isFreePlan.value) {
+  if (!isFreePlan) {
     await billingStore.fetchPaymentHistory()
   }
 })

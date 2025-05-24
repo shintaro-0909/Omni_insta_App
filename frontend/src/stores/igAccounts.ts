@@ -8,6 +8,8 @@ export interface IGAccount {
   id: string
   instagramUserId: string
   username: string
+  name?: string
+  profilePictureUrl?: string
   tokenExpiresAt: Date
   proxyId?: string
   createdAt: Date
@@ -184,6 +186,7 @@ export const useIgAccountsStore = defineStore('igAccounts', () => {
     getInstagramUserInfo,
     addAccount,
     loadAccounts,
+    fetchAccounts: loadAccounts, // エイリアス
     deleteAccount,
     refreshToken,
     clearError,

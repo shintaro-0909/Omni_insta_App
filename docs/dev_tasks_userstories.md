@@ -232,10 +232,21 @@
 - [x] IP確認テスト
 - [x] プロキシローテーション
 
-### T15: アカウントグループ機能
-- [ ] Firestore subcollection `groups`
-- [ ] グループ管理UI
-- [ ] グループ単位プロキシ設定
+### T15: アカウントグループ機能 ✅
+- [x] Firestore subcollection `groups`
+  - [x] Group型定義 (functions/src/api/groups.ts)
+  - [x] groups CRUD API実装
+  - [x] グループ作成・編集・削除機能
+  - [x] プロキシ割当機能
+- [x] グループ管理UI
+  - [x] GroupFormDialog.vue コンポーネント
+  - [x] GroupsView.vue 管理画面
+  - [x] グループ統計表示
+  - [x] フィルタ・検索機能
+- [x] グループ単位プロキシ設定
+  - [x] グループストア (frontend/src/stores/groups.ts)
+  - [x] ナビゲーション・ルーター統合
+  - [x] TypeScript型定義完備
 
 ### T16: ログダッシュボード
 - [ ] 実行ログ表示機能

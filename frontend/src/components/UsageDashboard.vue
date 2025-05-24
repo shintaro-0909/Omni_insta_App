@@ -245,15 +245,15 @@ const {
 } = planLimitsStore
 
 const shouldShowUpgrade = computed(() => {
-  if (!limits.value || !usage.value) return false
+  if (!limits || !usage) return false
   
   // Freeプランで使用量が多い場合
   if (getCurrentPlanId() === 'free') {
-    return usage.value.instagramAccountCount > 0 || usage.value.monthlyPostCount > 5
+    return usage.instagramAccountCount > 0 || usage.monthlyPostCount > 5
   }
   
   // 使用量が70%を超えている場合
-  return accountUsagePercentage.value > 70 || postUsagePercentage.value > 70
+  return accountUsagePercentage > 70 || postUsagePercentage > 70
 })
 
 // Methods
