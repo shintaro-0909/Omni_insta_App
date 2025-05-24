@@ -18,6 +18,7 @@ interface ExecutionLog {
   executedAt: admin.firestore.Timestamp;
   retryCount: number;
   nextRetryAt?: admin.firestore.Timestamp;
+  userId: string;
 }
 
 // 最大リトライ回数
@@ -273,6 +274,7 @@ async function handleExecutionSuccess(
     instagramPostId: instagramPostId,
     executedAt: admin.firestore.Timestamp.now(),
     retryCount: 0,
+    userId: scheduleData.ownerUid,
   };
 
   const logRef = db.collection("executionLogs").doc();
@@ -336,6 +338,7 @@ async function handleExecutionFailure(
     error: errorMessage,
     executedAt: admin.firestore.Timestamp.now(),
     retryCount: currentRetryCount,
+    userId: scheduleData.ownerUid,
   };
 
   // 次回リトライ時刻を設定

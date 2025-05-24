@@ -343,6 +343,13 @@ const menuItems = [
     badge: false
   },
   { 
+    title: 'ログダッシュボード', 
+    subtitle: '実行履歴・統計', 
+    icon: 'mdi-chart-line', 
+    to: '/logs',
+    badge: false
+  },
+  { 
     title: '料金プラン', 
     subtitle: 'プラン・使用量', 
     icon: 'mdi-crown', 

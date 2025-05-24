@@ -116,6 +116,13 @@ export {
   removeProxyFromGroup,
 } from "./api/groups";
 
+// Logs API
+export {
+  getExecutionLogs as getExecutionLogsV2,
+  getLogStats,
+  getDailyLogStats,
+} from "./api/logs";
+
 // 基本的なヘルスチェック関数
 export const healthCheck = functions.https.onRequest((req, res) => {
   res.status(200).json({

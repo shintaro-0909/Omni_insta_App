@@ -21,6 +21,7 @@
     "@mdi/font": "^7.3.67",
     "@vueuse/core": "^10.5.0",
     "axios": "^1.6.0",
+    "chart.js": "^4.4.9",
     "date-fns": "^2.30.0",
     "firebase": "^10.14.1",
     "pinia": "^2.1.7",
