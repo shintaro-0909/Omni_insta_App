@@ -11,6 +11,7 @@ import {
   validateScheduleData,
   createTimestamp,
 } from "../utils/scheduleUtils";
+import { canCreateSchedule } from "../utils/planLimits";
 
 // スケジュール作成
 export const createSchedule = functions.https.onCall(async (data, context) => {
@@ -41,7 +42,17 @@ export const createSchedule = functions.https.onCall(async (data, context) => {
   }
 
   try {
-    // ユーザー情報とプラン制限を取得
+    // プラン制限チェック
+    const limitCheck = await canCreateSchedule(context.auth.uid, type);
+    
+    if (!limitCheck.allowed) {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        `Schedule creation not allowed. ${limitCheck.reason}`
+      );
+    }
+
+    // ユーザー情報を取得
     const userDoc = await db.collection("users").doc(context.auth.uid).get();
     
     if (!userDoc.exists) {

@@ -83,6 +83,16 @@ export {
   stripeWebhook,
 } from "./api/stripeWebhook";
 
+// Plan Limits
+export {
+  getUserLimitsAndUsage,
+  checkInstagramAccountLimit,
+  checkPostExecutionLimit,
+  checkScheduleCreationLimit,
+  checkFeatureAvailability,
+  incrementUserPostUsage,
+} from "./api/planLimits";
+
 // 基本的なヘルスチェック関数
 export const healthCheck = functions.https.onRequest((req, res) => {
   res.status(200).json({

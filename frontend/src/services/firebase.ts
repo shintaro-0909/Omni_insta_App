@@ -2,15 +2,18 @@ import { initializeApp } from 'firebase/app'
 import { getAuth, connectAuthEmulator } from 'firebase/auth'
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore'
 import { getFunctions, connectFunctionsEmulator } from 'firebase/functions'
+import { getStorage, connectStorageEmulator } from 'firebase/storage'
+import { getAnalytics } from 'firebase/analytics'
 
-// Firebase設定（環境変数から取得）
+// Firebase設定
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'demo-api-key',
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'demo-project.firebaseapp.com',
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'demo-project',
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'demo-project.appspot.com',
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '123456789',
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:123456789:web:abcdef'
+  apiKey: "AIzaSyAIXJTPl98s8pDEh0fWTBG-pI7zj9wzIU8",
+  authDomain: "my-omniy.firebaseapp.com",
+  projectId: "my-omniy",
+  storageBucket: "my-omniy.firebasestorage.app",
+  messagingSenderId: "374319673625",
+  appId: "1:374319673625:web:3d5fc43595071b84101588",
+  measurementId: "G-F19QLM5ZRE"
 }
 
 // Firebase初期化
@@ -20,6 +23,8 @@ const app = initializeApp(firebaseConfig)
 export const auth = getAuth(app)
 export const db = getFirestore(app)
 export const functions = getFunctions(app)
+export const storage = getStorage(app)
+export const analytics = getAnalytics(app)
 
 // 開発環境でエミュレータに接続
 if (import.meta.env.DEV) {
@@ -32,6 +37,9 @@ if (import.meta.env.DEV) {
     
     // Functions エミュレータ
     connectFunctionsEmulator(functions, 'localhost', 5001)
+
+    // Storage エミュレータ
+    connectStorageEmulator(storage, 'localhost', 9199)
     
     console.log('🔧 Firebase エミュレータに接続しました')
   } catch (error) {

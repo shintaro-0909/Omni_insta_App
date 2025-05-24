@@ -1,6 +1,7 @@
 import * as functions from "firebase-functions";
 import {db} from "../index";
 import * as admin from "firebase-admin";
+import { canAddInstagramAccount } from "../utils/planLimits";
 
 // IGアカウントの型定義
 interface IGAccountData {
@@ -86,30 +87,13 @@ export const addInstagramAccount = functions.https.onCall(async (data, context) 
   }
 
   try {
-    // ユーザー情報とプラン制限を取得
-    const userDoc = await db.collection("users").doc(context.auth.uid).get();
+    // プラン制限チェック
+    const limitCheck = await canAddInstagramAccount(context.auth.uid);
     
-    if (!userDoc.exists) {
-      throw new functions.https.HttpsError(
-        "not-found",
-        "User not found"
-      );
-    }
-
-    const userData = userDoc.data();
-    const instagramAccountLimit = userData?.currentPlan?.instagramAccountLimit || 1;
-
-    // 現在のアカウント数をチェック
-    const existingAccountsSnapshot = await db
-      .collection("users")
-      .doc(context.auth.uid)
-      .collection("igAccounts")
-      .get();
-
-    if (existingAccountsSnapshot.size >= instagramAccountLimit) {
+    if (!limitCheck.allowed) {
       throw new functions.https.HttpsError(
         "failed-precondition",
-        `Instagram account limit exceeded. Current plan allows ${instagramAccountLimit} accounts.`
+        `Instagram account limit exceeded. ${limitCheck.reason} (${limitCheck.currentCount}/${limitCheck.limit})`
       );
     }
 

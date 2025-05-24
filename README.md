@@ -109,17 +109,34 @@ firebase emulators:start
 
 ## 📋 開発進捗
 
-### Sprint 0: 環境構築・基盤整備
-- [ ] ENV-01: GCPプロジェクト・Firebase初期設定
-- [ ] ENV-02: フロントエンドSPA初期構築  
-- [ ] ENV-03: Cloud Functions初期構築
+**現在のSprint 1進捗: 92% (11/12 Must タスク完了)**
+
+### Sprint 0: 環境構築・基盤整備 ✅
+- [x] ENV-01: GCPプロジェクト・Firebase初期設定
+- [x] ENV-02: フロントエンドSPA初期構築  
+- [x] ENV-03: Cloud Functions初期構築
 
 ### Sprint 1: MVPコア機能
-- [ ] T10: Firebase Auth + Firestore基本ルール
-- [ ] T06: IGアカウント管理
-- [ ] T01-T05: 予約投稿機能
-- [ ] T07-T09: 自動投稿実行
-- [ ] T11-T12: 決済・プラン管理
+- [x] T01-T09: 予約投稿機能（日時指定・繰返・ランダム・自動実行）
+- [x] T06: IGアカウント管理
+- [x] T10: Firebase Auth + Firestore基本ルール（バックエンド）
+- [x] T11: Stripe決済・プラン管理
+- [x] POSTS: コンテンツライブラリ
+- [ ] T12: プラン制限チェック（次回実装）
+
+> **進捗管理**: 詳細な進捗状況は `docs/dev_tasks_userstories.md` を参照
+
+## 🔄 進捗管理ルール
+
+### 必須実行事項
+1. **タスク完了時**: `docs/dev_tasks_userstories.md` の進捗表を更新
+2. **詳細記載**: 実装した具体的な内容（ファイル名・関数名）を記載
+3. **部分完了時**: 次回作業の開始点を明確化
+4. **進捗率更新**: Sprint全体の進捗率を再計算
+
+### 進捗管理ファイル
+- **メイン**: `docs/dev_tasks_userstories.md`
+- **ルール**: `.cursor/rules/progress-management.mdc`
 
 ## 🔧 開発ガイドライン
 

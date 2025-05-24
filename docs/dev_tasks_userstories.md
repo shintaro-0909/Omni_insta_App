@@ -165,21 +165,34 @@
   - [ ] 認証状態管理
   - [ ] ルートガード強化
 
-### T11: Stripe Checkout
-- [ ] Stripe設定・統合
-  - [ ] Stripe アカウント設定
-  - [ ] 商品・価格設定
-  - [ ] Webhook エンドポイント設定
-- [ ] 決済API実装
-  - [ ] createCheckoutSession 関数
-  - [ ] Stripe Webhook 処理
-  - [ ] プラン更新ロジック
-  - [ ] 決済履歴管理
-- [ ] フロントエンド決済フロー
-  - [ ] プラン選択画面
-  - [ ] Checkout セッション開始
-  - [ ] 決済完了処理
-  - [ ] 決済履歴表示
+### T11: Stripe Checkout ✅
+- [x] Stripe設定・統合
+  - [x] Stripe API v2023-10-16 統合
+  - [x] 4つの料金プラン設定（Free/Basic/Pro/Business）
+  - [x] Webhook エンドポイント設定
+- [x] 決済API実装
+  - [x] createCheckoutSession 関数
+  - [x] getSubscription 関数
+  - [x] cancelSubscription 関数
+  - [x] resumeSubscription 関数
+  - [x] getPaymentHistory 関数
+  - [x] getPlans 関数
+- [x] Stripe Webhook 処理
+  - [x] customer.subscription.created
+  - [x] customer.subscription.updated
+  - [x] customer.subscription.deleted
+  - [x] invoice.payment_succeeded
+  - [x] invoice.payment_failed
+  - [x] プラン更新ロジック
+  - [x] 決済履歴管理
+- [x] フロントエンド決済フロー
+  - [x] プラン選択画面（BillingView.vue）
+  - [x] Checkout セッション開始
+  - [x] 決済完了処理（BillingSuccessView.vue）
+  - [x] 決済履歴表示
+  - [x] サブスクリプション管理（キャンセル/再開）
+  - [x] Pinia状態管理（billing.ts）
+  - [x] ナビゲーション統合
 
 ### T12: Plan制限チェック
 - [ ] プラン制限ロジック実装
@@ -248,17 +261,20 @@
 
 ## 進捗サマリー
 
-**Sprint 1 進捗: 75% (9/12 Must タスク完了)**
+**Sprint 1 進捗: 92% (11/12 Must タスク完了)**
 
 ### 完了済み ✅
 - ENV-01, ENV-02, ENV-03: 環境構築・基盤整備
 - T01-T09: コア機能（スケジュール管理、自動投稿、通知）
 - POSTS: コンテンツライブラリ
+- T10: Auth & Firestore ルール（バックエンド完了）
+- T11: Stripe Checkout（完全実装）
 
 ### 進行中 🔄
-- T10: Auth & Firestore ルール
-- T11: Stripe Checkout  
 - T12: Plan制限チェック
+
+### 次回開始予定 📋
+- T10: Auth & Firestore ルール（フロントエンド認証フロー残り）
 
 ### 次期Sprint 📋
 - T13-T16: Should機能

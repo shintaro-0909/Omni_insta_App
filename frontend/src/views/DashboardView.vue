@@ -82,6 +82,13 @@
       </v-col>
     </v-row>
 
+    <!-- 使用量ダッシュボード -->
+    <v-row class="mb-6">
+      <v-col cols="12">
+        <UsageDashboard />
+      </v-col>
+    </v-row>
+
     <!-- 最近の活動 -->
     <v-row>
       <v-col cols="12" md="8">
@@ -214,6 +221,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useIgAccountsStore } from '@/stores/igAccounts'
 import { useSchedulesStore } from '@/stores/schedules'
+import UsageDashboard from '@/components/UsageDashboard.vue'
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
 
