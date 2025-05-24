@@ -47,6 +47,18 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/billing',
+      name: 'billing',
+      component: () => import('@/views/BillingView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/billing/success',
+      name: 'billing-success',
+      component: () => import('@/views/BillingSuccessView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/:pathMatch(.*)*',
       name: 'not-found',
       component: () => import('@/views/NotFoundView.vue')

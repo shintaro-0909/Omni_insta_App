@@ -68,6 +68,21 @@ export {
   getUserInfo,
 } from "./api/auth";
 
+// Stripe Payment
+export {
+  createCheckoutSession,
+  getSubscription,
+  cancelSubscription,
+  resumeSubscription,
+  getPaymentHistory,
+  getPlans,
+} from "./api/stripe";
+
+// Stripe Webhook
+export {
+  stripeWebhook,
+} from "./api/stripeWebhook";
+
 // 基本的なヘルスチェック関数
 export const healthCheck = functions.https.onRequest((req, res) => {
   res.status(200).json({

@@ -145,7 +145,8 @@ const menuItems = [
   { title: 'ダッシュボード', icon: 'mdi-view-dashboard', to: '/dashboard' },
   { title: '予約投稿', icon: 'mdi-calendar-clock', to: '/schedules' },
   { title: 'アカウント管理', icon: 'mdi-instagram', to: '/accounts' },
-  { title: 'コンテンツ', icon: 'mdi-image-multiple', to: '/content' }
+  { title: 'コンテンツ', icon: 'mdi-image-multiple', to: '/content' },
+  { title: '料金プラン', icon: 'mdi-crown', to: '/billing' }
 ]
 
 // Methods
