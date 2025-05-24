@@ -18,6 +18,12 @@
     "test:e2e:open": "cypress open"
   },
   "dependencies": {
+    "@fullcalendar/core": "^6.1.17",
+    "@fullcalendar/daygrid": "^6.1.17",
+    "@fullcalendar/interaction": "^6.1.17",
+    "@fullcalendar/list": "^6.1.17",
+    "@fullcalendar/timegrid": "^6.1.17",
+    "@fullcalendar/vue3": "^6.1.17",
     "@mdi/font": "^7.3.67",
     "@vueuse/core": "^10.5.0",
     "axios": "^1.6.0",

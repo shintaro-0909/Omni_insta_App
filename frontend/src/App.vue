@@ -350,6 +350,13 @@ const menuItems = [
     badge: false
   },
   { 
+    title: 'カレンダー', 
+    subtitle: '投稿スケジュール', 
+    icon: 'mdi-calendar', 
+    to: '/calendar',
+    badge: false
+  },
+  { 
     title: '料金プラン', 
     subtitle: 'プラン・使用量', 
     icon: 'mdi-crown', 
