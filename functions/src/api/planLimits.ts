@@ -4,9 +4,11 @@ import {
   getUserUsage,
   canAddInstagramAccount,
   canExecutePost,
+  canExecutePostForAccount,
   canCreateSchedule,
   checkFeatureAccess,
   incrementPostUsage,
+  incrementPostUsageForAccount,
 } from "../utils/planLimits";
 
 /**
@@ -194,6 +196,45 @@ export const checkFeatureAvailability = functions.https.onCall(async (data, cont
 });
 
 /**
+ * IGアカウント別日次投稿制限チェック
+ */
+export const checkDailyPostLimitForAccount = functions.https.onCall(async (data, context) => {
+  // 認証チェック
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "Authentication required"
+    );
+  }
+
+  const { igAccountId } = data;
+  const userId = context.auth.uid;
+
+  if (!igAccountId) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "Instagram account ID is required"
+    );
+  }
+
+  try {
+    const result = await canExecutePostForAccount(userId, igAccountId);
+
+    return {
+      success: true,
+      ...result,
+    };
+
+  } catch (error: any) {
+    console.error("Failed to check daily post limit for account:", error);
+    throw new functions.https.HttpsError(
+      "internal",
+      `Failed to check daily post limit: ${error.message}`
+    );
+  }
+});
+
+/**
  * 投稿使用量を増加（内部使用）
  */
 export const incrementUserPostUsage = functions.https.onCall(async (data, context) => {
@@ -220,6 +261,45 @@ export const incrementUserPostUsage = functions.https.onCall(async (data, contex
     throw new functions.https.HttpsError(
       "internal",
       `Failed to increment post usage: ${error.message}`
+    );
+  }
+});
+
+/**
+ * IGアカウント別投稿使用量を増加（内部使用）
+ */
+export const incrementUserPostUsageForAccount = functions.https.onCall(async (data, context) => {
+  // 認証チェック
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "Authentication required"
+    );
+  }
+
+  const { igAccountId } = data;
+  const userId = context.auth.uid;
+
+  if (!igAccountId) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "Instagram account ID is required"
+    );
+  }
+
+  try {
+    await incrementPostUsageForAccount(userId, igAccountId);
+
+    return {
+      success: true,
+      message: "Post usage incremented successfully for account",
+    };
+
+  } catch (error: any) {
+    console.error("Failed to increment post usage for account:", error);
+    throw new functions.https.HttpsError(
+      "internal",
+      `Failed to increment post usage for account: ${error.message}`
     );
   }
 }); 

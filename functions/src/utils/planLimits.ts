@@ -6,6 +6,7 @@ const db = admin.firestore();
 export interface PlanLimits {
   instagramAccountLimit: number; // -1 = 無制限
   monthlyPostLimit: number; // -1 = 無制限
+  dailyPostLimitPerAccount: number; // -1 = 無制限、1アカウントあたりの日次投稿上限
   scheduledPosts: boolean;
   recurringPosts: boolean;
   randomPosts: boolean;
@@ -19,6 +20,8 @@ export interface Usage {
   instagramAccountCount: number;
   monthlyPostCount: number;
   lastResetDate: admin.firestore.Timestamp;
+  dailyPostCount?: { [igAccountId: string]: number }; // アカウント別日次投稿数
+  lastDailyResetDate?: admin.firestore.Timestamp; // 日次リセット日
 }
 
 /**
@@ -44,6 +47,7 @@ export async function getUserPlanLimits(userId: string): Promise<PlanLimits> {
       return {
         instagramAccountLimit: 1,
         monthlyPostLimit: 10,
+        dailyPostLimitPerAccount: 10, // Freeプランは月10回なので日次制限なし（月次で制御）
         scheduledPosts: true,
         recurringPosts: false,
         randomPosts: false,
@@ -63,7 +67,85 @@ export async function getUserPlanLimits(userId: string): Promise<PlanLimits> {
 }
 
 /**
- * ユーザーの現在の使用量を取得
+ * ユーザーの現在の使用量を取得（日次データ含む）
+ */
+export async function getUserUsageWithDaily(userId: string): Promise<Usage> {
+  try {
+    // ユーザー情報を取得
+    const userDoc = await db.collection("users").doc(userId).get();
+    
+    if (!userDoc.exists) {
+      throw new Error("User not found");
+    }
+
+    const userData = userDoc.data()!;
+    
+    // Instagramアカウント数を取得
+    const igAccountsSnapshot = await db
+      .collection("users")
+      .doc(userId)
+      .collection("igAccounts")
+      .get();
+
+    const instagramAccountCount = igAccountsSnapshot.size;
+
+    // 月間投稿数を取得（使用量リセット日をチェック）
+    const usage = userData.usage || {};
+    const lastResetDate = usage.lastResetDate || admin.firestore.Timestamp.now();
+    const monthlyPostCount = usage.monthlyPostCount || 0;
+
+    // 日次データを取得
+    const dailyPostCount = usage.dailyPostCount || {};
+    const lastDailyResetDate = usage.lastDailyResetDate || admin.firestore.Timestamp.now();
+
+    // 月が変わっている場合はリセット
+    const now = new Date();
+    const resetDate = lastResetDate.toDate();
+    const shouldResetMonthly = now.getMonth() !== resetDate.getMonth() || 
+                              now.getFullYear() !== resetDate.getFullYear();
+
+    // 日が変わっている場合はリセット
+    const dailyResetDate = lastDailyResetDate.toDate();
+    const shouldResetDaily = now.getDate() !== dailyResetDate.getDate() ||
+                            now.getMonth() !== dailyResetDate.getMonth() ||
+                            now.getFullYear() !== dailyResetDate.getFullYear();
+
+    const updateData: any = {};
+    let needsUpdate = false;
+
+    if (shouldResetMonthly) {
+      updateData["usage.monthlyPostCount"] = 0;
+      updateData["usage.lastResetDate"] = admin.firestore.Timestamp.now();
+      needsUpdate = true;
+    }
+
+    if (shouldResetDaily) {
+      updateData["usage.dailyPostCount"] = {};
+      updateData["usage.lastDailyResetDate"] = admin.firestore.Timestamp.now();
+      needsUpdate = true;
+    }
+
+    if (needsUpdate) {
+      updateData.updatedAt = admin.firestore.Timestamp.now();
+      await db.collection("users").doc(userId).update(updateData);
+    }
+
+    return {
+      instagramAccountCount,
+      monthlyPostCount: shouldResetMonthly ? 0 : monthlyPostCount,
+      lastResetDate: shouldResetMonthly ? admin.firestore.Timestamp.now() : lastResetDate,
+      dailyPostCount: shouldResetDaily ? {} : dailyPostCount,
+      lastDailyResetDate: shouldResetDaily ? admin.firestore.Timestamp.now() : lastDailyResetDate,
+    };
+
+  } catch (error) {
+    console.error("Failed to get user usage with daily:", error);
+    throw error;
+  }
+}
+
+/**
+ * ユーザーの現在の使用量を取得（従来版・後方互換性）
  */
 export async function getUserUsage(userId: string): Promise<Usage> {
   try {
@@ -160,7 +242,7 @@ export async function canAddInstagramAccount(userId: string): Promise<{
 }
 
 /**
- * 投稿実行可能かチェック
+ * 投稿実行可能かチェック（月次制限）
  */
 export async function canExecutePost(userId: string): Promise<{
   allowed: boolean;
@@ -186,6 +268,69 @@ export async function canExecutePost(userId: string): Promise<{
 
   } catch (error) {
     console.error("Failed to check post limit:", error);
+    return {
+      allowed: false,
+      reason: "Failed to check post limit",
+      currentCount: 0,
+      limit: 0,
+    };
+  }
+}
+
+/**
+ * 特定IGアカウントの日次投稿制限チェック
+ */
+export async function canExecutePostForAccount(
+  userId: string, 
+  igAccountId: string
+): Promise<{
+  allowed: boolean;
+  reason?: string;
+  currentCount: number;
+  limit: number;
+}> {
+  try {
+    const [limits, usage] = await Promise.all([
+      getUserPlanLimits(userId),
+      getUserUsageWithDaily(userId)
+    ]);
+
+    // 日次制限チェック
+    const dailyLimit = limits.dailyPostLimitPerAccount;
+    const currentDailyCount = usage.dailyPostCount?.[igAccountId] || 0;
+    
+    const dailyAllowed = dailyLimit === -1 || currentDailyCount < dailyLimit;
+    
+    if (!dailyAllowed) {
+      return {
+        allowed: false,
+        reason: "Daily post limit reached for this account",
+        currentCount: currentDailyCount,
+        limit: dailyLimit,
+      };
+    }
+
+    // 月次制限チェック
+    const monthlyAllowed = limits.monthlyPostLimit === -1 || 
+                          usage.monthlyPostCount < limits.monthlyPostLimit;
+
+    if (!monthlyAllowed) {
+      return {
+        allowed: false,
+        reason: "Monthly post limit reached",
+        currentCount: usage.monthlyPostCount,
+        limit: limits.monthlyPostLimit,
+      };
+    }
+
+    return {
+      allowed: true,
+      currentCount: currentDailyCount,
+      limit: dailyLimit,
+    };
+
+  } catch (error) {
+    console.error("Failed to check post limit for account:", error);
     return {
       allowed: false,
       reason: "Failed to check post limit",
@@ -244,7 +389,7 @@ export async function canCreateSchedule(
 }
 
 /**
- * 投稿実行後の使用量更新
+ * 投稿実行後の使用量更新（月次のみ・従来版）
  */
 export async function incrementPostUsage(userId: string): Promise<void> {
   try {
@@ -270,6 +415,53 @@ export async function incrementPostUsage(userId: string): Promise<void> {
 
   } catch (error) {
     console.error("Failed to increment post usage:", error);
+    throw error;
+  }
+}
+
+/**
+ * 投稿実行後の使用量更新（月次＋日次・アカウント別）
+ */
+export async function incrementPostUsageForAccount(
+  userId: string, 
+  igAccountId: string
+): Promise<void> {
+  try {
+    const userRef = db.collection("users").doc(userId);
+    
+    await db.runTransaction(async (transaction) => {
+      const userDoc = await transaction.get(userRef);
+      
+      if (!userDoc.exists) {
+        throw new Error("User not found");
+      }
+
+      const userData = userDoc.data()!;
+      const usage = userData.usage || {};
+      
+      // 月次カウント更新
+      const currentMonthlyCount = usage.monthlyPostCount || 0;
+      
+      // 日次カウント更新
+      const dailyPostCount = usage.dailyPostCount || {};
+      const currentDailyCount = dailyPostCount[igAccountId] || 0;
+      
+      const updatedDailyPostCount = {
+        ...dailyPostCount,
+        [igAccountId]: currentDailyCount + 1,
+      };
+
+      transaction.update(userRef, {
+        "usage.monthlyPostCount": currentMonthlyCount + 1,
+        "usage.dailyPostCount": updatedDailyPostCount,
+        updatedAt: admin.firestore.Timestamp.now(),
+      });
+    });
+
+    console.log(`Post usage incremented for user ${userId}, account ${igAccountId}`);
+
+  } catch (error) {
+    console.error("Failed to increment post usage for account:", error);
     throw error;
   }
 }

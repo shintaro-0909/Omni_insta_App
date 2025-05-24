@@ -88,9 +88,11 @@ export {
   getUserLimitsAndUsage,
   checkInstagramAccountLimit,
   checkPostExecutionLimit,
+  checkDailyPostLimitForAccount,
   checkScheduleCreationLimit,
   checkFeatureAvailability,
   incrementUserPostUsage,
+  incrementUserPostUsageForAccount,
 } from "./api/planLimits";
 
 // 基本的なヘルスチェック関数

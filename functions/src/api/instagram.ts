@@ -1,7 +1,7 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import axios from "axios";
-import { canExecutePost, incrementPostUsage } from "../utils/planLimits";
+import { canExecutePostForAccount, incrementPostUsageForAccount } from "../utils/planLimits";
 
 const db = admin.firestore();
 
@@ -184,13 +184,13 @@ export const postToInstagram = functions.https.onCall(async (data: InstagramPost
   }
 
   try {
-    // プラン制限チェック
-    const limitCheck = await canExecutePost(context.auth.uid);
+    // 日次制限チェック（アカウント別）
+    const dailyLimitCheck = await canExecutePostForAccount(context.auth.uid, igAccountId);
     
-    if (!limitCheck.allowed) {
+    if (!dailyLimitCheck.allowed) {
       throw new functions.https.HttpsError(
         "failed-precondition",
-        `Post execution not allowed. ${limitCheck.reason} (${limitCheck.currentCount}/${limitCheck.limit})`
+        `Post execution not allowed. ${dailyLimitCheck.reason} (${dailyLimitCheck.currentCount}/${dailyLimitCheck.limit})`
       );
     }
     // IGアカウント情報を取得
@@ -267,8 +267,8 @@ export const postToInstagram = functions.https.onCall(async (data: InstagramPost
     // 投稿成功をログに記録
     console.log(`Instagram post published successfully: ${publishedId}`);
 
-    // 使用量を更新
-    await incrementPostUsage(context.auth.uid);
+    // 使用量を更新（アカウント別日次＋月次）
+    await incrementPostUsageForAccount(context.auth.uid, igAccountId);
 
     return {
       success: true,
