@@ -1,0 +1,57 @@
+name: Claude Simple Test
+
+on:
+  issue_comment:
+    types: [created]
+  issues:
+    types: [opened]
+
+jobs:
+  claude-test:
+    # シンプルな条件でテスト
+    if: contains(github.event.comment.body, '@claude') || contains(github.event.issue.body, '@claude')
+    
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+      
+    steps:
+      - name: Debug event info
+        run: |
+          echo "Event name: ${{ github.event_name }}"
+          echo "Action: ${{ github.event.action }}"
+          if [ "${{ github.event_name }}" = "issue_comment" ]; then
+            echo "Comment body: ${{ github.event.comment.body }}"
+          elif [ "${{ github.event_name }}" = "issues" ]; then
+            echo "Issue body: ${{ github.event.issue.body }}"
+          fi
+      
+      - name: Simple Claude response
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            
+            const comment = `🤖 **Claude Code テスト応答**
+            
+            ✅ GitHub Action が正常に動作しています！
+            📅 今日の日付: ${new Date().toLocaleDateString('ja-JP')}
+            
+            **イベント情報:**
+            - Event: ${{ github.event_name }}
+            - Action: ${{ github.event.action }}
+            
+            ---
+            *Claude Code GitHub Actions テスト*`;
+            
+            github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number,
+              body: comment
+            });
