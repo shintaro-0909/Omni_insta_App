@@ -103,6 +103,9 @@
 
       <v-spacer />
 
+      <!-- 🌍 言語切り替え -->
+      <LanguageSwitcher compact class="mr-2" />
+
       <!-- 📊 クイック統計（認証済みユーザー） -->
       <template v-if="authStore.isAuthenticated">
         <div class="quick-stats d-none d-md-flex mr-4">
@@ -113,7 +116,7 @@
             class="mr-2"
           >
             <v-icon icon="mdi-calendar-clock" size="16" class="mr-1" />
-            アクティブ予約 3
+            {{ $t('dashboard.activeSchedules') }} 3
           </v-chip>
         </div>
 
@@ -275,6 +278,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()

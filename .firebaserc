@@ -1,0 +1,17 @@
+{
+  "projects": {
+    "default": "omniy-instagram-scheduler"
+  },
+  "targets": {
+    "omniy-instagram-scheduler": {
+      "hosting": {
+        "production": [
+          "omniy-prod"
+        ],
+        "staging": [
+          "omniy-staging"
+        ]
+      }
+    }
+  }
+}

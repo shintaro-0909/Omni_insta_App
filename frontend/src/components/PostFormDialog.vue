@@ -87,10 +87,26 @@
             </template>
           </v-combobox>
 
-          <!-- プレビュー -->
-          <div v-if="form.mediaUrls[0] && isValidUrl(form.mediaUrls[0])">
+          <!-- Instagram風プレビュー -->
+          <div v-if="hasValidMedia">
             <v-label class="text-subtitle-2 font-weight-bold mb-2">
-              プレビュー
+              Instagram投稿プレビュー
+            </v-label>
+            <InstagramPreview
+              :post="previewPost"
+              :account-data="selectedAccount"
+              :allow-edit="true"
+              class="mb-4"
+              @update:location="updateLocation"
+              @update:estimated-likes="updateEstimatedLikes"
+              @hashtag-click="addHashtagFromPreview"
+            />
+          </div>
+
+          <!-- 従来のシンプルプレビュー -->
+          <div v-else-if="form.mediaUrls[0] && isValidUrl(form.mediaUrls[0])">
+            <v-label class="text-subtitle-2 font-weight-bold mb-2">
+              画像プレビュー
             </v-label>
             <v-card variant="outlined" class="mb-4">
               <v-img
@@ -157,6 +173,9 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
 import { usePostsStore, type Post, type CreatePostData, type UpdatePostData } from '@/stores/posts'
+import { usePreviewStore, type PreviewPost, type PreviewAccount } from '@/stores/preview'
+import { useIgAccountsStore } from '@/stores/igAccounts'
+import InstagramPreview from './InstagramPreview.vue'
 
 interface Props {
   modelValue: boolean
@@ -172,11 +191,15 @@ const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
 const postsStore = usePostsStore()
+const previewStore = usePreviewStore()
+const igAccountsStore = useIgAccountsStore()
 
 // State
 const formRef = ref()
 const isFormValid = ref(false)
 const loading = ref(false)
+const previewLocation = ref('')
+const estimatedLikes = ref(120)
 
 // Form data
 const form = ref({
@@ -187,6 +210,34 @@ const form = ref({
 
 // Computed
 const isEditing = computed(() => !!props.post)
+
+const hasValidMedia = computed(() => {
+  return form.value.mediaUrls.some(url => url && isValidUrl(url))
+})
+
+const previewPost = computed((): PreviewPost => ({
+  id: props.post?.id,
+  mediaUrls: form.value.mediaUrls.filter(url => url && isValidUrl(url)),
+  caption: form.value.caption,
+  tags: form.value.tags,
+  location: previewLocation.value,
+  estimatedLikes: estimatedLikes.value
+}))
+
+const selectedAccount = computed((): PreviewAccount | undefined => {
+  // 最初のアクティブなアカウントを選択
+  const account = igAccountsStore.accounts[0]
+  if (!account) return undefined
+  
+  return {
+    id: account.id,
+    username: account.username,
+    name: account.name,
+    profilePictureUrl: account.profilePictureUrl,
+    followersCount: 1000, // デフォルト値
+    avgLikes: estimatedLikes.value
+  }
+})
 
 // Validation rules
 const rules = {
@@ -221,6 +272,21 @@ const addMediaUrl = () => {
 const removeMediaUrl = (index: number) => {
   if (form.value.mediaUrls.length > 1) {
     form.value.mediaUrls.splice(index, 1)
+  }
+}
+
+// Preview methods
+const updateLocation = (location: string) => {
+  previewLocation.value = location
+}
+
+const updateEstimatedLikes = (likes: number) => {
+  estimatedLikes.value = likes
+}
+
+const addHashtagFromPreview = (hashtag: string) => {
+  if (!form.value.tags.includes(hashtag)) {
+    form.value.tags.push(hashtag)
   }
 }
 
@@ -301,9 +367,19 @@ watch(() => props.modelValue, (newValue) => {
   if (newValue) {
     nextTick(() => {
       loadPostData()
+      // IGアカウントを読み込み
+      igAccountsStore.fetchAccounts()
     })
   }
 })
+
+// Watch for form changes to update preview
+watch(() => previewPost.value, (newPost) => {
+  if (hasValidMedia.value && selectedAccount.value) {
+    previewStore.setPreviewPost(newPost)
+    previewStore.setPreviewAccount(selectedAccount.value)
+  }
+}, { deep: true })
 </script>
 
 <style scoped>

@@ -299,6 +299,7 @@
       </v-col>
     </v-row>
   </v-container>
+</div>
 </template>
 
 <script setup lang="ts">
@@ -508,10 +509,6 @@ onMounted(async () => {
   ])
 })
 </script>
-
-    </v-container>
-  </div>
-</template>
 
 <style scoped>
 /* 🎨 ダッシュボード：Instagram風デザインシステム */
