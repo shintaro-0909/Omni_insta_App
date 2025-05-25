@@ -166,10 +166,10 @@
           no-data-text="決済履歴がありません"
           loading-text="読み込み中..."
         >
-          <template #item.amount="{ item }">
+          <template v-slot:[`item.amount`]="{ item }">
             {{ formatPrice(item.amount) }}
           </template>
-          <template #item.status="{ item }">
+          <template v-slot:[`item.status`]="{ item }">
             <v-chip
               :color="getPaymentStatusColor(item.status)"
               size="small"
@@ -178,7 +178,7 @@
               {{ getPaymentStatusText(item.status) }}
             </v-chip>
           </template>
-          <template #item.createdAt="{ item }">
+          <template v-slot:[`item.createdAt`]="{ item }">
             {{ formatDate(item.createdAt) }}
           </template>
         </v-data-table>

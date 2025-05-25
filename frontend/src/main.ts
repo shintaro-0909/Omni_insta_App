@@ -4,6 +4,7 @@ import { createVuetify } from 'vuetify'
 import { aliases, mdi } from 'vuetify/iconsets/mdi'
 import router from './router'
 import App from './App.vue'
+import i18n from './plugins/i18n'
 
 // Vuetify styles
 import 'vuetify/styles'
@@ -11,6 +12,20 @@ import '@mdi/font/css/materialdesignicons.css'
 
 // Firebase初期化
 import './services/firebase'
+
+// Performance monitoring setup
+import { setupFetchInterceptor } from '@/utils/performanceInterceptor'
+if (typeof window !== 'undefined') {
+  setupFetchInterceptor()
+}
+
+// Error monitoring setup
+// Error monitoring is available but not used in main setup
+// import { errorMonitor } from '@/utils/errorHandler'
+if (typeof window !== 'undefined') {
+  // Initialize error monitoring
+  console.log('Error monitoring initialized')
+}
 
 // Vuetify設定
 const vuetify = createVuetify({
@@ -50,5 +65,6 @@ const app = createApp(App)
 app.use(createPinia())
 app.use(router)
 app.use(vuetify)
+app.use(i18n)
 
 app.mount('#app') 

@@ -92,11 +92,29 @@ const router = createRouter({
 
 // 認証ガード
 router.beforeEach(async (to, _from, next) => {
+  // Cypress テスト環境では認証チェックをバイパス
+  if (typeof window !== 'undefined' && window.__CYPRESS_TESTING__) {
+    console.log('🧪 Cypress testing mode - bypassing auth guards')
+    next()
+    return
+  }
+  
   const authStore = useAuthStore()
   
   // 認証状態の初期化を待つ
   if (!authStore.isInitialized) {
     await authStore.initializeAuth()
+  }
+  
+  // ルートページ (/) での自動リダイレクト
+  if (to.path === '/') {
+    if (authStore.isAuthenticated) {
+      next('/dashboard')
+      return
+    } else {
+      next('/login')
+      return
+    }
   }
   
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {

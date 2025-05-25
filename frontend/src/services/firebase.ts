@@ -26,8 +26,9 @@ export const functions = getFunctions(app)
 export const storage = getStorage(app)
 export const analytics = getAnalytics(app)
 
-// 開発環境でエミュレータに接続
-if (import.meta.env.DEV) {
+// 開発環境でエミュレータに接続 (一時的に無効化)
+const ENABLE_EMULATOR = false // Set to true to enable Firebase emulators
+if (import.meta.env.DEV && ENABLE_EMULATOR) {
   try {
     // Auth エミュレータ
     connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true })
