@@ -39,9 +39,9 @@ firebase deploy --only hosting   # Deploy frontend only
 
 ### Claude Code Operations
 ```bash
-./scripts/start-claude.sh        # Start Claude Code (auto-detects environment)
-./scripts/start-claude.sh -c     # Force devcontainer mode
-./scripts/start-claude.sh -d     # Direct start (if in container)
+./tools/scripts/start-claude.sh        # Start Claude Code (auto-detects environment)
+./tools/scripts/start-claude.sh -c     # Force devcontainer mode
+./tools/scripts/start-claude.sh -d     # Direct start (if in container)
 claude --dangerously-skip-permissions  # Direct command (in secure container)
 ```
 

@@ -106,15 +106,10 @@ router.beforeEach(async (to, _from, next) => {
     await authStore.initializeAuth()
   }
   
-  // ルートページ (/) での自動リダイレクト
-  if (to.path === '/') {
-    if (authStore.isAuthenticated) {
-      next('/dashboard')
-      return
-    } else {
-      next('/login')
-      return
-    }
+  // ルートページ (/) での自動リダイレクト（認証済みユーザーのみ）
+  if (to.path === '/' && authStore.isAuthenticated) {
+    next('/dashboard')
+    return
   }
   
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
