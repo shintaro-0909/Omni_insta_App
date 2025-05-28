@@ -191,7 +191,7 @@
 
         <v-row justify="center" class="pricing-grid">
           <v-col
-            v-for="(plan, index) in plans"
+            v-for="plan in plans"
             :key="plan.name"
             cols="12"
             sm="6"

@@ -103,11 +103,15 @@
 
       <v-spacer />
 
-      <!-- 🌍 言語切り替え -->
-      <LanguageSwitcher compact class="mr-2" />
+      <!-- 🌍 言語切り替え（機能フラグで制御）-->
+      <LanguageSwitcher 
+        v-if="featureFlags.isAdvancedFeatureEnabled('multiLanguage')" 
+        compact 
+        class="mr-2" 
+      />
 
-      <!-- 📊 クイック統計（認証済みユーザー） -->
-      <template v-if="authStore.isAuthenticated">
+      <!-- 📊 クイック統計（MVP では非表示） -->
+      <template v-if="authStore.isAuthenticated && featureFlags.isAdvancedFeatureEnabled('quickStats')">
         <div class="quick-stats d-none d-md-flex mr-4">
           <v-chip
             variant="outlined"
@@ -119,9 +123,12 @@
             {{ $t('dashboard.activeSchedules') }} 3
           </v-chip>
         </div>
+      </template>
 
-        <!-- 🔔 通知ボタン -->
+      <template v-if="authStore.isAuthenticated">
+        <!-- 🔔 通知ボタン（MVP では非表示） -->
         <v-btn
+          v-if="featureFlags.isAdvancedFeatureEnabled('notifications')"
           icon
           size="small"
           class="notification-btn mr-2"
@@ -248,8 +255,9 @@
       </template>
     </v-snackbar>
 
-    <!-- 🔔 通知パネル -->
+    <!-- 🔔 通知パネル（MVP では非表示） -->
     <v-overlay
+      v-if="featureFlags.isAdvancedFeatureEnabled('notifications')"
       v-model="showNotifications"
       class="notification-overlay"
       @click="showNotifications = false"
@@ -278,6 +286,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { featureFlags } from '@/utils/featureFlags'
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
 
 const router = useRouter()
@@ -300,8 +309,8 @@ const appBarStyle = computed(() => ({
   boxShadow: '0 4px 20px rgba(102, 126, 234, 0.3)'
 }))
 
-// メニューアイテム（拡張版）
-const menuItems = [
+// 🎯 ソロ起業家向けMVPメニュー（機能フラグでフィルタリング）
+const allMenuItems = [
   { 
     title: 'ダッシュボード', 
     subtitle: '全体概要', 
@@ -333,41 +342,18 @@ const menuItems = [
     badge: false
   },
   { 
-    title: 'プロキシ管理', 
-    subtitle: 'サーバー設定', 
-    icon: 'mdi-server-network', 
-    to: '/proxies',
-    badge: false
-  },
-  { 
-    title: 'グループ管理', 
-    subtitle: 'アカウントグループ', 
-    icon: 'mdi-account-group', 
-    to: '/groups',
-    badge: false
-  },
-  { 
-    title: 'ログダッシュボード', 
-    subtitle: '実行履歴・統計', 
-    icon: 'mdi-chart-line', 
-    to: '/logs',
-    badge: false
-  },
-  { 
-    title: 'カレンダー', 
-    subtitle: '投稿スケジュール', 
-    icon: 'mdi-calendar', 
-    to: '/calendar',
-    badge: false
-  },
-  { 
     title: '料金プラン', 
     subtitle: 'プラン・使用量', 
     icon: 'mdi-crown', 
     to: '/billing',
     badge: false
   }
+  // 🚫 複雑な機能は機能フラグで無効化
+  // プロキシ管理、グループ管理、ログダッシュボード、カレンダーは非表示
 ]
+
+// 機能フラグでフィルタリングされたメニューアイテム
+const menuItems = computed(() => featureFlags.filterMenuItems(allMenuItems))
 
 // Methods
 const handleLogout = async () => {

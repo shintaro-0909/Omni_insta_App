@@ -153,13 +153,37 @@
         </v-col>
       </v-row>
 
-      <!-- 📈 使用量ダッシュボード -->
+      <!-- 📈 シンプルプラン表示 (MVP) -->
       <v-row class="mb-8">
         <v-col cols="12">
-          <h2 class="section-title">📈 使用量とプラン</h2>
-          <div class="usage-dashboard-wrapper">
-            <UsageDashboard />
-          </div>
+          <h2 class="section-title">💎 プラン状況</h2>
+          <v-card elevation="0" rounded="xl" class="simple-plan-card">
+            <v-card-text class="pa-6">
+              <div class="d-flex align-center justify-space-between">
+                <div>
+                  <div class="text-h6 font-weight-bold">{{ currentPlan.name }}</div>
+                  <div class="text-body-2 text-grey-darken-1">
+                    今月の投稿: {{ currentPlan.usedPosts }}/{{ currentPlan.maxPosts }}
+                  </div>
+                </div>
+                <v-btn
+                  color="primary"
+                  variant="elevated"
+                  to="/billing"
+                  rounded="xl"
+                >
+                  プラン管理
+                </v-btn>
+              </div>
+              <v-progress-linear
+                :model-value="(currentPlan.usedPosts / currentPlan.maxPosts) * 100"
+                color="primary"
+                height="8"
+                rounded
+                class="mt-4"
+              />
+            </v-card-text>
+          </v-card>
         </v-col>
       </v-row>
 
@@ -308,7 +332,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useIgAccountsStore } from '@/stores/igAccounts'
 import { useSchedulesStore } from '@/stores/schedules'
-import UsageDashboard from '@/components/UsageDashboard.vue'
+// UsageDashboard removed for MVP simplification
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
 

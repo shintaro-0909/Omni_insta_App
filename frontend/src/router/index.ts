@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { featureFlags } from '@/utils/featureFlags'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -115,6 +116,10 @@ router.beforeEach(async (to, _from, next) => {
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next('/login')
   } else if (to.name === 'login' && authStore.isAuthenticated) {
+    next('/dashboard')
+  } else if (to.meta.requiresAuth && !featureFlags.isRouteAccessible(to.path)) {
+    // 機能フラグで無効化されたルートへのアクセスをブロック
+    console.warn(`🚫 Route ${to.path} is disabled by feature flags`)
     next('/dashboard')
   } else {
     next()
