@@ -132,6 +132,7 @@ temp/
 # Cypress
 cypress/videos/
 cypress/screenshots/
+cypress/downloads/
 
 # Test results
 test-results/
