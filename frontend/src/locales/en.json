@@ -266,5 +266,118 @@
     "statusGood": "Good",
     "statusNeedsImprovement": "Needs Improvement",
     "statusPoor": "Poor"
+  },
+  "accessibility": {
+    "dashboard": {
+      "title": "Universal Accessibility"
+    },
+    "emergency": {
+      "toggle": "Toggle emergency accessibility mode",
+      "activate": "Emergency Mode",
+      "deactivate": "Exit Emergency"
+    },
+    "status": {
+      "active": "Accessibility Active",
+      "inactive": "Accessibility Inactive",
+      "profileLoaded": "Profile loaded",
+      "noProfile": "No profile loaded"
+    },
+    "adaptations": {
+      "active": "Active Adaptations",
+      "title": "Current Adaptations",
+      "confidence": "Confidence",
+      "remove": "Remove adaptation",
+      "removed": "Adaptation Removed",
+      "removedDescription": "The accessibility adaptation has been removed",
+      "types": {
+        "layout": "Layout Adaptation",
+        "content": "Content Adaptation", 
+        "interaction": "Interaction Adaptation",
+        "navigation": "Navigation Adaptation",
+        "feedback": "Feedback Adaptation"
+      }
+    },
+    "profile": {
+      "title": "Accessibility Profile",
+      "name": "Profile Name",
+      "impairments": "Impairments",
+      "adaptationMode": "Adaptation Mode"
+    },
+    "impairments": {
+      "visual": "Visual",
+      "hearing": "Hearing",
+      "motor": "Motor",
+      "cognitive": "Cognitive",
+      "speech": "Speech",
+      "multiple": "Multiple",
+      "temporary": "Temporary"
+    },
+    "adaptationMode": {
+      "subtle": "Subtle",
+      "moderate": "Moderate",
+      "aggressive": "Aggressive",
+      "complete": "Complete",
+      "predictive": "Predictive"
+    },
+    "visual": {
+      "title": "Visual Preferences",
+      "fontSize": "Font Size",
+      "contrast": "Contrast",
+      "darkMode": "Dark Mode",
+      "reducedMotion": "Reduced Motion"
+    },
+    "motor": {
+      "title": "Motor Preferences", 
+      "clickTolerance": "Click Tolerance",
+      "dwellTime": "Dwell Time (ms)",
+      "stickyKeys": "Sticky Keys",
+      "gestureComplexity": "Gesture Complexity",
+      "gestureComplexity": {
+        "simple": "Simple",
+        "normal": "Normal", 
+        "complex": "Complex"
+      }
+    },
+    "cognitive": {
+      "title": "Cognitive Preferences",
+      "simplifiedInterface": "Simplified Interface",
+      "memoryAids": "Memory Aids",
+      "attentionFocus": "Attention Focus",
+      "processingTime": "Processing Time",
+      "attentionFocus": {
+        "single": "Single Focus",
+        "multiple": "Multiple Focus",
+        "adaptive": "Adaptive Focus"
+      }
+    },
+    "ai": {
+      "title": "AI Assistance",
+      "predictiveInput": "Predictive Input",
+      "proactiveAssistance": "Proactive Assistance",
+      "smartSuggestions": "Smart Suggestions", 
+      "contextualHelp": "Contextual Help"
+    },
+    "insights": {
+      "title": "Accessibility Insights",
+      "successRate": "Success Rate",
+      "assistiveDevices": "Assistive Devices",
+      "learningAccuracy": "Learning Accuracy",
+      "assistanceFrequency": "Assistance Frequency"
+    },
+    "suggestions": {
+      "title": "Improvement Suggestions"
+    },
+    "alerts": {
+      "actions": "Actions"
+    },
+    "actions": {
+      "reassess": "Run Assessment",
+      "export": "Export Settings",
+      "crossDevice": "Cross-Device Sync"
+    },
+    "assessment": {
+      "completed": "Assessment Completed",
+      "completedDescription": "Your accessibility profile has been updated based on the latest assessment"
+    }
   }
 }

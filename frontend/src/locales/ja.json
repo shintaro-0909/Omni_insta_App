@@ -69,5 +69,118 @@
     "statusGood": "良好",
     "statusNeedsImprovement": "要改善",
     "statusPoor": "不良"
+  },
+  "accessibility": {
+    "dashboard": {
+      "title": "完全アクセシビリティシステム"
+    },
+    "emergency": {
+      "toggle": "緊急アクセシビリティモードの切り替え",
+      "activate": "緊急モード",
+      "deactivate": "緊急モード終了"
+    },
+    "status": {
+      "active": "アクセシビリティ有効",
+      "inactive": "アクセシビリティ無効",
+      "profileLoaded": "プロファイル読み込み済み",
+      "noProfile": "プロファイル未読み込み"
+    },
+    "adaptations": {
+      "active": "アクティブな適応",
+      "title": "現在の適応機能",
+      "confidence": "信頼度",
+      "remove": "適応機能を削除",
+      "removed": "適応機能を削除しました",
+      "removedDescription": "アクセシビリティ適応機能が削除されました",
+      "types": {
+        "layout": "レイアウト適応",
+        "content": "コンテンツ適応",
+        "interaction": "インタラクション適応",
+        "navigation": "ナビゲーション適応",
+        "feedback": "フィードバック適応"
+      }
+    },
+    "profile": {
+      "title": "アクセシビリティプロファイル",
+      "name": "プロファイル名",
+      "impairments": "障害",
+      "adaptationMode": "適応モード"
+    },
+    "impairments": {
+      "visual": "視覚",
+      "hearing": "聴覚",
+      "motor": "運動",
+      "cognitive": "認知",
+      "speech": "言語",
+      "multiple": "複数",
+      "temporary": "一時的"
+    },
+    "adaptationMode": {
+      "subtle": "控えめ",
+      "moderate": "標準",
+      "aggressive": "積極的",
+      "complete": "完全",
+      "predictive": "予測型"
+    },
+    "visual": {
+      "title": "視覚設定",
+      "fontSize": "フォントサイズ",
+      "contrast": "コントラスト",
+      "darkMode": "ダークモード",
+      "reducedMotion": "アニメーション軽減"
+    },
+    "motor": {
+      "title": "運動設定",
+      "clickTolerance": "クリック許容範囲",
+      "dwellTime": "滞留時間 (ミリ秒)",
+      "stickyKeys": "固定キー",
+      "gestureComplexity": "ジェスチャー複雑度",
+      "gestureComplexity": {
+        "simple": "シンプル",
+        "normal": "標準",
+        "complex": "複雑"
+      }
+    },
+    "cognitive": {
+      "title": "認知設定",
+      "simplifiedInterface": "簡素化インターフェース",
+      "memoryAids": "記憶補助",
+      "attentionFocus": "注意集中",
+      "processingTime": "処理時間",
+      "attentionFocus": {
+        "single": "単一フォーカス",
+        "multiple": "複数フォーカス",
+        "adaptive": "適応フォーカス"
+      }
+    },
+    "ai": {
+      "title": "AI支援",
+      "predictiveInput": "予測入力",
+      "proactiveAssistance": "先回り支援",
+      "smartSuggestions": "スマート提案",
+      "contextualHelp": "文脈ヘルプ"
+    },
+    "insights": {
+      "title": "アクセシビリティ分析",
+      "successRate": "成功率",
+      "assistiveDevices": "支援技術",
+      "learningAccuracy": "学習精度",
+      "assistanceFrequency": "支援頻度"
+    },
+    "suggestions": {
+      "title": "改善提案"
+    },
+    "alerts": {
+      "actions": "アクション"
+    },
+    "actions": {
+      "reassess": "評価実行",
+      "export": "設定エクスポート",
+      "crossDevice": "デバイス間同期"
+    },
+    "assessment": {
+      "completed": "評価完了",
+      "completedDescription": "最新の評価に基づいてアクセシビリティプロファイルが更新されました"
+    }
   }
 }
