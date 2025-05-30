@@ -27,7 +27,7 @@
     "exactOptionalPropertyTypes": true, // オプショナル型の厳密化
     "noImplicitReturns": true,         // 戻り値必須
     "noFallthroughCasesInSwitch": true, // switch文安全性
-    "noUncheckedSideEffectImports": true, // サイドエフェクト防止
+    // "noUncheckedSideEffectImports": true, // サイドエフェクト防止 (無効なオプション)
     
     // === 未使用コード検出 ===
     "noUnusedLocals": true,

@@ -5,15 +5,20 @@ import { getFunctions, connectFunctionsEmulator } from 'firebase/functions'
 import { getStorage, connectStorageEmulator } from 'firebase/storage'
 import { getAnalytics } from 'firebase/analytics'
 
-// Firebase設定
+// Firebase設定 - 環境変数から読み込み
 const firebaseConfig = {
-  apiKey: "AIzaSyAIXJTPl98s8pDEh0fWTBG-pI7zj9wzIU8",
-  authDomain: "my-omniy.firebaseapp.com",
-  projectId: "my-omniy",
-  storageBucket: "my-omniy.firebasestorage.app",
-  messagingSenderId: "374319673625",
-  appId: "1:374319673625:web:3d5fc43595071b84101588",
-  measurementId: "G-F19QLM5ZRE"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+}
+
+// 環境変数の検証
+if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+  throw new Error('Firebase configuration is missing. Please check your environment variables.')
 }
 
 // Firebase初期化
@@ -26,8 +31,8 @@ export const functions = getFunctions(app)
 export const storage = getStorage(app)
 export const analytics = getAnalytics(app)
 
-// 開発環境でエミュレータに接続 (一時的に無効化)
-const ENABLE_EMULATOR = false // Set to true to enable Firebase emulators
+// 開発環境でエミュレータに接続
+const ENABLE_EMULATOR = import.meta.env.VITE_ENABLE_FIREBASE_EMULATOR === 'true'
 if (import.meta.env.DEV && ENABLE_EMULATOR) {
   try {
     // Auth エミュレータ
