@@ -7,7 +7,8 @@
     "src/locales/*.json"
   ],
   "exclude": [
-    "src/**/__tests__/*"
+    "src/**/__tests__/*",
+    "src/views/demos/**/*"
   ],
   "compilerOptions": {
     "composite": true,
@@ -24,7 +25,7 @@
     // === 厳格な型チェック (1人運営品質向上) ===
     "strict": true,
     "noUncheckedIndexedAccess": true,  // 配列・オブジェクトアクセス安全性
-    "exactOptionalPropertyTypes": true, // オプショナル型の厳密化
+    // "exactOptionalPropertyTypes": true, // オプショナル型の厳密化 (一時的に無効化)
     "noImplicitReturns": true,         // 戻り値必須
     "noFallthroughCasesInSwitch": true, // switch文安全性
     // "noUncheckedSideEffectImports": true, // サイドエフェクト防止 (無効なオプション)

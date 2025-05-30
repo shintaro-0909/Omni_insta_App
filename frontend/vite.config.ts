@@ -23,62 +23,20 @@ export default defineConfig({
       theme: {
         defaultTheme: 'light'
       },
-      styles: {
-        configFile: 'src/styles/settings.scss'
-      }
+      // styles: {
+      //   configFile: 'src/styles/settings.scss'
+      // }
     }),
-    VitePWA({
-      registerType: 'autoUpdate',
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        cleanupOutdatedCaches: true,
-        skipWaiting: true,
-        clientsClaim: true,
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'google-fonts-cache',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 365 days
-              },
-              cacheKeyWillBeUsed: async ({ request }) => {
-                return `${request.url}`
-              }
-            }
-          },
-          {
-            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'gstatic-fonts-cache',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 365 days
-              }
-            }
-          }
-        ]
-      },
-      manifest: {
-        name: 'Omniy - Instagram Scheduler',
-        short_name: 'Omniy',
-        description: 'Professional Instagram scheduling app for influencers and businesses',
-        theme_color: '#E91E63',
-        background_color: '#ffffff',
-        display: 'standalone',
-        scope: '/',
-        start_url: '/',
-        orientation: 'portrait-primary',
-        categories: ['social', 'productivity', 'business'],
-        lang: 'ja'
-      },
-      devOptions: {
-        enabled: false
-      }
-    })
+    // VitePWA temporarily disabled for build testing
+    // VitePWA({
+    //   registerType: 'autoUpdate',
+    //   workbox: {
+    //     globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+    //     cleanupOutdatedCaches: true,
+    //     skipWaiting: true,
+    //     clientsClaim: true
+    //   }
+    // })
   ],
   resolve: {
     alias: {
