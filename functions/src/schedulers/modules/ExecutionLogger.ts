@@ -72,11 +72,7 @@ export class ExecutionLogger {
     try {
       const logDoc = await this.db.collection("executionLogs").doc(logId).get();
       const logData = logDoc.data() as ExecutionLog;
-      await sendPostSuccessNotification(logData.userId, {
-        scheduleId: logData.scheduleId,
-        instagramPostId,
-        executedAt: new Date()
-      });
+      await sendPostSuccessNotification(logData.userId, logData.scheduleId, instagramPostId, 'account');
     } catch (notificationError) {
       console.warn("Failed to send success notification:", notificationError);
     }
@@ -105,11 +101,7 @@ export class ExecutionLogger {
       try {
         const logDoc = await this.db.collection("executionLogs").doc(logId).get();
         const logData = logDoc.data() as ExecutionLog;
-        await sendPostFailureNotification(logData.userId, {
-          scheduleId: logData.scheduleId,
-          error,
-          finalAttempt: true
-        });
+        await sendPostFailureNotification(logData.userId, logData.scheduleId, error, 'account', retryCount);
       } catch (notificationError) {
         console.warn("Failed to send failure notification:", notificationError);
       }
@@ -135,7 +127,7 @@ export class ExecutionLogger {
       .where("executedAt", ">=", admin.firestore.Timestamp.fromDate(startTime))
       .get();
 
-    const logs = logsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as ExecutionLog[];
+    const logs = logsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as (ExecutionLog & { id: string })[];
 
     return {
       total: logs.length,

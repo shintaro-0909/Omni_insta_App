@@ -264,9 +264,7 @@ async function handleSuccessfulExecution(
   // スケジュールの次回実行時間を更新
   await updateNextRunAfterExecution(
     schedule.userId,
-    schedule.id,
-    schedule.scheduleType,
-    schedule.repeatRule
+    schedule.id
   );
 
   console.log(`✅ 投稿成功: ${schedule.id} -> ${instagramPostId}`);

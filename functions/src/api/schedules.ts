@@ -40,7 +40,9 @@ async function getCachedOrFetch<T>(
   // Cleanup old cache entries
   if (API_CACHE.size > 100) {
     const oldestKey = API_CACHE.keys().next().value;
-    API_CACHE.delete(oldestKey);
+    if (oldestKey) {
+      API_CACHE.delete(oldestKey);
+    }
   }
   
   return data;

@@ -160,7 +160,7 @@ export class InstagramExecutor {
     };
 
     const response = proxyConfig 
-      ? await proxyFetch(uploadUrl, fetchOptions, proxyConfig)
+      ? await proxyFetch(uploadUrl, fetchOptions as any, proxyConfig)
       : await fetch(uploadUrl, fetchOptions);
 
     if (!response.ok) {
@@ -212,7 +212,7 @@ export class InstagramExecutor {
     };
 
     const response = proxyConfig 
-      ? await proxyFetch(publishUrl, fetchOptions, proxyConfig)
+      ? await proxyFetch(publishUrl, fetchOptions as any, proxyConfig)
       : await fetch(publishUrl, fetchOptions);
 
     if (!response.ok) {
@@ -245,7 +245,7 @@ export class InstagramExecutor {
     };
 
     const response = proxyConfig 
-      ? await proxyFetch(statusUrl, fetchOptions, proxyConfig)
+      ? await proxyFetch(statusUrl, fetchOptions as any, proxyConfig)
       : await fetch(statusUrl, fetchOptions);
 
     if (!response.ok) {

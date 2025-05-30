@@ -22,7 +22,7 @@ export default defineConfig({
       autoImport: true,
       theme: {
         defaultTheme: 'light'
-      },
+      }
       // styles: {
       //   configFile: 'src/styles/settings.scss'
       // }
@@ -78,62 +78,12 @@ export default defineConfig({
         annotations: true
       },
       output: {
-        experimentalMinChunkSize: 20000,
-        manualChunks(id) {
-          // === 1人運営向け最適化チャンク分割 ===
-          
-          // MVPコア（常に必要）
-          if (id.includes('node_modules/vue/') || id.includes('node_modules/@vue/')) {
-            return 'vue-core'
-          }
-          if (id.includes('node_modules/vue-router/')) {
-            return 'vue-core'
-          }
-          if (id.includes('node_modules/pinia/')) {
-            return 'vue-core'
-          }
-          
-          // Firebase必須機能
-          if (id.includes('firebase/app') || id.includes('firebase/auth') || id.includes('firebase/firestore')) {
-            return 'firebase-core'
-          }
-          
-          // Firebase拡張機能 (機能フラグで制御)
-          if (id.includes('firebase/functions') || id.includes('firebase/storage')) {
-            return 'firebase-extended'
-          }
-          
-          // Vuetify UI（分割してロード速度向上）
-          if (id.includes('node_modules/vuetify/') && id.includes('components')) {
-            return 'vuetify-components'
-          }
-          if (id.includes('node_modules/vuetify/')) {
-            return 'vuetify-core'
-          }
-          
-          // 複雑機能（機能フラグで制御）
-          if (id.includes('node_modules/chart.js/') || id.includes('node_modules/chartjs-')) {
-            return 'features-analytics'  // パフォーマンス分析用
-          }
-          if (id.includes('node_modules/@fullcalendar/')) {
-            return 'features-calendar'   // カレンダー表示用
-          }
-          if (id.includes('node_modules/vue-i18n/')) {
-            return 'features-i18n'       // 多言語対応用
-          }
-          
-          // ユーティリティ（軽量化）
-          if (id.includes('node_modules/date-fns/')) {
-            return 'utils-date'
-          }
-          if (id.includes('node_modules/lodash/')) {
-            return 'utils-lodash'
-          }
-          
-          // その他vendor（最小限）
-          if (id.includes('node_modules/')) {
-            return 'vendor'
-          }
+        experimentalMinChunkSize: 50000, // 空チャンク防止
+        manualChunks: {
+          // 主要ライブラリのみ分割（空チャンク防止）
+          'vue': ['vue', 'vue-router', 'pinia'],
+          'vuetify': ['vuetify'],
+          'firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore']
         },
         chunkFileNames: (chunkInfo) => {
           const facadeModuleId = chunkInfo.facadeModuleId
@@ -166,11 +116,11 @@ export default defineConfig({
     __VUE_OPTIONS_API__: false
   },
   css: {
-    devSourcemap: false,
-    preprocessorOptions: {
-      scss: {
-        additionalData: `@import "@/styles/variables.scss";`
-      }
-    }
+    devSourcemap: false
+    // preprocessorOptions: {
+    //   scss: {
+    //     additionalData: `@import "@/styles/variables.scss";`
+    //   }
+    // }
   }
 }) 
