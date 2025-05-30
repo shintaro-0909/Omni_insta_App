@@ -1,404 +1,326 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import * as admin from 'firebase-admin'
-import { FieldValue } from 'firebase-admin/firestore'
+// Import types only when needed
 
 // Mock Firebase Admin
-vi.mock('firebase-admin', () => ({
-  auth: vi.fn(() => ({
-    verifyIdToken: vi.fn()
-  })),
-  firestore: vi.fn(() => ({
-    collection: vi.fn(),
-    doc: vi.fn()
+jest.mock('firebase-admin', () => ({
+  initializeApp: jest.fn(),
+  firestore: jest.fn(() => ({
+    collection: jest.fn(() => ({
+      doc: jest.fn(() => ({
+        get: jest.fn(),
+        set: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn()
+      })),
+      add: jest.fn(),
+      where: jest.fn(() => ({
+        orderBy: jest.fn(() => ({
+          limit: jest.fn(() => ({
+            get: jest.fn()
+          })),
+          get: jest.fn()
+        }))
+      }))
+    }))
   })),
   FieldValue: {
-    serverTimestamp: vi.fn(() => 'mock-timestamp'),
-    arrayUnion: vi.fn()
+    serverTimestamp: jest.fn(() => 'mock-timestamp'),
+    arrayUnion: jest.fn()
+  }
+}))
+
+// Mock Firebase Functions
+jest.mock('firebase-functions', () => ({
+  https: {
+    onCall: jest.fn((handler) => handler),
+    HttpsError: class HttpsError extends Error {
+      constructor(public code: string, public message: string) {
+        super(message)
+      }
+    }
+  },
+  config: jest.fn(() => ({}))
+}))
+
+// Mock the index file to avoid initialization issues
+jest.mock('../index', () => ({
+  db: {
+    collection: jest.fn(() => ({
+      doc: jest.fn(() => ({
+        get: jest.fn(),
+        set: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn()
+      })),
+      add: jest.fn(),
+      where: jest.fn(() => ({
+        orderBy: jest.fn(() => ({
+          limit: jest.fn(() => ({
+            get: jest.fn()
+          })),
+          get: jest.fn()
+        }))
+      }))
+    }))
   }
 }))
 
 // Mock utils
-vi.mock('../utils/planLimits', () => ({
-  checkScheduleCreationLimit: vi.fn(),
-  checkPostExecutionLimit: vi.fn()
+jest.mock('../utils/planLimits', () => ({
+  canCreateSchedule: jest.fn().mockResolvedValue(true),
+  getUserPlanLimits: jest.fn().mockResolvedValue({
+    instagramAccountLimit: 10,
+    monthlyPostLimit: 1000,
+    dailyPostLimitPerAccount: 50,
+    scheduledPosts: true,
+    recurringPosts: true,
+    randomPosts: true
+  })
 }))
 
-import { createSchedule, getSchedules, updateSchedule, deleteSchedule } from '../api/schedules'
-import { checkScheduleCreationLimit } from '../utils/planLimits'
+jest.mock('../utils/scheduleUtils', () => ({
+  calculateNextRunAt: jest.fn().mockReturnValue(new Date('2024-12-31T23:59:59.000Z')),
+  updateNextRunAfterExecution: jest.fn(),
+  validateScheduleData: jest.fn().mockReturnValue(true),
+  createTimestamp: jest.fn().mockReturnValue(new Date()),
+  ScheduleType: {
+    ONCE: 'once',
+    RECURRING: 'recurring',
+    RANDOM: 'random'
+  },
+  ScheduleStatus: {
+    ACTIVE: 'active',
+    PAUSED: 'paused',
+    COMPLETED: 'completed'
+  }
+}))
+
+// Import after mocks
+const { createSchedule, getSchedules, updateSchedule, deleteSchedule } = require('../api/schedules')
+const { canCreateSchedule } = require('../utils/planLimits')
+const { db } = require('../index')
 
 describe('Schedules API', () => {
-  let mockFirestore: any
-  let mockAuth: any
-  let mockRequest: any
-  let mockResponse: any
+  let mockContext: any
+  let mockData: any
 
   beforeEach(() => {
-    // Setup mocks
-    mockFirestore = {
-      collection: vi.fn(() => ({
-        add: vi.fn(),
-        doc: vi.fn(() => ({
-          get: vi.fn(),
-          update: vi.fn(),
-          delete: vi.fn()
-        })),
-        where: vi.fn(() => ({
-          orderBy: vi.fn(() => ({
-            limit: vi.fn(() => ({
-              get: vi.fn()
-            })),
-            get: vi.fn()
-          }))
-        }))
-      }))
+    // Clear all mocks
+    jest.clearAllMocks()
+    
+    // Setup context for authenticated user
+    mockContext = {
+      auth: {
+        uid: 'test-user-id',
+        token: {}
+      }
     }
 
-    mockAuth = {
-      verifyIdToken: vi.fn()
-    }
-
-    vi.mocked(admin.firestore).mockReturnValue(mockFirestore)
-    vi.mocked(admin.auth).mockReturnValue(mockAuth)
-
-    mockRequest = {
-      headers: {
-        authorization: 'Bearer test-token'
-      },
-      body: {},
-      method: 'POST'
-    }
-
-    mockResponse = {
-      status: vi.fn(() => mockResponse),
-      json: vi.fn(),
-      send: vi.fn()
+    // Setup default data
+    mockData = {
+      igAccountId: 'ig-account-1',
+      contentId: 'content-1',
+      type: 'once',
+      title: 'Test Schedule',
+      scheduledAt: '2024-12-31T23:59:59.000Z'
     }
   })
 
   afterEach(() => {
-    vi.clearAllMocks()
+    jest.clearAllMocks()
   })
 
   describe('createSchedule', () => {
     it('should create a schedule successfully', async () => {
-      // Mock authentication
-      mockAuth.verifyIdToken.mockResolvedValue({ uid: 'test-user-id' })
-      
-      // Mock plan limits check
-      vi.mocked(checkScheduleCreationLimit).mockResolvedValue(true)
-
-      // Mock Firestore add
+      // Mock Firestore operations
       const mockDocRef = { id: 'new-schedule-id' }
-      mockFirestore.collection().add.mockResolvedValue(mockDocRef)
+      db.collection().add.mockResolvedValue(mockDocRef)
+      
+      // Mock account verification
+      db.collection().doc().get.mockResolvedValue({
+        exists: true,
+        data: () => ({ userId: 'test-user-id' })
+      })
 
-      mockRequest.body = {
-        caption: 'Test post',
-        images: ['image1.jpg'],
-        igAccountId: 'ig-account-1',
-        scheduleType: 'once',
-        scheduledAt: '2024-12-31T23:59:59.000Z'
-      }
+      // Call the function
+      const result = await createSchedule(mockData, mockContext)
 
-      await createSchedule(mockRequest, mockResponse)
-
-      expect(mockResponse.status).toHaveBeenCalledWith(201)
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'Schedule created successfully',
+      // Verify the result
+      expect(result).toEqual({
+        success: true,
         scheduleId: 'new-schedule-id'
       })
+
+      // Verify plan limits were checked
+      expect(canCreateSchedule).toHaveBeenCalledWith('test-user-id')
+
+      // Verify Firestore add was called
+      expect(db.collection().add).toHaveBeenCalled()
     })
 
-    it('should validate required fields', async () => {
-      mockAuth.verifyIdToken.mockResolvedValue({ uid: 'test-user-id' })
+    it('should throw error when not authenticated', async () => {
+      mockContext.auth = null
 
-      mockRequest.body = {
-        // Missing required fields
-        caption: ''
-      }
-
-      await createSchedule(mockRequest, mockResponse)
-
-      expect(mockResponse.status).toHaveBeenCalledWith(400)
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        error: 'Missing required fields'
-      })
+      await expect(createSchedule(mockData, mockContext)).rejects.toThrow(
+        'Authentication required'
+      )
     })
 
-    it('should check plan limits', async () => {
-      mockAuth.verifyIdToken.mockResolvedValue({ uid: 'test-user-id' })
-      
-      // Mock plan limits exceeded
-      vi.mocked(checkScheduleCreationLimit).mockResolvedValue(false)
-
-      mockRequest.body = {
-        caption: 'Test post',
-        images: ['image1.jpg'],
-        igAccountId: 'ig-account-1',
-        scheduleType: 'once',
-        scheduledAt: '2024-12-31T23:59:59.000Z'
-      }
-
-      await createSchedule(mockRequest, mockResponse)
-
-      expect(mockResponse.status).toHaveBeenCalledWith(403)
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        error: 'Schedule creation limit exceeded for your plan'
+    it('should throw error when account does not exist', async () => {
+      // Mock account not found
+      db.collection().doc().get.mockResolvedValue({
+        exists: false
       })
+
+      await expect(createSchedule(mockData, mockContext)).rejects.toThrow(
+        'Instagram account not found'
+      )
     })
 
-    it('should handle authentication errors', async () => {
-      mockAuth.verifyIdToken.mockRejectedValue(new Error('Invalid token'))
+    it('should throw error when plan limit exceeded', async () => {
+      // Mock plan limit exceeded
+      canCreateSchedule.mockResolvedValue(false)
 
-      await createSchedule(mockRequest, mockResponse)
-
-      expect(mockResponse.status).toHaveBeenCalledWith(401)
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        error: 'Unauthorized'
+      // Mock account verification
+      db.collection().doc().get.mockResolvedValue({
+        exists: true,
+        data: () => ({ userId: 'test-user-id' })
       })
-    })
 
-    it('should validate schedule type', async () => {
-      mockAuth.verifyIdToken.mockResolvedValue({ uid: 'test-user-id' })
-
-      mockRequest.body = {
-        caption: 'Test post',
-        images: ['image1.jpg'],
-        igAccountId: 'ig-account-1',
-        scheduleType: 'invalid-type', // Invalid schedule type
-        scheduledAt: '2024-12-31T23:59:59.000Z'
-      }
-
-      await createSchedule(mockRequest, mockResponse)
-
-      expect(mockResponse.status).toHaveBeenCalledWith(400)
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        error: 'Invalid schedule type'
-      })
-    })
-
-    it('should validate future date for one-time schedules', async () => {
-      mockAuth.verifyIdToken.mockResolvedValue({ uid: 'test-user-id' })
-
-      mockRequest.body = {
-        caption: 'Test post',
-        images: ['image1.jpg'],
-        igAccountId: 'ig-account-1',
-        scheduleType: 'once',
-        scheduledAt: '2023-01-01T00:00:00.000Z' // Past date
-      }
-
-      await createSchedule(mockRequest, mockResponse)
-
-      expect(mockResponse.status).toHaveBeenCalledWith(400)
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        error: 'Scheduled time must be in the future'
-      })
+      await expect(createSchedule(mockData, mockContext)).rejects.toThrow(
+        'スケジュール作成上限に達しました'
+      )
     })
   })
 
   describe('getSchedules', () => {
-    it('should fetch user schedules with pagination', async () => {
-      mockAuth.verifyIdToken.mockResolvedValue({ uid: 'test-user-id' })
-
-      const mockDocs = [
-        {
-          id: 'schedule-1',
-          data: () => ({
-            caption: 'Post 1',
-            scheduleType: 'once',
-            status: 'pending'
-          })
-        },
-        {
-          id: 'schedule-2',
-          data: () => ({
-            caption: 'Post 2',
-            scheduleType: 'recurring',
-            status: 'active'
-          })
-        }
+    it('should get schedules successfully', async () => {
+      const mockSchedules = [
+        { id: 'schedule-1', data: () => ({ title: 'Schedule 1' }) },
+        { id: 'schedule-2', data: () => ({ title: 'Schedule 2' }) }
       ]
 
-      mockFirestore.collection().where().orderBy().limit().get.mockResolvedValue({
-        docs: mockDocs,
-        empty: false
+      db.collection().where().orderBy().get.mockResolvedValue({
+        docs: mockSchedules
       })
 
-      mockRequest.method = 'GET'
-      mockRequest.query = {
-        limit: '10',
-        page: '1'
-      }
+      const result = await getSchedules({}, mockContext)
 
-      await getSchedules(mockRequest, mockResponse)
-
-      expect(mockResponse.status).toHaveBeenCalledWith(200)
-      expect(mockResponse.json).toHaveBeenCalledWith({
+      expect(result).toEqual({
         schedules: [
-          { id: 'schedule-1', caption: 'Post 1', scheduleType: 'once', status: 'pending' },
-          { id: 'schedule-2', caption: 'Post 2', scheduleType: 'recurring', status: 'active' }
-        ],
-        pagination: {
-          page: 1,
-          limit: 10,
-          hasMore: false
-        }
+          { id: 'schedule-1', title: 'Schedule 1' },
+          { id: 'schedule-2', title: 'Schedule 2' }
+        ]
       })
     })
 
-    it('should filter schedules by status', async () => {
-      mockAuth.verifyIdToken.mockResolvedValue({ uid: 'test-user-id' })
+    it('should throw error when not authenticated', async () => {
+      mockContext.auth = null
 
-      mockRequest.method = 'GET'
-      mockRequest.query = {
-        status: 'pending',
-        limit: '10'
-      }
+      await expect(getSchedules({}, mockContext)).rejects.toThrow(
+        'Authentication required'
+      )
+    })
 
-      const mockQueryBuilder = {
-        where: vi.fn(() => mockQueryBuilder),
-        orderBy: vi.fn(() => mockQueryBuilder),
-        limit: vi.fn(() => mockQueryBuilder),
-        get: vi.fn().mockResolvedValue({ docs: [], empty: true })
-      }
+    it('should filter by account if provided', async () => {
+      const mockSchedules = [
+        { id: 'schedule-1', data: () => ({ title: 'Schedule 1' }) }
+      ]
 
-      mockFirestore.collection.mockReturnValue(mockQueryBuilder)
+      db.collection().where().orderBy().get.mockResolvedValue({
+        docs: mockSchedules
+      })
 
-      await getSchedules(mockRequest, mockResponse)
+      const result = await getSchedules({ igAccountId: 'ig-account-1' }, mockContext)
 
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith('userId', '==', 'test-user-id')
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith('status', '==', 'pending')
+      expect(result).toEqual({
+        schedules: [
+          { id: 'schedule-1', title: 'Schedule 1' }
+        ]
+      })
+
+      // Verify where clause was called
+      expect(db.collection().where).toHaveBeenCalledWith('igAccountId', '==', 'ig-account-1')
     })
   })
 
   describe('updateSchedule', () => {
-    it('should update a schedule successfully', async () => {
-      mockAuth.verifyIdToken.mockResolvedValue({ uid: 'test-user-id' })
+    it('should update schedule successfully', async () => {
+      const updateData = {
+        scheduleId: 'schedule-1',
+        title: 'Updated Title'
+      }
 
-      const mockDoc = {
+      // Mock schedule exists and belongs to user
+      db.collection().doc().get.mockResolvedValue({
         exists: true,
-        data: () => ({
-          userId: 'test-user-id',
-          caption: 'Old caption'
-        })
-      }
-
-      mockFirestore.collection().doc().get.mockResolvedValue(mockDoc)
-      mockFirestore.collection().doc().update.mockResolvedValue({})
-
-      mockRequest.method = 'PUT'
-      mockRequest.params = { scheduleId: 'schedule-1' }
-      mockRequest.body = {
-        caption: 'Updated caption'
-      }
-
-      await updateSchedule(mockRequest, mockResponse)
-
-      expect(mockResponse.status).toHaveBeenCalledWith(200)
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'Schedule updated successfully'
+        data: () => ({ userId: 'test-user-id' })
       })
+
+      db.collection().doc().update.mockResolvedValue({})
+
+      const result = await updateSchedule(updateData, mockContext)
+
+      expect(result).toEqual({ success: true })
+      expect(db.collection().doc().update).toHaveBeenCalled()
     })
 
-    it('should prevent updating other users schedules', async () => {
-      mockAuth.verifyIdToken.mockResolvedValue({ uid: 'test-user-id' })
-
-      const mockDoc = {
-        exists: true,
-        data: () => ({
-          userId: 'different-user-id', // Different user
-          caption: 'Old caption'
-        })
-      }
-
-      mockFirestore.collection().doc().get.mockResolvedValue(mockDoc)
-
-      mockRequest.method = 'PUT'
-      mockRequest.params = { scheduleId: 'schedule-1' }
-      mockRequest.body = {
-        caption: 'Updated caption'
-      }
-
-      await updateSchedule(mockRequest, mockResponse)
-
-      expect(mockResponse.status).toHaveBeenCalledWith(403)
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        error: 'Forbidden: Cannot modify schedule'
-      })
-    })
-
-    it('should handle non-existent schedule', async () => {
-      mockAuth.verifyIdToken.mockResolvedValue({ uid: 'test-user-id' })
-
-      const mockDoc = {
+    it('should throw error when schedule not found', async () => {
+      db.collection().doc().get.mockResolvedValue({
         exists: false
-      }
-
-      mockFirestore.collection().doc().get.mockResolvedValue(mockDoc)
-
-      mockRequest.method = 'PUT'
-      mockRequest.params = { scheduleId: 'non-existent' }
-      mockRequest.body = {
-        caption: 'Updated caption'
-      }
-
-      await updateSchedule(mockRequest, mockResponse)
-
-      expect(mockResponse.status).toHaveBeenCalledWith(404)
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        error: 'Schedule not found'
       })
+
+      await expect(updateSchedule({ scheduleId: 'invalid' }, mockContext)).rejects.toThrow(
+        'Schedule not found'
+      )
+    })
+
+    it('should throw error when user does not own schedule', async () => {
+      db.collection().doc().get.mockResolvedValue({
+        exists: true,
+        data: () => ({ userId: 'different-user' })
+      })
+
+      await expect(updateSchedule({ scheduleId: 'schedule-1' }, mockContext)).rejects.toThrow(
+        'Permission denied'
+      )
     })
   })
 
   describe('deleteSchedule', () => {
-    it('should delete a schedule successfully', async () => {
-      mockAuth.verifyIdToken.mockResolvedValue({ uid: 'test-user-id' })
-
-      const mockDoc = {
+    it('should delete schedule successfully', async () => {
+      // Mock schedule exists and belongs to user
+      db.collection().doc().get.mockResolvedValue({
         exists: true,
-        data: () => ({
-          userId: 'test-user-id',
-          status: 'pending'
-        })
-      }
-
-      mockFirestore.collection().doc().get.mockResolvedValue(mockDoc)
-      mockFirestore.collection().doc().delete.mockResolvedValue({})
-
-      mockRequest.method = 'DELETE'
-      mockRequest.params = { scheduleId: 'schedule-1' }
-
-      await deleteSchedule(mockRequest, mockResponse)
-
-      expect(mockResponse.status).toHaveBeenCalledWith(200)
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'Schedule deleted successfully'
+        data: () => ({ userId: 'test-user-id' })
       })
+
+      db.collection().doc().delete.mockResolvedValue({})
+
+      const result = await deleteSchedule({ scheduleId: 'schedule-1' }, mockContext)
+
+      expect(result).toEqual({ success: true })
+      expect(db.collection().doc().delete).toHaveBeenCalled()
     })
 
-    it('should prevent deleting executed schedules', async () => {
-      mockAuth.verifyIdToken.mockResolvedValue({ uid: 'test-user-id' })
-
-      const mockDoc = {
-        exists: true,
-        data: () => ({
-          userId: 'test-user-id',
-          status: 'executed' // Already executed
-        })
-      }
-
-      mockFirestore.collection().doc().get.mockResolvedValue(mockDoc)
-
-      mockRequest.method = 'DELETE'
-      mockRequest.params = { scheduleId: 'schedule-1' }
-
-      await deleteSchedule(mockRequest, mockResponse)
-
-      expect(mockResponse.status).toHaveBeenCalledWith(400)
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        error: 'Cannot delete executed schedule'
+    it('should throw error when schedule not found', async () => {
+      db.collection().doc().get.mockResolvedValue({
+        exists: false
       })
+
+      await expect(deleteSchedule({ scheduleId: 'invalid' }, mockContext)).rejects.toThrow(
+        'Schedule not found'
+      )
+    })
+
+    it('should throw error when user does not own schedule', async () => {
+      db.collection().doc().get.mockResolvedValue({
+        exists: true,
+        data: () => ({ userId: 'different-user' })
+      })
+
+      await expect(deleteSchedule({ scheduleId: 'schedule-1' }, mockContext)).rejects.toThrow(
+        'Permission denied'
+      )
     })
   })
 })

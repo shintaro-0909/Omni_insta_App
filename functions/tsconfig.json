@@ -1,20 +1,39 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "noImplicitReturns": true,
-    "noUnusedLocals": true,
+    "target": "es2020",  // Node.js 18対応
     "outDir": "lib",
     "sourceMap": true,
+    
+    // === 厳格な型チェック (Cloud Functions品質向上) ===
     "strict": true,
-    "target": "es2018",
+    "noUncheckedIndexedAccess": true,  // 配列アクセス安全性
+    "exactOptionalPropertyTypes": true, // オプショナル型厳密化
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true,
+    
+    // === 未使用コード検出 ===
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "allowUnusedLabels": false,
+    
+    // === Node.js最適化 ===
     "esModuleInterop": true,
-    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "moduleResolution": "node",
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "moduleResolution": "node",
-    "allowSyntheticDefaultImports": true,
+    
+    // === Firebase Functions最適化 ===
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+    "emitDecoratorMetadata": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    
+    // === パフォーマンス最適化 ===
+    "incremental": true,
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.tsbuildinfo"
   },
   "compileOnSave": true,
   "include": [

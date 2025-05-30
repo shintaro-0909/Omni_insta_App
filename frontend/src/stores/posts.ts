@@ -1,7 +1,9 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, shallowRef } from 'vue'
 import { httpsCallable } from 'firebase/functions'
 import { functions } from '@/services/firebase'
+import { measureAsync } from '@/utils/performance'
+import { useOptimizedFetch } from '@/composables/useOptimizedFetch'
 
 // 投稿コンテンツの型定義
 export interface Post {
@@ -29,24 +31,55 @@ export interface UpdatePostData {
 }
 
 export const usePostsStore = defineStore('posts', () => {
-  // State
-  const posts = ref<Post[]>([])
+  // State - use shallowRef for better performance with arrays
+  const posts = shallowRef<Post[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
   const hasMore = ref(true)
   const lastPostId = ref<string | null>(null)
 
-  // Getters
+  // Cached computations for better performance
+  const cachedTags = ref<string[]>([])
+  const lastTagsUpdate = ref<number>(0)
+
+  // Getters with memoization
   const postsCount = computed(() => posts.value.length)
-  const postsByTag = computed(() => (tag: string) => 
-    posts.value.filter(post => post.tags.includes(tag))
-  )
+  
+  // Memoized posts by tag function
+  const postsByTagCache = new Map<string, Post[]>()
+  const postsByTag = computed(() => (tag: string) => {
+    const cacheKey = `${tag}-${posts.value.length}-${posts.value[0]?.id || 'empty'}`
+    if (!postsByTagCache.has(cacheKey)) {
+      const filtered = posts.value.filter(post => post.tags.includes(tag))
+      postsByTagCache.set(cacheKey, filtered)
+      
+      // Cleanup old cache entries
+      if (postsByTagCache.size > 50) {
+        const oldestKey = postsByTagCache.keys().next().value
+        postsByTagCache.delete(oldestKey)
+      }
+    }
+    return postsByTagCache.get(cacheKey)!
+  })
+
+  // Memoized tags computation
   const allTags = computed(() => {
+    const now = Date.now()
+    
+    // Cache tags for 30 seconds to avoid expensive recomputation
+    if (now - lastTagsUpdate.value < 30000 && cachedTags.value.length > 0) {
+      return cachedTags.value
+    }
+    
     const tagSet = new Set<string>()
     posts.value.forEach(post => {
       post.tags.forEach(tag => tagSet.add(tag))
     })
-    return Array.from(tagSet).sort()
+    
+    cachedTags.value = Array.from(tagSet).sort()
+    lastTagsUpdate.value = now
+    
+    return cachedTags.value
   })
 
   // Actions

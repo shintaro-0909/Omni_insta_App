@@ -199,4 +199,74 @@ describe('Authentication Flow', () => {
     cy.get('[data-testid="usage-dashboard"]').should('be.visible')
     cy.get('[data-testid="plan-limits"]').should('contain', 'Free Plan')
   })
+  
+  it('should handle network errors during authentication', () => {
+    cy.visit('/login')
+    
+    // Mock network error
+    cy.window().then((win) => {
+      if (win.firebase && win.firebase.auth) {
+        cy.stub(win.firebase.auth(), 'signInWithPopup').rejects({
+          code: 'auth/network-request-failed',
+          message: 'A network error has occurred.'
+        })
+      }
+    })
+    
+    cy.get('[data-testid="google-login-btn"]').click()
+    cy.get('[data-testid="error-message"]', { timeout: 5000 })
+      .should('be.visible')
+      .should('contain.text', 'Network error')
+  })
+  
+  it('should handle popup closed by user', () => {
+    cy.visit('/login')
+    
+    // Mock popup closed error
+    cy.window().then((win) => {
+      if (win.firebase && win.firebase.auth) {
+        cy.stub(win.firebase.auth(), 'signInWithPopup').rejects({
+          code: 'auth/popup-closed-by-user',
+          message: 'The popup has been closed by the user before finalizing the operation.'
+        })
+      }
+    })
+    
+    cy.get('[data-testid="google-login-btn"]').click()
+    // No error message should be shown for user-closed popup
+    cy.get('[data-testid="error-message"]').should('not.exist')
+  })
+  
+  it('should clear previous errors on new login attempt', () => {
+    cy.visit('/login')
+    
+    // First attempt with error
+    cy.window().then((win) => {
+      if (win.firebase && win.firebase.auth) {
+        cy.stub(win.firebase.auth(), 'signInWithPopup').rejects({
+          code: 'auth/popup-blocked',
+          message: 'The popup has been blocked.'
+        })
+      }
+    })
+    
+    cy.get('[data-testid="google-login-btn"]').click()
+    cy.get('[data-testid="error-message"]').should('be.visible')
+    
+    // Second attempt should clear error
+    cy.window().then((win) => {
+      if (win.firebase && win.firebase.auth) {
+        cy.stub(win.firebase.auth(), 'signInWithPopup').resolves({
+          user: {
+            uid: 'test-user-123',
+            email: 'test@example.com',
+            displayName: 'Test User'
+          }
+        })
+      }
+    })
+    
+    cy.get('[data-testid="google-login-btn"]').click()
+    cy.get('[data-testid="error-message"]').should('not.exist')
+  })
 })

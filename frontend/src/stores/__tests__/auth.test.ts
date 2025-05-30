@@ -18,7 +18,9 @@ vi.mock('@/services/firebase', () => ({
 
 vi.mock('firebase/auth', () => ({
   signInWithPopup: vi.fn(),
-  GoogleAuthProvider: vi.fn(),
+  GoogleAuthProvider: class {
+    addScope = vi.fn()
+  },
   signOut: vi.fn(),
   onAuthStateChanged: vi.fn((auth, callback) => {
     // Simulate no user initially
@@ -26,6 +28,8 @@ vi.mock('firebase/auth', () => ({
     return vi.fn() // unsubscribe function
   })
 }))
+
+let unsubscribe: (() => void) | null = null
 
 describe('Auth Store', () => {
   beforeEach(() => {
@@ -74,7 +78,7 @@ describe('Auth Store', () => {
     expect(authStore.error).toBe(null)
   })
 
-  describe('login', () => {
+  describe('loginWithGoogle', () => {
     it('should login successfully with Google', async () => {
       const authStore = useAuthStore()
       
@@ -91,7 +95,7 @@ describe('Auth Store', () => {
         operationType: 'signIn'
       })
 
-      await authStore.login()
+      await authStore.loginWithGoogle()
 
       expect(authStore.user).toEqual({
         uid: 'test-uid',
@@ -110,7 +114,11 @@ describe('Auth Store', () => {
       const loginError = new Error('Login failed')
       vi.mocked(signInWithPopup).mockRejectedValue(loginError)
 
-      await authStore.login()
+      try {
+        await authStore.loginWithGoogle()
+      } catch (err) {
+        // Expected to throw
+      }
 
       expect(authStore.user).toBeNull()
       expect(authStore.isAuthenticated).toBe(false)
@@ -128,7 +136,7 @@ describe('Auth Store', () => {
       
       vi.mocked(signInWithPopup).mockReturnValue(loginPromise)
 
-      const loginCall = authStore.login()
+      const loginCall = authStore.loginWithGoogle()
       
       expect(authStore.loading).toBe(true)
       
@@ -171,7 +179,11 @@ describe('Auth Store', () => {
       const logoutError = new Error('Logout failed')
       vi.mocked(signOut).mockRejectedValue(logoutError)
 
-      await authStore.logout()
+      try {
+        await authStore.logout()
+      } catch (err) {
+        // Expected to throw
+      }
 
       expect(authStore.error).toBe('Logout failed')
     })

@@ -1,319 +1,173 @@
-import { usePerformanceStore } from '@/stores/performance'
+/**
+ * 1人運営向け簡潔エラーハンドリング
+ * 70%機能削減・実用性重視
+ */
 
-export interface ErrorDetails {
-  message: string
-  stack?: string
-  url?: string
-  lineNumber?: number
-  columnNumber?: number
-  timestamp: Date
-  userId?: string
-  sessionId: string
-  userAgent: string
-  viewport: string
-  buildVersion: string
-  environment: string
-  severity: 'low' | 'medium' | 'high' | 'critical'
-  category: 'javascript' | 'network' | 'auth' | 'api' | 'ui' | 'performance'
-  context?: Record<string, any>
+// シンプルなエラータイプ定義
+export enum ErrorType {
+  AUTH = 'AUTH',           // 認証エラー
+  VALIDATION = 'VALIDATION', // 入力検証エラー
+  NETWORK = 'NETWORK',     // ネットワークエラー
+  API = 'API',             // API エラー
+  PLAN_LIMIT = 'PLAN_LIMIT', // プラン制限エラー
+  UNKNOWN = 'UNKNOWN'      // その他
 }
 
-export interface NetworkError extends ErrorDetails {
-  category: 'network'
-  endpoint: string
-  method: string
-  statusCode?: number
-  responseTime: number
+export enum ErrorSeverity {
+  LOW = 'LOW',      // 警告レベル
+  MEDIUM = 'MEDIUM', // 機能影響
+  HIGH = 'HIGH'     // サービス影響
 }
 
-export interface ApiError extends ErrorDetails {
-  category: 'api'
-  endpoint: string
-  requestId?: string
-  errorCode?: string
+// 統一エラークラス
+export class AppError extends Error {
+  public readonly type: ErrorType
+  public readonly severity: ErrorSeverity
+  public readonly userMessage: string
+  public readonly timestamp: Date
+
+  constructor(
+    type: ErrorType,
+    message: string,
+    userMessage: string,
+    severity: ErrorSeverity = ErrorSeverity.MEDIUM
+  ) {
+    super(message)
+    this.name = 'AppError'
+    this.type = type
+    this.severity = severity
+    this.userMessage = userMessage
+    this.timestamp = new Date()
+  }
 }
 
-class ErrorMonitoringService {
-  private sessionId: string
-  private errors: ErrorDetails[] = []
-  private readonly maxErrors = 100
-  
-  constructor() {
-    this.sessionId = this.generateSessionId()
-    this.initializeGlobalErrorHandlers()
+// Firebase エラーマッピング (1人運営向けシンプル版)
+const FIREBASE_ERROR_MAP: Record<string, { type: ErrorType; userMessage: string; severity: ErrorSeverity }> = {
+  'permission-denied': {
+    type: ErrorType.AUTH,
+    userMessage: 'この操作を実行する権限がありません',
+    severity: ErrorSeverity.MEDIUM
+  },
+  'unauthenticated': {
+    type: ErrorType.AUTH,
+    userMessage: 'ログインが必要です',
+    severity: ErrorSeverity.MEDIUM
+  },
+  'quota-exceeded': {
+    type: ErrorType.PLAN_LIMIT,
+    userMessage: 'プランの利用上限に達しました',
+    severity: ErrorSeverity.HIGH
+  },
+  'invalid-argument': {
+    type: ErrorType.VALIDATION,
+    userMessage: '入力内容に問題があります',
+    severity: ErrorSeverity.LOW
+  },
+  'unavailable': {
+    type: ErrorType.NETWORK,
+    userMessage: 'サービスが一時的に利用できません',
+    severity: ErrorSeverity.HIGH
+  }
+}
+
+/**
+ * シンプルエラーハンドラー (必要最小限)
+ */
+export class ErrorHandler {
+  // Firebase エラーを AppError に変換
+  static fromFirebaseError(error: any): AppError {
+    const code = error.code || 'unknown'
+    const mapping = FIREBASE_ERROR_MAP[code]
+    
+    if (mapping) {
+      return new AppError(
+        mapping.type,
+        `Firebase: ${error.message}`,
+        mapping.userMessage,
+        mapping.severity
+      )
+    }
+
+    return new AppError(
+      ErrorType.UNKNOWN,
+      `Firebase: ${error.message}`,
+      'システムエラーが発生しました',
+      ErrorSeverity.HIGH
+    )
   }
 
-  private generateSessionId(): string {
-    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  // 汎用エラー変換
+  static fromError(error: any, context?: string): AppError {
+    if (error instanceof AppError) {
+      return error
+    }
+
+    // Firebase エラーの場合
+    if (error.code && typeof error.code === 'string') {
+      return this.fromFirebaseError(error)
+    }
+
+    // ネットワークエラーの場合
+    if (!navigator.onLine) {
+      return new AppError(
+        ErrorType.NETWORK,
+        'Network offline',
+        'インターネット接続を確認してください',
+        ErrorSeverity.HIGH
+      )
+    }
+
+    // その他のエラー
+    return new AppError(
+      ErrorType.UNKNOWN,
+      `${context ? context + ': ' : ''}${error.message}`,
+      '予期しないエラーが発生しました',
+      ErrorSeverity.MEDIUM
+    )
   }
+}
 
-  private initializeGlobalErrorHandlers(): void {
-    // Global JavaScript error handler
-    window.addEventListener('error', (event) => {
-      this.logError({
-        message: event.message,
-        stack: event.error?.stack,
-        url: event.filename,
-        lineNumber: event.lineno,
-        columnNumber: event.colno,
-        timestamp: new Date(),
-        sessionId: this.sessionId,
-        userAgent: navigator.userAgent,
-        viewport: `${window.innerWidth}x${window.innerHeight}`,
-        buildVersion: import.meta.env.VITE_APP_VERSION || '1.0.0',
-        environment: import.meta.env.VITE_APP_ENV || 'development',
-        severity: this.determineSeverity(event.message),
-        category: 'javascript'
-      })
-    })
-
-    // Unhandled promise rejection handler
-    window.addEventListener('unhandledrejection', (event) => {
-      this.logError({
-        message: `Unhandled Promise Rejection: ${event.reason}`,
-        stack: event.reason?.stack,
-        timestamp: new Date(),
-        sessionId: this.sessionId,
-        userAgent: navigator.userAgent,
-        viewport: `${window.innerWidth}x${window.innerHeight}`,
-        buildVersion: import.meta.env.VITE_APP_VERSION || '1.0.0',
-        environment: import.meta.env.VITE_APP_ENV || 'development',
-        severity: 'high',
-        category: 'javascript'
-      })
-    })
-
-    // Network error monitoring
-    this.interceptFetch()
-  }
-
-  private interceptFetch(): void {
-    const originalFetch = window.fetch
+/**
+ * Vue 3 Composable (シンプル版)
+ */
+export function useErrorHandler() {
+  const handleError = (error: any, context?: string): AppError => {
+    const appError = ErrorHandler.fromError(error, context)
     
-    window.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-      const start = performance.now()
-      const url = typeof input === 'string' ? input : input.toString()
-      const method = init?.method || 'GET'
-      
-      try {
-        const response = await originalFetch(input, init)
-        const duration = performance.now() - start
-        
-        if (!response.ok) {
-          this.logNetworkError({
-            message: `Network request failed: ${response.status} ${response.statusText}`,
-            timestamp: new Date(),
-            sessionId: this.sessionId,
-            userAgent: navigator.userAgent,
-            viewport: `${window.innerWidth}x${window.innerHeight}`,
-            buildVersion: import.meta.env.VITE_APP_VERSION || '1.0.0',
-            environment: import.meta.env.VITE_APP_ENV || 'development',
-            severity: response.status >= 500 ? 'critical' : 'high',
-            category: 'network',
-            endpoint: url,
-            method,
-            statusCode: response.status,
-            responseTime: duration
-          })
-        }
-        
-        return response
-      } catch (error) {
-        const duration = performance.now() - start
-        
-        this.logNetworkError({
-          message: `Network request failed: ${error}`,
-          stack: error instanceof Error ? error.stack : undefined,
-          timestamp: new Date(),
-          sessionId: this.sessionId,
-          userAgent: navigator.userAgent,
-          viewport: `${window.innerWidth}x${window.innerHeight}`,
-          buildVersion: import.meta.env.VITE_APP_VERSION || '1.0.0',
-          environment: import.meta.env.VITE_APP_ENV || 'development',
-          severity: 'critical',
-          category: 'network',
-          endpoint: url,
-          method,
-          responseTime: duration
-        })
-        
-        throw error
-      }
-    }
-  }
-
-  private determineSeverity(message: string): 'low' | 'medium' | 'high' | 'critical' {
-    const lowerMessage = message.toLowerCase()
-    
-    if (lowerMessage.includes('script error') || lowerMessage.includes('non-error')) {
-      return 'low'
-    }
-    
-    if (lowerMessage.includes('network') || lowerMessage.includes('fetch')) {
-      return 'high'
-    }
-    
-    if (lowerMessage.includes('auth') || lowerMessage.includes('permission')) {
-      return 'critical'
-    }
-    
-    return 'medium'
-  }
-
-  logError(error: ErrorDetails): void {
-    // Add to local storage
-    this.errors.push(error)
-    
-    if (this.errors.length > this.maxErrors) {
-      this.errors.shift()
-    }
-    
-    // Track in performance store
-    const performanceStore = usePerformanceStore()
-    performanceStore.trackError()
-    
-    // Log to console in development
+    // 開発環境でのみコンソール出力
     if (import.meta.env.DEV) {
-      console.error('[Error Monitor]', error)
+      console.error(`🚨 [${appError.severity}] ${appError.type}:`, appError.message)
     }
     
-    // Send to logging service in production
-    if (import.meta.env.PROD) {
-      this.sendToLoggingService(error)
-    }
+    return appError
   }
 
-  logNetworkError(error: NetworkError): void {
-    this.logError(error)
-  }
-
-  logApiError(error: ApiError): void {
-    this.logError(error)
-  }
-
-  logUserInteractionError(action: string, element: string, error: Error): void {
-    this.logError({
-      message: `User interaction error: ${action} on ${element}`,
-      stack: error.stack,
-      timestamp: new Date(),
-      sessionId: this.sessionId,
-      userAgent: navigator.userAgent,
-      viewport: `${window.innerWidth}x${window.innerHeight}`,
-      buildVersion: import.meta.env.VITE_APP_VERSION || '1.0.0',
-      environment: import.meta.env.VITE_APP_ENV || 'development',
-      severity: 'medium',
-      category: 'ui',
-      context: { action, element }
-    })
-  }
-
-  logPerformanceIssue(metric: string, value: number, threshold: number): void {
-    this.logError({
-      message: `Performance issue: ${metric} (${value}ms) exceeded threshold (${threshold}ms)`,
-      timestamp: new Date(),
-      sessionId: this.sessionId,
-      userAgent: navigator.userAgent,
-      viewport: `${window.innerWidth}x${window.innerHeight}`,
-      buildVersion: import.meta.env.VITE_APP_VERSION || '1.0.0',
-      environment: import.meta.env.VITE_APP_ENV || 'development',
-      severity: value > threshold * 2 ? 'high' : 'medium',
-      category: 'performance',
-      context: { metric, value, threshold }
-    })
-  }
-
-  private async sendToLoggingService(error: ErrorDetails): Promise<void> {
+  const handleAsyncError = async <T>(
+    asyncFn: () => Promise<T>,
+    context?: string
+  ): Promise<T> => {
     try {
-      // Send to your logging service (e.g., Sentry, LogRocket, custom endpoint)
-      const endpoint = import.meta.env.VITE_ERROR_LOGGING_ENDPOINT
-      
-      if (!endpoint) return
-      
-      await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...error,
-          timestamp: error.timestamp.toISOString(),
-        }),
-      })
-    } catch (loggingError) {
-      console.error('Failed to send error to logging service:', loggingError)
+      return await asyncFn()
+    } catch (error) {
+      throw handleError(error, context)
     }
   }
 
-  getErrorHistory(): ErrorDetails[] {
-    return [...this.errors]
-  }
-
-  clearErrorHistory(): void {
-    this.errors = []
-  }
-
-  exportErrorReport(): string {
-    const report = {
-      sessionId: this.sessionId,
-      timestamp: new Date().toISOString(),
-      errors: this.errors,
-      systemInfo: {
-        userAgent: navigator.userAgent,
-        viewport: `${window.innerWidth}x${window.innerHeight}`,
-        language: navigator.language,
-        platform: navigator.platform,
-        buildVersion: import.meta.env.VITE_APP_VERSION || '1.0.0',
-        environment: import.meta.env.VITE_APP_ENV || 'development'
-      }
-    }
-    
-    return JSON.stringify(report, null, 2)
+  return {
+    handleError,
+    handleAsyncError
   }
 }
 
-// Create singleton instance
-export const errorMonitor = new ErrorMonitoringService()
+// シンプルなヘルパー関数
+export const createAuthError = (message: string) => 
+  new AppError(ErrorType.AUTH, message, 'ログインしてください', ErrorSeverity.MEDIUM)
 
-// Utility functions for manual error logging
-export const logError = (message: string, context?: Record<string, any>) => {
-  errorMonitor.logError({
-    message,
-    timestamp: new Date(),
-    sessionId: errorMonitor['sessionId'],
-    userAgent: navigator.userAgent,
-    viewport: `${window.innerWidth}x${window.innerHeight}`,
-    buildVersion: import.meta.env.VITE_APP_VERSION || '1.0.0',
-    environment: import.meta.env.VITE_APP_ENV || 'development',
-    severity: 'medium',
-    category: 'javascript',
-    context
-  })
-}
+export const createValidationError = (message: string) => 
+  new AppError(ErrorType.VALIDATION, message, '入力内容を確認してください', ErrorSeverity.LOW)
 
-export const logApiError = (endpoint: string, error: Error, requestId?: string) => {
-  errorMonitor.logApiError({
-    message: `API Error: ${error.message}`,
-    stack: error.stack,
-    timestamp: new Date(),
-    sessionId: errorMonitor['sessionId'],
-    userAgent: navigator.userAgent,
-    viewport: `${window.innerWidth}x${window.innerHeight}`,
-    buildVersion: import.meta.env.VITE_APP_VERSION || '1.0.0',
-    environment: import.meta.env.VITE_APP_ENV || 'development',
-    severity: 'high',
-    category: 'api',
-    endpoint,
-    requestId
-  })
-}
+export const createPlanLimitError = (feature: string) => 
+  new AppError(ErrorType.PLAN_LIMIT, `Plan limit: ${feature}`, 'プランをアップグレードしてください', ErrorSeverity.HIGH)
 
-export const logUserAction = (action: string, element: string, success: boolean, context?: Record<string, any>) => {
-  if (!success) {
-    errorMonitor.logUserInteractionError(action, element, new Error(`User action failed: ${action}`))
-  }
-  
-  // Log successful actions for analytics (optional)
-  if (import.meta.env.DEV && success) {
-    console.log(`[User Action] ${action} on ${element}`, context)
-  }
-}
+export const createNetworkError = (message: string) => 
+  new AppError(ErrorType.NETWORK, message, 'ネットワークエラーが発生しました', ErrorSeverity.MEDIUM)

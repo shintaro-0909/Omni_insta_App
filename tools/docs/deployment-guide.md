@@ -10,24 +10,189 @@ OmniyプロジェクトのCI/CDパイプラインと環境設定の完全ガイ�
 ## 🚀 クイックスタート
 
 ### 1. GitHub リポジトリ設定
+
+#### 1.1 GitHubでリポジトリ作成
+1. GitHubにログイン
+2. 右上の「+」アイコンから「New repository」を選択
+3. 以下の設定で作成：
+   ```yaml
+   Repository name: omniy
+   Description: Instagram scheduling app for influencers and small businesses
+   Visibility: Private (推奨)
+   Initialize repository with: なし（既存コードをプッシュするため）
+   ```
+4. 「Create repository」をクリック
+
+#### 1.2 ローカルリポジトリの設定
 ```bash
-# リモートリポジトリ作成・プッシュ
+# 既存のローカルリポジトリに移動
+cd /path/to/omniy
+
+# GitHubリモートを追加
 git remote add origin https://github.com/yourusername/omniy.git
+
+# ブランチ名をmainに変更（必要な場合）
 git branch -M main
+
+# 初回プッシュ
 git push -u origin main
 ```
 
-### 2. Firebase プロジェクト作成
-```bash
-# 開発環境
-firebase projects:create omniy-dev
+#### 1.3 ブランチ保護設定
+1. GitHubリポジトリの「Settings」→「Branches」
+2. 「Add rule」をクリック
+3. Branch name pattern: `main`
+4. 以下を有効化：
+   - Require pull request reviews before merging
+   - Require status checks to pass before merging
+   - Require branches to be up to date before merging
+   - Include administrators
+5. 「Create」をクリック
 
-# 本番環境
-firebase projects:create omniy-prod
+### 2. Firebase プロジェクト作成
+
+#### 2.1 Firebase CLIのインストール・ログイン
+```bash
+# Firebase CLIをインストール（未インストールの場合）
+npm install -g firebase-tools
+
+# Firebaseにログイン
+firebase login
 ```
 
+#### 2.2 開発環境プロジェクト作成
+```bash
+# プロジェクト作成
+firebase projects:create omniy-dev --display-name "Omniy Development"
+
+# プロジェクトディレクトリでFirebase初期化
+firebase use omniy-dev
+firebase init
+# 選択項目:
+# - Firestore
+# - Functions
+# - Hosting
+# - Storage
+# - Emulators
+```
+
+#### 2.3 本番環境プロジェクト作成
+```bash
+# プロジェクト作成
+firebase projects:create omniy-prod --display-name "Omniy Production"
+
+# エイリアス設定
+firebase use --add
+# Choose alias: prod
+# Select project: omniy-prod
+```
+
+#### 2.4 Firebase Console設定
+各プロジェクトでFirebase Consoleから以下を設定：
+
+1. **Authentication設定**
+   - Authentication → Sign-in method
+   - 「Google」を有効化
+   - サポートメール設定
+
+2. **Firestore設定**
+   - Firestore Database → Create database
+   - Production modeを選択
+   - Location: asia-northeast1 (東京)
+
+3. **Storage設定**
+   - Storage → Get started
+   - Production modeを選択
+   - Location: asia-northeast1 (東京)
+
+4. **Webアプリ登録**
+   - Project Overview → Add app → Web
+   - App nickname: Omniy Web
+   - Firebase Hosting設定: チェック
+   - Register app
+
 ### 3. GitHub Secrets 設定
-リポジトリの **Settings** → **Secrets and variables** → **Actions** で以下を設定：
+
+#### 3.1 Firebase設定値の取得
+1. Firebase Console → プロジェクト設定 → 全般
+2. 「マイアプリ」セクションでWebアプリを選択
+3. 「SDK設定と構成」→「構成」を選択
+4. 表示される設定値をメモ
+
+#### 3.2 Firebase CIトークン取得
+```bash
+firebase login:ci
+# 表示されるトークンをメモ
+```
+
+#### 3.3 GitHub Secretsへの登録
+1. GitHubリポジトリ → Settings → Secrets and variables → Actions
+2. 「New repository secret」をクリック
+3. 以下のシークレットを順番に追加：
+
+```yaml
+# 共通
+FIREBASE_TOKEN: [firebase login:ciで取得したトークン]
+
+# 開発環境
+DEV_FIREBASE_PROJECT_ID: omniy-dev
+DEV_FIREBASE_API_KEY: [Firebaseコンソールから取得]
+DEV_FIREBASE_AUTH_DOMAIN: omniy-dev.firebaseapp.com
+DEV_FIREBASE_STORAGE_BUCKET: omniy-dev.appspot.com
+DEV_FIREBASE_MESSAGING_SENDER_ID: [Firebaseコンソールから取得]
+DEV_FIREBASE_APP_ID: [Firebaseコンソールから取得]
+
+# 本番環境
+PROD_FIREBASE_PROJECT_ID: omniy-prod
+PROD_FIREBASE_API_KEY: [Firebaseコンソールから取得]
+PROD_FIREBASE_AUTH_DOMAIN: omniy-prod.firebaseapp.com
+PROD_FIREBASE_STORAGE_BUCKET: omniy-prod.appspot.com
+PROD_FIREBASE_MESSAGING_SENDER_ID: [Firebaseコンソールから取得]
+PROD_FIREBASE_APP_ID: [Firebaseコンソールから取得]
+
+# Claude Code統合（オプション）
+ANTHROPIC_API_KEY: [Claude APIキー]
+```
+
+### 4. 環境変数設定
+
+#### 4.1 ローカル開発環境
+```bash
+# frontend/.env.development
+VITE_FIREBASE_PROJECT_ID=omniy-dev
+VITE_FIREBASE_API_KEY=[開発環境のAPIキー]
+VITE_FIREBASE_AUTH_DOMAIN=omniy-dev.firebaseapp.com
+VITE_FIREBASE_STORAGE_BUCKET=omniy-dev.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=[開発環境のSender ID]
+VITE_FIREBASE_APP_ID=[開発環境のApp ID]
+
+# functions/.env
+FIREBASE_PROJECT_ID=omniy-dev
+```
+
+#### 4.2 環境変数テンプレート作成
+```bash
+# frontend/.env.example
+VITE_FIREBASE_PROJECT_ID=your-project-id
+VITE_FIREBASE_API_KEY=your-api-key
+VITE_FIREBASE_AUTH_DOMAIN=your-auth-domain
+VITE_FIREBASE_STORAGE_BUCKET=your-storage-bucket
+VITE_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
+VITE_FIREBASE_APP_ID=your-app-id
+```
+
+### 5. 初回デプロイ確認
+```bash
+# developブランチ作成・プッシュ
+git checkout -b develop
+git push -u origin develop
+
+# GitHub Actionsの実行確認
+# → GitHubリポジトリのActionsタブで確認
+
+# 開発環境URL確認
+# https://omniy-dev.web.app
+```
 
 ---
 

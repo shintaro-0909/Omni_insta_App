@@ -1,0 +1,153 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Omni Insta Pre-commit Hook
+echo "🔍 Running pre-commit checks..."
+
+# Check if we have staged files
+if git diff --cached --quiet; then
+  echo "ℹ️ No staged changes found"
+  exit 0
+fi
+
+# Get list of staged files
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM)
+FRONTEND_FILES=$(echo "$STAGED_FILES" | grep "^frontend/" || true)
+BACKEND_FILES=$(echo "$STAGED_FILES" | grep "^functions/" || true)
+
+# Function to check if command exists
+command_exists() {
+  command -v "$1" >/dev/null 2>&1
+}
+
+# Function to run checks in directory
+run_checks() {
+  local dir=$1
+  local name=$2
+  
+  echo "🔧 Checking $name..."
+  
+  cd "$dir" || exit 1
+  
+  # Type checking
+  if [ -f "package.json" ] && grep -q '"type-check"' package.json; then
+    echo "📝 Running type check for $name..."
+    if ! npm run type-check; then
+      echo "❌ Type check failed for $name"
+      exit 1
+    fi
+  fi
+  
+  # Linting
+  if [ -f "package.json" ] && grep -q '"lint"' package.json; then
+    echo "🧹 Running linter for $name..."
+    if ! npm run lint; then
+      echo "❌ Linting failed for $name"
+      exit 1
+    fi
+  fi
+  
+  # Formatting check
+  if [ -f "package.json" ] && grep -q '"format:check"' package.json; then
+    echo "🎨 Checking formatting for $name..."
+    if ! npm run format:check; then
+      echo "❌ Formatting check failed for $name"
+      echo "💡 Run 'npm run format' to fix formatting issues"
+      exit 1
+    fi
+  fi
+  
+  cd - >/dev/null || exit 1
+}
+
+# Check frontend if there are frontend changes
+if [ -n "$FRONTEND_FILES" ]; then
+  if [ -d "frontend" ]; then
+    run_checks "frontend" "Frontend"
+  else
+    echo "⚠️ Frontend files changed but frontend directory not found"
+  fi
+fi
+
+# Check backend if there are backend changes
+if [ -n "$BACKEND_FILES" ]; then
+  if [ -d "functions" ]; then
+    run_checks "functions" "Backend"
+  else
+    echo "⚠️ Backend files changed but functions directory not found"
+  fi
+fi
+
+# Run quick tests if available
+if [ -n "$FRONTEND_FILES" ] && [ -d "frontend" ]; then
+  cd frontend
+  if [ -f "package.json" ] && grep -q '"test:unit"' package.json; then
+    echo "🧪 Running frontend unit tests..."
+    if ! npm run test:unit; then
+      echo "❌ Frontend tests failed"
+      exit 1
+    fi
+  fi
+  cd - >/dev/null
+fi
+
+if [ -n "$BACKEND_FILES" ] && [ -d "functions" ]; then
+  cd functions
+  if [ -f "package.json" ] && grep -q '"test"' package.json; then
+    echo "🧪 Running backend tests..."
+    if ! npm run test; then
+      echo "❌ Backend tests failed"
+      exit 1
+    fi
+  fi
+  cd - >/dev/null
+fi
+
+# Check for secrets or sensitive information
+echo "🔒 Checking for secrets..."
+if git diff --cached --name-only | xargs grep -l "sk_live\|pk_live\|AKIA\|password.*=\|secret.*=" 2>/dev/null; then
+  echo "❌ Potential secrets found in staged files!"
+  echo "Please review and remove any sensitive information before committing."
+  exit 1
+fi
+
+# Check for TODO/FIXME in critical files
+echo "📋 Checking for TODOs in critical files..."
+CRITICAL_FILES=$(echo "$STAGED_FILES" | grep -E "\.(ts|js|vue)$" | grep -E "(api|auth|payment|security)" || true)
+if [ -n "$CRITICAL_FILES" ]; then
+  if echo "$CRITICAL_FILES" | xargs grep -l "TODO\|FIXME\|XXX" 2>/dev/null; then
+    echo "⚠️ Found TODO/FIXME comments in critical files"
+    echo "Please resolve them before committing to critical paths"
+    echo "If these are intentional, add a comment explaining why"
+  fi
+fi
+
+# Check package.json syntax
+echo "📦 Validating package.json files..."
+for file in frontend/package.json functions/package.json; do
+  if [ -f "$file" ] && echo "$STAGED_FILES" | grep -q "$file"; then
+    if ! command_exists jq; then
+      echo "⚠️ jq not found, skipping package.json validation"
+    else
+      if ! jq . "$file" >/dev/null 2>&1; then
+        echo "❌ Invalid JSON in $file"
+        exit 1
+      fi
+    fi
+  fi
+done
+
+# Check for large files
+echo "📏 Checking file sizes..."
+for file in $STAGED_FILES; do
+  if [ -f "$file" ]; then
+    size=$(wc -c < "$file")
+    if [ "$size" -gt 1048576 ]; then  # 1MB
+      echo "⚠️ Large file detected: $file ($(echo "$size" | awk '{print int($1/1024/1024)}')MB)"
+      echo "Consider using Git LFS for large files"
+    fi
+  fi
+done
+
+echo "✅ All pre-commit checks passed!"
+echo "🚀 Proceeding with commit..."

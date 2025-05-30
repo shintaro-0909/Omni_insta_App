@@ -7,6 +7,28 @@ import { proxyFetch, getAccountProxyConfig } from "../utils/proxyFetch";
 
 const db = admin.firestore();
 
+// Performance optimizations
+const BATCH_SIZE = 10; // Reduce batch size for better cold start performance
+const MAX_CONCURRENT_EXECUTIONS = 3; // Limit concurrent executions
+
+// Connection pooling for better performance
+let dbConnectionInitialized = false;
+const initializeDbConnection = () => {
+  if (!dbConnectionInitialized) {
+    // Enable offline persistence and connection pooling
+    db.settings({
+      ignoreUndefinedProperties: true,
+      merge: true
+    });
+    dbConnectionInitialized = true;
+  }
+};
+
+// Cache frequently accessed data
+const accountCache = new Map<string, any>();
+const contentCache = new Map<string, any>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 // 実行ログの型定義
 interface ExecutionLog {
   scheduleId: string;
@@ -28,24 +50,83 @@ const MAX_RETRY_COUNT = 3;
 const RETRY_INTERVALS = [5, 15, 60]; // 5分、15分、1時間後
 
 /**
- * 実行予定のスケジュールを取得
+ * 実行予定のスケジュールを取得 (optimized for performance)
  */
 async function getPendingSchedules(): Promise<admin.firestore.QueryDocumentSnapshot[]> {
+  initializeDbConnection();
+  
   const now = admin.firestore.Timestamp.now();
   
   // 実行時刻が現在時刻以前で、アクティブなスケジュールを取得
+  // 最適化：インデックスを活用し、制限を小さくして高速化
   const schedulesSnapshot = await db
     .collection("schedules")
     .where("status", "==", "active")
     .where("nextRunAt", "<=", now)
-    .limit(50) // 一度に処理する最大件数
+    .orderBy("nextRunAt", "asc") // 実行時刻順で取得して優先度付け
+    .limit(BATCH_SIZE) // バッチサイズを制限
     .get();
 
   return schedulesSnapshot.docs;
 }
 
 /**
- * スケジュールを実行
+ * キャッシュされたアカウント情報を取得
+ */
+async function getCachedAccountData(ownerUid: string, igAccountId: string) {
+  const cacheKey = `${ownerUid}:${igAccountId}`;
+  const cached = accountCache.get(cacheKey);
+  
+  if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
+    return cached.data;
+  }
+  
+  const igAccountDoc = await db.collection("users")
+    .doc(ownerUid)
+    .collection("igAccounts")
+    .doc(igAccountId)
+    .get();
+  
+  if (!igAccountDoc.exists) {
+    throw new Error("Instagram account not found");
+  }
+  
+  const data = igAccountDoc.data()!;
+  accountCache.set(cacheKey, {
+    data,
+    timestamp: Date.now()
+  });
+  
+  return data;
+}
+
+/**
+ * キャッシュされたコンテンツ情報を取得
+ */
+async function getCachedContentData(contentId: string) {
+  const cached = contentCache.get(contentId);
+  
+  if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
+    return cached.data;
+  }
+  
+  const contentDoc = await db.collection("posts").doc(contentId).get();
+  
+  if (!contentDoc.exists) {
+    throw new Error("Content not found");
+  }
+  
+  const data = contentDoc.data()!;
+  contentCache.set(contentId, {
+    data,
+    timestamp: Date.now()
+  });
+  
+  return data;
+}
+
+/**
+ * スケジュールを実行 (optimized with caching)
  */
 async function executeSchedule(scheduleDoc: admin.firestore.QueryDocumentSnapshot): Promise<void> {
   const scheduleData = scheduleDoc.data();
@@ -54,28 +135,11 @@ async function executeSchedule(scheduleDoc: admin.firestore.QueryDocumentSnapsho
   console.log(`Executing schedule: ${scheduleId}`);
 
   try {
-    // 関連データを取得
-    const [igAccountDoc, contentDoc] = await Promise.all([
-      db.collection("users")
-        .doc(scheduleData.ownerUid)
-        .collection("igAccounts")
-        .doc(scheduleData.igAccountId)
-        .get(),
-      db.collection("posts")
-        .doc(scheduleData.contentId)
-        .get()
+    // 関連データをキャッシュから取得（高速化）
+    const [igAccountData, contentData] = await Promise.all([
+      getCachedAccountData(scheduleData.ownerUid, scheduleData.igAccountId),
+      getCachedContentData(scheduleData.contentId)
     ]);
-
-    if (!igAccountDoc.exists) {
-      throw new Error("Instagram account not found");
-    }
-
-    if (!contentDoc.exists) {
-      throw new Error("Content not found");
-    }
-
-    const igAccountData = igAccountDoc.data()!;
-    const contentData = contentDoc.data()!;
 
     // アクセストークンの有効期限チェック
     const tokenExpiresAt = igAccountData.tokenExpiresAt.toDate();
@@ -403,14 +467,25 @@ async function cleanupExpiredSchedules(): Promise<void> {
 
 /**
  * メインの自動投稿実行関数（Cloud Schedulerから呼び出される）
+ * 最適化: Cold start mitigation, concurrency control, better error handling
  */
-export const executeScheduledPosts = functions.pubsub
+export const executeScheduledPosts = functions
+  .runWith({
+    timeoutSeconds: 540, // 9 minutes (max for 2nd gen)
+    memory: '256MB', // Optimize memory usage
+    maxInstances: 10, // Limit concurrent instances
+  })
+  .pubsub
   .schedule("every 1 minutes")
   .timeZone("Asia/Tokyo")
   .onRun(async (context) => {
+    const startTime = Date.now();
     console.log("Starting scheduled posts execution...");
 
     try {
+      // Pre-warm database connection
+      initializeDbConnection();
+
       // 実行予定のスケジュールを取得
       const pendingSchedules = await getPendingSchedules();
 
@@ -421,23 +496,46 @@ export const executeScheduledPosts = functions.pubsub
 
       console.log(`Found ${pendingSchedules.length} pending schedules`);
 
-      // 各スケジュールを並行実行（最大5件まで）
+      // 並行実行数を制限して安定性を向上
       const executionPromises = pendingSchedules
-        .slice(0, 5)
+        .slice(0, MAX_CONCURRENT_EXECUTIONS)
         .map((scheduleDoc) => executeSchedule(scheduleDoc));
 
-      await Promise.allSettled(executionPromises);
+      const results = await Promise.allSettled(executionPromises);
 
-      // 期限切れスケジュールのクリーンアップ（1時間に1回）
+      // エラー結果をログ出力
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          console.error(`Schedule execution ${index} failed:`, result.reason);
+        }
+      });
+
+      // 期限切れスケジュールのクリーンアップ（1時間に1回、かつ負荷が低い時間帯）
       const currentMinute = new Date().getMinutes();
-      if (currentMinute === 0) {
-        await cleanupExpiredSchedules();
+      const currentHour = new Date().getHours();
+      if (currentMinute === 0 && (currentHour >= 2 && currentHour <= 4)) {
+        try {
+          await cleanupExpiredSchedules();
+        } catch (cleanupError) {
+          console.error("Cleanup failed:", cleanupError);
+          // クリーンアップエラーは全体の処理を停止させない
+        }
       }
 
-      console.log("Scheduled posts execution completed");
+      const executionTime = Date.now() - startTime;
+      console.log(`Scheduled posts execution completed in ${executionTime}ms`);
 
     } catch (error: any) {
-      console.error("Scheduled posts execution error:", error);
+      const executionTime = Date.now() - startTime;
+      console.error(`Scheduled posts execution error after ${executionTime}ms:`, error);
+      
+      // Performance monitoring for debugging
+      console.error("Performance metrics:", {
+        executionTime,
+        memoryUsage: process.memoryUsage(),
+        timestamp: new Date().toISOString()
+      });
+      
       throw error;
     }
   });

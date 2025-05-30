@@ -13,6 +13,39 @@ import {
 } from "../utils/scheduleUtils";
 import { canCreateSchedule } from "../utils/planLimits";
 
+// Performance optimizations for API functions
+const API_CACHE = new Map<string, { data: any; timestamp: number }>();
+const CACHE_TTL = 2 * 60 * 1000; // 2 minutes cache for API responses
+
+/**
+ * Get cached data or fetch from database
+ */
+async function getCachedOrFetch<T>(
+  cacheKey: string,
+  fetchFn: () => Promise<T>,
+  ttl: number = CACHE_TTL
+): Promise<T> {
+  const cached = API_CACHE.get(cacheKey);
+  
+  if (cached && (Date.now() - cached.timestamp < ttl)) {
+    return cached.data as T;
+  }
+  
+  const data = await fetchFn();
+  API_CACHE.set(cacheKey, {
+    data,
+    timestamp: Date.now()
+  });
+  
+  // Cleanup old cache entries
+  if (API_CACHE.size > 100) {
+    const oldestKey = API_CACHE.keys().next().value;
+    API_CACHE.delete(oldestKey);
+  }
+  
+  return data;
+}
+
 // スケジュール作成
 export const createSchedule = functions.https.onCall(async (data, context) => {
   // 認証チェック

@@ -1,128 +1,311 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
-import { featureFlags } from '@/utils/featureFlags'
+import type { RouteRecordRaw } from 'vue-router'
+import { trackRouteChange } from '@/utils/performance'
 
+// Define route metadata interface
+interface RouteMeta {
+  requiresAuth?: boolean
+  preload?: boolean
+  title?: string
+  description?: string
+  keepAlive?: boolean
+}
+
+// Core routes (always loaded)
+const coreRoutes: RouteRecordRaw[] = [
+  {
+    path: '/',
+    name: 'home',
+    component: () => import('@/views/HomeView.vue'),
+    meta: { 
+      requiresAuth: false,
+      title: 'Omniy - Instagram Scheduler',
+      description: 'Professional Instagram scheduling app'
+    } as RouteMeta
+  },
+  {
+    path: '/login',
+    name: 'login',
+    component: () => import('@/views/LoginView.vue'),
+    meta: { 
+      requiresAuth: false,
+      preload: true,
+      title: 'Login - Omniy',
+      description: 'Sign in to your Omniy account'
+    } as RouteMeta
+  }
+]
+
+// Main application routes (lazy loaded)
+const appRoutes: RouteRecordRaw[] = [
+  {
+    path: '/dashboard',
+    name: 'dashboard',
+    component: () => import('@/views/DashboardView.vue'),
+    meta: { 
+      requiresAuth: true,
+      preload: true,
+      keepAlive: true,
+      title: 'Dashboard - Omniy',
+      description: 'Instagram scheduling dashboard'
+    } as RouteMeta
+  },
+  {
+    path: '/schedules',
+    name: 'schedules',
+    component: () => import('@/views/SchedulesView.vue'),
+    meta: { 
+      requiresAuth: true,
+      keepAlive: true,
+      title: 'Schedules - Omniy',
+      description: 'Manage your Instagram post schedules'
+    } as RouteMeta
+  },
+  {
+    path: '/accounts',
+    name: 'accounts',
+    component: () => import('@/views/AccountsView.vue'),
+    meta: { 
+      requiresAuth: true,
+      title: 'Accounts - Omniy',
+      description: 'Manage your Instagram accounts'
+    } as RouteMeta
+  },
+  {
+    path: '/content',
+    name: 'content',
+    component: () => import('@/views/ContentView.vue'),
+    meta: { 
+      requiresAuth: true,
+      title: 'Content Library - Omniy',
+      description: 'Manage your post content'
+    } as RouteMeta
+  }
+]
+
+// Secondary features (lazy loaded)
+const secondaryRoutes: RouteRecordRaw[] = [
+  {
+    path: '/settings',
+    name: 'settings',
+    component: () => import('@/views/SettingsView.vue'),
+    meta: { 
+      requiresAuth: true,
+      title: 'Settings - Omniy',
+      description: 'Application settings'
+    } as RouteMeta
+  },
+  {
+    path: '/billing',
+    name: 'billing',
+    component: () => import('@/views/BillingView.vue'),
+    meta: { 
+      requiresAuth: true,
+      title: 'Billing - Omniy',
+      description: 'Manage your subscription'
+    } as RouteMeta
+  },
+  {
+    path: '/billing/success',
+    name: 'billing-success',
+    component: () => import('@/views/BillingSuccessView.vue'),
+    meta: { 
+      requiresAuth: true,
+      title: 'Payment Success - Omniy',
+      description: 'Payment confirmation'
+    } as RouteMeta
+  },
+  {
+    path: '/proxies',
+    name: 'proxies',
+    component: () => import('@/views/ProxiesView.vue'),
+    meta: { 
+      requiresAuth: true,
+      title: 'Proxies - Omniy',
+      description: 'Manage proxy settings'
+    } as RouteMeta
+  },
+  {
+    path: '/groups',
+    name: 'groups',
+    component: () => import('@/views/GroupsView.vue'),
+    meta: { 
+      requiresAuth: true,
+      title: 'Groups - Omniy',
+      description: 'Manage account groups'
+    } as RouteMeta
+  },
+  {
+    path: '/logs',
+    name: 'logs',
+    component: () => import('@/views/LogsView.vue'),
+    meta: { 
+      requiresAuth: true,
+      title: 'Activity Logs - Omniy',
+      description: 'View activity logs'
+    } as RouteMeta
+  },
+  {
+    path: '/calendar',
+    name: 'calendar',
+    component: () => import('@/views/CalendarView.vue'),
+    meta: { 
+      requiresAuth: true,
+      title: 'Calendar - Omniy',
+      description: 'Schedule calendar view'
+    } as RouteMeta
+  }
+]
+
+// Error routes
+const errorRoutes: RouteRecordRaw[] = [
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'not-found',
+    component: () => import('@/views/NotFoundView.vue'),
+    meta: {
+      title: 'Page Not Found - Omniy',
+      description: 'The requested page was not found'
+    } as RouteMeta
+  }
+]
+
+// Combine all routes
+const routes = [...coreRoutes, ...appRoutes, ...secondaryRoutes, ...errorRoutes]
+
+// Create router with optimized configuration
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-  routes: [
-    {
-      path: '/',
-      name: 'home',
-      component: () => import('@/views/HomeView.vue'),
-      meta: { requiresAuth: false }
-    },
-    {
-      path: '/login',
-      name: 'login',
-      component: () => import('@/views/LoginView.vue'),
-      meta: { requiresAuth: false }
-    },
-    {
-      path: '/dashboard',
-      name: 'dashboard',
-      component: () => import('@/views/DashboardView.vue'),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/schedules',
-      name: 'schedules',
-      component: () => import('@/views/SchedulesView.vue'),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/accounts',
-      name: 'accounts',
-      component: () => import('@/views/AccountsView.vue'),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/content',
-      name: 'content',
-      component: () => import('@/views/ContentView.vue'),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/settings',
-      name: 'settings',
-      component: () => import('@/views/SettingsView.vue'),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/billing',
-      name: 'billing',
-      component: () => import('@/views/BillingView.vue'),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/billing/success',
-      name: 'billing-success',
-      component: () => import('@/views/BillingSuccessView.vue'),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/proxies',
-      name: 'proxies',
-      component: () => import('@/views/ProxiesView.vue'),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/groups',
-      name: 'groups',
-      component: () => import('@/views/GroupsView.vue'),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/logs',
-      name: 'logs',
-      component: () => import('@/views/LogsView.vue'),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/calendar',
-      name: 'calendar',
-      component: () => import('@/views/CalendarView.vue'),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/:pathMatch(.*)*',
-      name: 'not-found',
-      component: () => import('@/views/NotFoundView.vue')
+  routes,
+  scrollBehavior(to, from, savedPosition) {
+    // Restore scroll position on back navigation
+    if (savedPosition) {
+      return savedPosition
     }
-  ]
+    // Scroll to anchor if present
+    if (to.hash) {
+      return { el: to.hash, behavior: 'smooth' }
+    }
+    // Scroll to top for new routes
+    return { top: 0, behavior: 'smooth' }
+  }
 })
 
-// 認証ガード
-router.beforeEach(async (to, _from, next) => {
-  // Cypress テスト環境では認証チェックをバイパス
-  if (typeof window !== 'undefined' && window.__CYPRESS_TESTING__) {
+// Optimized route guards with performance tracking
+router.beforeEach(async (to, from, next) => {
+  // Track route change performance
+  trackRouteChange(to.path, from.path)
+
+  // Update document title and meta description
+  if (to.meta?.title) {
+    document.title = to.meta.title as string
+  }
+  if (to.meta?.description) {
+    const metaDescription = document.querySelector('meta[name="description"]')
+    if (metaDescription) {
+      metaDescription.setAttribute('content', to.meta.description as string)
+    }
+  }
+
+  // Cypress test environment bypass
+  if (typeof window !== 'undefined' && (window as any).__CYPRESS_TESTING__) {
     console.log('🧪 Cypress testing mode - bypassing auth guards')
     next()
     return
   }
-  
-  const authStore = useAuthStore()
-  
-  // 認証状態の初期化を待つ
-  if (!authStore.isInitialized) {
-    await authStore.initializeAuth()
+
+  // Lazy load auth store only when needed
+  if (to.meta?.requiresAuth) {
+    try {
+      const { useAuthStore } = await import('@/stores/auth')
+      const authStore = useAuthStore()
+      
+      // Initialize auth if not already done
+      if (!authStore.isInitialized) {
+        await authStore.initializeAuth()
+      }
+      
+      if (!authStore.isAuthenticated) {
+        next('/login')
+        return
+      }
+
+      // Feature flag check (lazy loaded)
+      try {
+        const { featureFlags } = await import('@/utils/featureFlags')
+        if (!featureFlags.isRouteAccessible(to.path)) {
+          console.warn(`🚫 Route ${to.path} is disabled by feature flags`)
+          next('/dashboard')
+          return
+        }
+      } catch (error) {
+        console.warn('Feature flags check failed:', error)
+      }
+    } catch (error) {
+      console.error('Auth check failed:', error)
+      next('/login')
+      return
+    }
   }
-  
-  // ルートページ (/) での自動リダイレクト（認証済みユーザーのみ）
-  if (to.path === '/' && authStore.isAuthenticated) {
-    next('/dashboard')
-    return
+
+  // Handle authenticated user on login page
+  if (to.name === 'login') {
+    try {
+      const { useAuthStore } = await import('@/stores/auth')
+      const authStore = useAuthStore()
+      
+      if (authStore.isAuthenticated) {
+        next('/dashboard')
+        return
+      }
+    } catch (error) {
+      console.warn('Auth store check failed:', error)
+    }
   }
+
+  // Auto-redirect root to dashboard for authenticated users
+  if (to.path === '/') {
+    try {
+      const { useAuthStore } = await import('@/stores/auth')
+      const authStore = useAuthStore()
+      
+      if (authStore.isAuthenticated) {
+        next('/dashboard')
+        return
+      }
+    } catch (error) {
+      console.warn('Root redirect check failed:', error)
+    }
+  }
+
+  next()
+})
+
+// Preload critical routes
+router.afterEach((to, from) => {
+  // Preload routes marked for preloading
+  if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+    requestIdleCallback(() => {
+      const preloadRoutes = routes.filter(route => route.meta?.preload)
+      preloadRoutes.forEach(route => {
+        if (typeof route.component === 'function') {
+          (route.component as () => Promise<any>)().catch(() => {
+            // Ignore preload errors
+          })
+        }
+      })
+    })
+  }
+})
+
+// Error handling for route loading failures
+router.onError((error) => {
+  console.error('Router error:', error)
   
-  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    next('/login')
-  } else if (to.name === 'login' && authStore.isAuthenticated) {
-    next('/dashboard')
-  } else if (to.meta.requiresAuth && !featureFlags.isRouteAccessible(to.path)) {
-    // 機能フラグで無効化されたルートへのアクセスをブロック
-    console.warn(`🚫 Route ${to.path} is disabled by feature flags`)
-    next('/dashboard')
-  } else {
-    next()
+  // Try to navigate to a safe route on chunk load errors
+  if (error.message?.includes('Loading chunk')) {
+    console.warn('Chunk loading failed, attempting to reload...')
+    window.location.reload()
   }
 })
 

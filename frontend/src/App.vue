@@ -103,15 +103,15 @@
 
       <v-spacer />
 
-      <!-- 🌍 言語切り替え（機能フラグで制御）-->
+      <!-- 🌍 言語切り替え（1人運営では非表示）-->
       <LanguageSwitcher 
-        v-if="featureFlags.isAdvancedFeatureEnabled('multiLanguage')" 
+        v-if="isFeatureEnabled('MULTI_LANGUAGE')" 
         compact 
         class="mr-2" 
       />
 
       <!-- 📊 クイック統計（MVP では非表示） -->
-      <template v-if="authStore.isAuthenticated && featureFlags.isAdvancedFeatureEnabled('quickStats')">
+      <template v-if="authStore.isAuthenticated && isFeatureEnabled('PERFORMANCE_METRICS')">
         <div class="quick-stats d-none d-md-flex mr-4">
           <v-chip
             variant="outlined"
@@ -120,15 +120,15 @@
             class="mr-2"
           >
             <v-icon icon="mdi-calendar-clock" size="16" class="mr-1" />
-            {{ $t('dashboard.activeSchedules') }} 3
+            アクティブ 3
           </v-chip>
         </div>
       </template>
 
       <template v-if="authStore.isAuthenticated">
-        <!-- 🔔 通知ボタン（MVP では非表示） -->
+        <!-- 🔔 通知ボタン（1人運営では非表示） -->
         <v-btn
-          v-if="featureFlags.isAdvancedFeatureEnabled('notifications')"
+          v-if="isFeatureEnabled('ADVANCED_NOTIFICATIONS')"
           icon
           size="small"
           class="notification-btn mr-2"
@@ -255,9 +255,9 @@
       </template>
     </v-snackbar>
 
-    <!-- 🔔 通知パネル（MVP では非表示） -->
+    <!-- 🔔 通知パネル（1人運営では非表示） -->
     <v-overlay
-      v-if="featureFlags.isAdvancedFeatureEnabled('notifications')"
+      v-if="isFeatureEnabled('ADVANCED_NOTIFICATIONS')"
       v-model="showNotifications"
       class="notification-overlay"
       @click="showNotifications = false"
@@ -286,7 +286,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { featureFlags } from '@/utils/featureFlags'
+import { isFeatureEnabled } from '@/config/featureFlags'
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
 
 const router = useRouter()
@@ -309,8 +309,8 @@ const appBarStyle = computed(() => ({
   boxShadow: '0 4px 20px rgba(102, 126, 234, 0.3)'
 }))
 
-// 🎯 ソロ起業家向けMVPメニュー（機能フラグでフィルタリング）
-const allMenuItems = [
+// 🎯 1人運営向けMVPメニュー (70%簡略化)
+const coreMenuItems = [
   { 
     title: 'ダッシュボード', 
     subtitle: '全体概要', 
@@ -348,12 +348,53 @@ const allMenuItems = [
     to: '/billing',
     badge: false
   }
-  // 🚫 複雑な機能は機能フラグで無効化
-  // プロキシ管理、グループ管理、ログダッシュボード、カレンダーは非表示
+]
+
+// 将来実装予定の高度機能 (機能フラグで制御)
+const advancedMenuItems = [
+  { 
+    title: 'グループ管理', 
+    subtitle: 'アカウントグループ', 
+    icon: 'mdi-account-group', 
+    to: '/groups',
+    feature: 'GROUP_MANAGEMENT'
+  },
+  { 
+    title: 'ログダッシュボード', 
+    subtitle: '活動履歴', 
+    icon: 'mdi-chart-line', 
+    to: '/logs',
+    feature: 'LOGS_DASHBOARD'
+  },
+  { 
+    title: 'カレンダー', 
+    subtitle: '投稿カレンダー', 
+    icon: 'mdi-calendar', 
+    to: '/calendar',
+    feature: 'CALENDAR_VIEW'
+  },
+  { 
+    title: 'プロキシ管理', 
+    subtitle: 'プロキシ設定', 
+    icon: 'mdi-server-network', 
+    to: '/proxies',
+    feature: 'PROXY_MANAGEMENT'
+  }
 ]
 
 // 機能フラグでフィルタリングされたメニューアイテム
-const menuItems = computed(() => featureFlags.filterMenuItems(allMenuItems))
+const menuItems = computed(() => {
+  const items = [...coreMenuItems]
+  
+  // 高度機能は機能フラグで制御
+  advancedMenuItems.forEach(item => {
+    if (item.feature && isFeatureEnabled(item.feature as any)) {
+      items.push(item)
+    }
+  })
+  
+  return items
+})
 
 // Methods
 const handleLogout = async () => {

@@ -93,93 +93,166 @@ declare global {
       shouldShowError(message: string): Chainable<void>
       shouldShowSuccess(message: string): Chainable<void>
       shouldNotHaveLoadingSpinner(): Chainable<void>
+      
+      /**
+       * Mock API error responses
+       */
+      mockApiError(endpoint: string, statusCode?: number, message?: string): Chainable<void>
+      
+      /**
+       * Mock post creation API
+       */
+      mockPostCreation(): Chainable<void>
+      
+      /**
+       * Mock Instagram authentication
+       */
+      mockInstagramAuth(): Chainable<void>
+      
+      /**
+       * Wait for specific API call
+       */
+      waitForApiCall(alias: string, timeout?: number): Chainable<void>
     }
   }
 }
 
-// Login command
+// Login command with improved Firebase mocking
 Cypress.Commands.add('login', (email?: string, _password?: string) => {
-  const testEmail = email || Cypress.env('TEST_USER_EMAIL')
-  // const _testPassword = password || Cypress.env('TEST_USER_PASSWORD')
+  const testEmail = email || Cypress.env('TEST_USER_EMAIL') || 'test@omniy.app'
+  const mockUser = {
+    uid: 'test-user-id',
+    email: testEmail,
+    displayName: 'Test User',
+    photoURL: 'https://example.com/photo.jpg'
+  }
+  
+  // Mock Firebase Auth before visiting
+  cy.mockFirebaseAuth(mockUser)
   
   cy.visit('/login')
   cy.waitForAppLoad()
   
   // Check if already logged in
   cy.get('body').then(($body) => {
-    if ($body.find('[data-cy="login-form"]').length > 0) {
-      // Click Google login button (mock for testing)
-      cy.get('[data-cy="google-login-btn"]').click()
+    if ($body.find('[data-testid="login-form"]').length > 0) {
+      // Click Google login button (mock will handle authentication)
+      cy.get('[data-testid="google-login-btn"]').click()
       
-      // In real scenario, this would handle OAuth flow
-      // For testing, we'll mock the authentication
-      cy.window().its('localStorage').invoke('setItem', 'omniy-auth-token', 'mock-token')
-      cy.window().its('localStorage').invoke('setItem', 'omniy-user', JSON.stringify({
-        uid: 'test-user-id',
-        email: testEmail,
-        displayName: 'Test User'
-      }))
-      
-      cy.reload()
+      // Wait for redirect to dashboard
+      cy.url({ timeout: 10000 }).should('include', '/dashboard')
+      cy.get('[data-testid="dashboard-content"]', { timeout: 10000 }).should('be.visible')
+    } else {
+      // Already logged in, just verify we're on dashboard
+      cy.url().should('include', '/dashboard')
     }
   })
-  
-  cy.url().should('include', '/dashboard')
 })
 
-// Logout command
+// Enhanced logout with proper Firebase cleanup
 Cypress.Commands.add('logout', () => {
-  cy.get('[data-cy="user-menu"]').click()
-  cy.get('[data-cy="logout-btn"]').click()
-  cy.url().should('include', '/login')
+  cy.get('[data-testid="user-menu"]').click()
+  
+  // Mock the logout process
+  cy.window().then((win) => {
+    if (win.firebase && win.firebase.auth) {
+      cy.stub(win.firebase.auth(), 'signOut').resolves()
+      cy.stub(win.firebase.auth(), 'currentUser').value(null)
+      cy.stub(win.firebase.auth(), 'onAuthStateChanged').callsFake((callback: any) => {
+        setTimeout(() => callback(null), 100)
+        return () => {}
+      })
+    }
+    
+    // Clear auth data from localStorage
+    win.localStorage.removeItem('omniy_user')
+    win.localStorage.removeItem('omniy_auth_token')
+  })
+  
+  cy.get('[data-testid="logout-btn"]').click()
+  cy.url({ timeout: 10000 }).should('include', '/login')
+  cy.get('[data-testid="login-form"]').should('be.visible')
 })
 
 // Wait for app load
 Cypress.Commands.add('waitForAppLoad', () => {
   // Wait for Vue app to mount
-  cy.get('[data-cy="app-loaded"]', { timeout: 10000 }).should('exist')
+  cy.get('[data-testid="app-loaded"]', { timeout: 10000 }).should('exist')
   
   // Wait for any loading indicators to disappear
-  cy.get('[data-cy="loading"]').should('not.exist')
+  cy.get('[data-testid="loading"]').should('not.exist')
+  
+  // Wait for auth state to be determined
+  cy.window().its('document.readyState').should('equal', 'complete')
 })
 
-// Create test account
+// Enhanced test account creation with API mocking
 Cypress.Commands.add('createTestAccount', (accountData) => {
-  cy.navigateToView('accounts')
-  cy.get('[data-cy="add-account-btn"]').click()
+  // Mock the account creation API
+  cy.intercept('POST', '**/api/igAccounts', {
+    statusCode: 200,
+    body: {
+      id: accountData.id || 'generated-id',
+      username: accountData.username,
+      displayName: accountData.displayName || accountData.username,
+      profilePictureUrl: accountData.profilePictureUrl || 'https://example.com/default.jpg',
+      status: 'active',
+      createdAt: new Date().toISOString()
+    }
+  }).as('createAccount')
   
-  cy.get('[data-cy="account-username"]').type(accountData.username)
-  cy.get('[data-cy="account-token"]').type(accountData.accessToken)
+  cy.navigateToAccounts()
+  cy.get('[data-testid="add-account-btn"]').click()
   
-  cy.get('[data-cy="save-account-btn"]').click()
-  cy.get('[data-cy="success-message"]').should('be.visible')
-})
-
-// Create test schedule
-Cypress.Commands.add('createTestSchedule', (scheduleData) => {
-  cy.navigateToView('schedules')
-  cy.get('[data-cy="create-schedule-btn"]').click()
-  
-  // Fill schedule form
-  cy.get('[data-cy="schedule-type"]').select(scheduleData.type)
-  cy.get('[data-cy="schedule-content"]').select(scheduleData.contentId)
-  cy.get('[data-cy="schedule-account"]').select(scheduleData.accountId)
-  
-  if (scheduleData.type === 'once') {
-    cy.get('[data-cy="scheduled-date"]').type(scheduleData.scheduledAt)
-  } else if (scheduleData.type === 'recurring') {
-    cy.get('[data-cy="repeat-days"]').select(scheduleData.repeatDays)
-    cy.get('[data-cy="repeat-time"]').type(scheduleData.repeatTime)
+  cy.get('[data-testid="account-username"]').type(accountData.username)
+  if (accountData.accessToken) {
+    cy.get('[data-testid="account-token"]').type(accountData.accessToken)
+  }
+  if (accountData.displayName) {
+    cy.get('[data-testid="account-display-name"]').type(accountData.displayName)
   }
   
-  cy.get('[data-cy="save-schedule-btn"]').click()
-  cy.get('[data-cy="success-message"]').should('be.visible')
+  cy.get('[data-testid="save-account-btn"]').click()
+  cy.wait('@createAccount')
+  cy.get('[data-testid="success-message"]').should('be.visible')
 })
 
-// Navigate to view
+// Enhanced test schedule creation with API mocking
+Cypress.Commands.add('createTestSchedule', (scheduleData) => {
+  // Mock the schedule creation API
+  cy.intercept('POST', '**/api/schedules', {
+    statusCode: 200,
+    body: {
+      id: scheduleData.id || 'generated-schedule-id',
+      title: scheduleData.title || 'Test Schedule',
+      type: scheduleData.type,
+      contentId: scheduleData.contentId,
+      accountId: scheduleData.accountId,
+      status: 'active',
+      scheduledAt: scheduleData.scheduledAt,
+      repeatDays: scheduleData.repeatDays,
+      repeatTime: scheduleData.repeatTime,
+      createdAt: new Date().toISOString(),
+      nextRunAt: scheduleData.scheduledAt || new Date().toISOString()
+    }
+  }).as('createSchedule')
+  
+  cy.navigateToSchedules()
+  cy.get('[data-testid="create-schedule-btn"]').click()
+  
+  // Fill schedule form using the fillScheduleForm helper
+  cy.fillScheduleForm(scheduleData)
+  
+  cy.get('[data-testid="save-schedule-btn"]').click()
+  cy.wait('@createSchedule')
+  cy.get('[data-testid="success-message"]').should('be.visible')
+})
+
+// Enhanced navigation with proper waiting
 Cypress.Commands.add('navigateToView', (view: string) => {
-  cy.get(`[data-cy="nav-${view}"]`).click()
+  cy.get(`[data-testid="nav-${view}"]`).click()
   cy.url().should('include', `/${view}`)
+  cy.get(`[data-testid="${view}-content"]`, { timeout: 10000 }).should('be.visible')
   cy.waitForAppLoad()
 })
 
@@ -215,37 +288,122 @@ Cypress.Commands.add('checkA11y', () => {
   })
 })
 
-// Seed test data
+// Enhanced test data management
 Cypress.Commands.add('seedTestData', () => {
-  cy.task('seedDatabase')
+  // Mock API responses for test data
+  cy.intercept('GET', '**/api/igAccounts', {
+    statusCode: 200,
+    body: [
+      {
+        id: 'test-account-1',
+        username: '@test_account_1',
+        displayName: 'Test Account 1',
+        profilePictureUrl: 'https://example.com/profile1.jpg',
+        status: 'active'
+      },
+      {
+        id: 'test-account-2', 
+        username: '@test_account_2',
+        displayName: 'Test Account 2',
+        profilePictureUrl: 'https://example.com/profile2.jpg',
+        status: 'active'
+      }
+    ]
+  }).as('getAccounts')
+  
+  cy.intercept('GET', '**/api/posts', {
+    statusCode: 200,
+    body: [
+      {
+        id: 'test-content-1',
+        title: 'Test Content 1',
+        caption: 'This is test content for automated testing',
+        mediaUrls: ['https://example.com/image1.jpg'],
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'test-content-2',
+        title: 'Test Content 2', 
+        caption: 'Another test content item',
+        mediaUrls: ['https://example.com/image2.jpg'],
+        createdAt: new Date().toISOString()
+      }
+    ]
+  }).as('getPosts')
+  
+  cy.intercept('GET', '**/api/schedules', {
+    statusCode: 200,
+    body: []
+  }).as('getSchedules')
+  
+  // Call the database seeding task if it exists
+  cy.task('seedDatabase', null, { failOnStatusCode: false })
 })
 
-// Cleanup test data
+// Enhanced cleanup with API mocking
 Cypress.Commands.add('cleanupTestData', () => {
-  cy.task('cleanupDatabase')
+  // Clear localStorage
+  cy.window().then((win) => {
+    win.localStorage.clear()
+    win.sessionStorage.clear()
+  })
+  
+  // Reset all intercepted API calls
+  cy.intercept('DELETE', '**/api/schedules/*', { statusCode: 200 }).as('deleteSchedule')
+  cy.intercept('DELETE', '**/api/posts/*', { statusCode: 200 }).as('deletePost')
+  cy.intercept('DELETE', '**/api/igAccounts/*', { statusCode: 200 }).as('deleteAccount')
+  
+  // Call the database cleanup task if it exists
+  cy.task('cleanupDatabase', null, { failOnStatusCode: false })
 })
 
-// Mock Firebase Auth
+// Enhanced Firebase Auth mocking
 Cypress.Commands.add('mockFirebaseAuth', (user) => {
-  cy.window().its('firebase').then((firebase: any) => {
-    if (firebase && firebase.auth) {
-      cy.stub(firebase.auth(), 'currentUser').value(user)
-      cy.stub(firebase.auth(), 'signInWithPopup').resolves({
+  cy.window().then((win) => {
+    // Set up Firebase Auth mocks before the app initializes
+    if (!win.firebase) {
+      win.firebase = {
+        auth: () => ({
+          currentUser: user,
+          signInWithPopup: cy.stub().resolves({
+            user,
+            credential: null,
+            operationType: 'signIn',
+            providerId: 'google.com'
+          }),
+          onAuthStateChanged: cy.stub().callsFake((callback: any) => {
+            setTimeout(() => callback(user), 100)
+            return () => {}
+          }),
+          signOut: cy.stub().resolves(),
+          getIdToken: cy.stub().resolves('mock-id-token'),
+          getIdTokenResult: cy.stub().resolves({
+            token: 'mock-id-token',
+            claims: { uid: user.uid }
+          })
+        })
+      }
+    } else {
+      // Firebase already exists, just stub the methods
+      const auth = win.firebase.auth()
+      cy.stub(auth, 'currentUser').value(user)
+      cy.stub(auth, 'signInWithPopup').resolves({
         user,
         credential: null,
         operationType: 'signIn',
         providerId: 'google.com'
       })
-      cy.stub(firebase.auth(), 'onAuthStateChanged').callsFake((callback: any) => {
-        callback(user)
+      cy.stub(auth, 'onAuthStateChanged').callsFake((callback: any) => {
+        setTimeout(() => callback(user), 100)
         return () => {}
       })
-      cy.stub(firebase.auth(), 'signOut').resolves()
+      cy.stub(auth, 'signOut').resolves()
+      cy.stub(auth, 'getIdToken').resolves('mock-id-token')
     }
-  })
-  
-  cy.window().then((win) => {
+    
+    // Set user data in localStorage for persistence
     win.localStorage.setItem('omniy_user', JSON.stringify(user))
+    win.localStorage.setItem('omniy_auth_token', 'mock-id-token')
   })
 })
 
@@ -275,22 +433,74 @@ Cypress.Commands.add('uploadFile', (selector: string, fileName: string, fileType
   })
 })
 
-// Fill schedule form
+// Enhanced schedule form filling
 Cypress.Commands.add('fillScheduleForm', (data: any) => {
+  // Schedule type
+  if (data.type) {
+    cy.get('[data-testid="schedule-type"]').select(data.type)
+  }
+  
+  // Schedule title
+  if (data.title) {
+    cy.get('[data-testid="schedule-title"]').type(data.title)
+  }
+  
+  // Content selection
+  if (data.contentId) {
+    cy.get('[data-testid="schedule-content"]').select(data.contentId)
+  }
+  
+  // Account selection
+  if (data.accountId) {
+    cy.get('[data-testid="schedule-account"]').select(data.accountId)
+  }
+  
+  // Caption
   if (data.caption) {
     cy.get('[data-testid="schedule-caption"]').type(data.caption)
   }
   
-  if (data.scheduledAt) {
-    cy.get('[data-testid="schedule-date"]').type(data.scheduledAt.split('T')[0])
-    cy.get('[data-testid="schedule-time"]').type(data.scheduledAt.split('T')[1].substring(0, 5))
+  // Type-specific fields
+  if (data.type === 'once') {
+    if (data.scheduledAt) {
+      const [date, time] = data.scheduledAt.split('T')
+      cy.get('[data-testid="scheduled-date"]').type(date)
+      cy.get('[data-testid="scheduled-time"]').type(time.substring(0, 5))
+    }
+  } else if (data.type === 'recurring') {
+    if (data.repeatDays && Array.isArray(data.repeatDays)) {
+      data.repeatDays.forEach((day: string) => {
+        cy.get('[data-testid="repeat-days"]').within(() => {
+          cy.get(`[data-testid="day-${day}"]`).check()
+        })
+      })
+    }
+    if (data.repeatTime) {
+      cy.get('[data-testid="repeat-time"]').type(data.repeatTime)
+    }
+  } else if (data.type === 'random') {
+    if (data.minInterval) {
+      cy.get('[data-testid="random-min-interval"]').type(data.minInterval.toString())
+    }
+    if (data.maxInterval) {
+      cy.get('[data-testid="random-max-interval"]').type(data.maxInterval.toString())
+    }
+    if (data.startTime) {
+      cy.get('[data-testid="random-start-time"]').type(data.startTime)
+    }
+    if (data.endTime) {
+      cy.get('[data-testid="random-end-time"]').type(data.endTime)
+    }
+    if (data.activeDays && Array.isArray(data.activeDays)) {
+      data.activeDays.forEach((day: string) => {
+        cy.get('[data-testid="random-days"]').within(() => {
+          cy.get(`[data-testid="day-${day}"]`).check()
+        })
+      })
+    }
   }
   
-  if (data.igAccount) {
-    cy.get('[data-testid="ig-account-select"]').click()
-    cy.get(`[data-testid="ig-account-option-${data.igAccount}"]`).click()
-  }
-  
+  // Media uploads
   if (data.images && data.images.length > 0) {
     data.images.forEach((image: string, index: number) => {
       cy.uploadFile('[data-testid="image-upload"]', `test-image-${index + 1}.jpg`)
@@ -347,4 +557,74 @@ Cypress.Commands.add('shouldShowSuccess', (message: string) => {
 
 Cypress.Commands.add('shouldNotHaveLoadingSpinner', () => {
   cy.get('[data-testid="loading-spinner"]').should('not.exist')
+})
+
+// Additional API mocking commands
+Cypress.Commands.add('mockApiError', (endpoint: string, statusCode: number = 500, message: string = 'Internal Server Error') => {
+  cy.intercept('**/api/**', (req) => {
+    if (req.url.includes(endpoint)) {
+      req.reply({
+        statusCode,
+        body: { error: message, code: statusCode }
+      })
+    }
+  }).as('apiError')
+})
+
+Cypress.Commands.add('mockPostCreation', () => {
+  cy.intercept('POST', '**/api/posts', {
+    statusCode: 200,
+    body: {
+      id: 'generated-post-id',
+      title: 'Test Post',
+      caption: 'Test caption',
+      mediaUrls: ['https://example.com/test-image.jpg'],
+      createdAt: new Date().toISOString()
+    }
+  }).as('createPost')
+})
+
+Cypress.Commands.add('mockInstagramAuth', () => {
+  cy.intercept('POST', '**/api/instagram/auth', {
+    statusCode: 200,
+    body: {
+      accessToken: 'mock-instagram-token',
+      userId: 'mock-instagram-user-id',
+      username: 'test_instagram_user'
+    }
+  }).as('instagramAuth')
+})
+
+Cypress.Commands.add('waitForApiCall', (alias: string, timeout: number = 10000) => {
+  cy.wait(`@${alias}`, { timeout })
+})
+
+// Enhanced file upload with better error handling
+Cypress.Commands.add('uploadFile', (selector: string, fileName: string, fileType: string = 'image/jpeg') => {
+  cy.get(selector).then(subject => {
+    // Check if fixture exists, otherwise create a mock file
+    cy.task('fileExists', fileName).then((exists) => {
+      if (exists) {
+        cy.fixture(fileName, 'base64').then((content) => {
+          const el = subject[0] as HTMLInputElement
+          const testFile = new File([Cypress.Blob.base64StringToBlob(content)], fileName, { type: fileType })
+          const dataTransfer = new DataTransfer()
+          dataTransfer.items.add(testFile)
+          el.files = dataTransfer.files
+          
+          cy.wrap(subject).trigger('change', { force: true })
+        })
+      } else {
+        // Create a mock file if fixture doesn't exist
+        const mockContent = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
+        const el = subject[0] as HTMLInputElement
+        const testFile = new File([Cypress.Blob.base64StringToBlob(mockContent)], fileName, { type: fileType })
+        const dataTransfer = new DataTransfer()
+        dataTransfer.items.add(testFile)
+        el.files = dataTransfer.files
+        
+        cy.wrap(subject).trigger('change', { force: true })
+      }
+    })
+  })
 })

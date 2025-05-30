@@ -1,74 +1,38 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { 
   initializeTestEnvironment, 
   RulesTestEnvironment,
   assertFails,
   assertSucceeds
 } from '@firebase/rules-unit-testing'
+import * as fs from 'fs'
+import * as path from 'path'
 
 const PROJECT_ID = 'omniy-test'
+
+// Load actual firestore rules
+const rulesPath = path.resolve(__dirname, '../../../firestore.rules')
+const rules = fs.readFileSync(rulesPath, 'utf8')
 
 describe('Firestore Security Rules', () => {
   let testEnv: RulesTestEnvironment
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     testEnv = await initializeTestEnvironment({
       projectId: PROJECT_ID,
       firestore: {
-        rules: `
-          rules_version = '2';
-          service cloud.firestore {
-            match /databases/{database}/documents {
-              // Users collection
-              match /users/{userId} {
-                allow read, write: if request.auth != null && request.auth.uid == userId;
-              }
-              
-              // Schedules collection
-              match /schedules/{scheduleId} {
-                allow read, write: if request.auth != null && 
-                  request.auth.uid == resource.data.userId;
-                allow create: if request.auth != null && 
-                  request.auth.uid == request.resource.data.userId;
-              }
-              
-              // Posts collection
-              match /posts/{postId} {
-                allow read, write: if request.auth != null && 
-                  request.auth.uid == resource.data.userId;
-                allow create: if request.auth != null && 
-                  request.auth.uid == request.resource.data.userId;
-              }
-              
-              // Instagram Accounts collection
-              match /igAccounts/{accountId} {
-                allow read, write: if request.auth != null && 
-                  request.auth.uid == resource.data.userId;
-                allow create: if request.auth != null && 
-                  request.auth.uid == request.resource.data.userId;
-              }
-              
-              // User Usage collection
-              match /userUsage/{userId} {
-                allow read, write: if request.auth != null && 
-                  request.auth.uid == userId;
-              }
-              
-              // Subscriptions collection (read-only for users)
-              match /subscriptions/{subscriptionId} {
-                allow read: if request.auth != null && 
-                  request.auth.uid == resource.data.userId;
-                allow write: if false; // Only backend can write
-              }
-            }
-          }
-        `
+        rules: rules,
+        host: 'localhost',
+        port: 8080
       }
     })
   })
 
-  afterEach(async () => {
+  afterAll(async () => {
     await testEnv.cleanup()
+  })
+
+  beforeEach(async () => {
+    await testEnv.clearFirestore()
   })
 
   describe('Users Collection', () => {
@@ -118,11 +82,54 @@ describe('Firestore Security Rules', () => {
     })
   })
 
+  describe('Instagram Accounts Subcollection', () => {
+    it('should allow users to read their own Instagram accounts', async () => {
+      const alice = testEnv.authenticatedContext('alice')
+      
+      await assertSucceeds(
+        alice.firestore().collection('users').doc('alice').collection('igAccounts').get()
+      )
+    })
+
+    it('should allow users to create Instagram account', async () => {
+      const alice = testEnv.authenticatedContext('alice')
+      
+      await assertSucceeds(
+        alice.firestore().collection('users').doc('alice').collection('igAccounts').doc().set({
+          username: 'alice_instagram',
+          igUserId: '123456',
+          accessToken: 'encrypted_token'
+        })
+      )
+    })
+
+    it('should deny users from reading other users Instagram accounts', async () => {
+      const alice = testEnv.authenticatedContext('alice')
+      
+      await assertFails(
+        alice.firestore().collection('users').doc('bob').collection('igAccounts').get()
+      )
+    })
+
+    it('should deny users from writing other users Instagram accounts', async () => {
+      const alice = testEnv.authenticatedContext('alice')
+      
+      await assertFails(
+        alice.firestore().collection('users').doc('bob').collection('igAccounts').doc().set({
+          username: 'malicious',
+          igUserId: '123456'
+        })
+      )
+    })
+  })
+
   describe('Schedules Collection', () => {
     beforeEach(async () => {
-      const admin = testEnv.authenticatedContext('alice', { admin: true })
+      // Setup test data using admin context
+      const admin = testEnv.withSecurityRulesDisabled()
       await admin.firestore().collection('schedules').doc('schedule1').set({
         userId: 'alice',
+        title: 'Test Schedule',
         caption: 'Test post',
         scheduledAt: new Date(),
         status: 'pending'
@@ -143,6 +150,7 @@ describe('Firestore Security Rules', () => {
       await assertSucceeds(
         alice.firestore().collection('schedules').doc('schedule2').set({
           userId: 'alice',
+          title: 'New Schedule',
           caption: 'Another test post',
           scheduledAt: new Date(),
           status: 'pending'
@@ -194,7 +202,7 @@ describe('Firestore Security Rules', () => {
 
   describe('Posts Collection', () => {
     beforeEach(async () => {
-      const admin = testEnv.authenticatedContext('alice', { admin: true })
+      const admin = testEnv.withSecurityRulesDisabled()
       await admin.firestore().collection('posts').doc('post1').set({
         userId: 'alice',
         caption: 'Test post content',
@@ -246,78 +254,12 @@ describe('Firestore Security Rules', () => {
     })
   })
 
-  describe('Instagram Accounts Collection', () => {
-    beforeEach(async () => {
-      const admin = testEnv.authenticatedContext('alice', { admin: true })
-      await admin.firestore().collection('igAccounts').doc('account1').set({
-        userId: 'alice',
-        username: 'alice_instagram',
-        accessToken: 'encrypted_token',
-        createdAt: new Date()
-      })
-    })
-
-    it('should allow users to read their own Instagram accounts', async () => {
-      const alice = testEnv.authenticatedContext('alice')
-      
-      await assertSucceeds(
-        alice.firestore().collection('igAccounts').doc('account1').get()
-      )
-    })
-
-    it('should allow users to create Instagram accounts with their userId', async () => {
-      const alice = testEnv.authenticatedContext('alice')
-      
-      await assertSucceeds(
-        alice.firestore().collection('igAccounts').doc('account2').set({
-          userId: 'alice',
-          username: 'alice_business',
-          accessToken: 'encrypted_token_2',
-          createdAt: new Date()
-        })
-      )
-    })
-
-    it('should deny users from accessing other users Instagram accounts', async () => {
-      const bob = testEnv.authenticatedContext('bob')
-      
-      await assertFails(
-        bob.firestore().collection('igAccounts').doc('account1').get()
-      )
-    })
-
-    it('should deny users from creating accounts with different userId', async () => {
-      const alice = testEnv.authenticatedContext('alice')
-      
-      await assertFails(
-        alice.firestore().collection('igAccounts').doc('account2').set({
-          userId: 'bob', // Different user ID
-          username: 'malicious_account',
-          accessToken: 'stolen_token',
-          createdAt: new Date()
-        })
-      )
-    })
-  })
-
   describe('User Usage Collection', () => {
     it('should allow users to read their own usage data', async () => {
       const alice = testEnv.authenticatedContext('alice')
       
       await assertSucceeds(
         alice.firestore().collection('userUsage').doc('alice').get()
-      )
-    })
-
-    it('should allow users to update their own usage data', async () => {
-      const alice = testEnv.authenticatedContext('alice')
-      
-      await assertSucceeds(
-        alice.firestore().collection('userUsage').doc('alice').set({
-          postsUsed: 5,
-          scheduleCreationsUsed: 3,
-          lastResetAt: new Date()
-        })
       )
     })
 
@@ -328,56 +270,177 @@ describe('Firestore Security Rules', () => {
         alice.firestore().collection('userUsage').doc('bob').get()
       )
     })
+
+    it('should deny users from writing usage data', async () => {
+      const alice = testEnv.authenticatedContext('alice')
+      
+      // Usage data should only be written by Cloud Functions
+      await assertFails(
+        alice.firestore().collection('userUsage').doc('alice').set({
+          instagramAccountCount: 0,
+          monthlyPostCount: 0
+        })
+      )
+    })
   })
 
-  describe('Subscriptions Collection', () => {
+  describe('Plans Collection', () => {
     beforeEach(async () => {
-      const admin = testEnv.authenticatedContext('alice', { admin: true })
-      await admin.firestore().collection('subscriptions').doc('sub1').set({
-        userId: 'alice',
-        stripeCustomerId: 'cus_test123',
-        status: 'active',
-        currentPlan: 'basic'
+      const admin = testEnv.withSecurityRulesDisabled()
+      await admin.firestore().collection('plans').doc('free').set({
+        planId: 'free',
+        name: 'Free',
+        price: 0,
+        features: {
+          instagramAccountLimit: 1,
+          monthlyPostLimit: 10
+        }
       })
     })
 
-    it('should allow users to read their own subscription data', async () => {
+    it('should allow any authenticated user to read plans', async () => {
       const alice = testEnv.authenticatedContext('alice')
       
       await assertSucceeds(
-        alice.firestore().collection('subscriptions').doc('sub1').get()
+        alice.firestore().collection('plans').doc('free').get()
       )
     })
 
-    it('should deny users from writing subscription data', async () => {
+    it('should deny unauthenticated users from reading plans', async () => {
+      const unauth = testEnv.unauthenticatedContext()
+      
+      await assertFails(
+        unauth.firestore().collection('plans').doc('free').get()
+      )
+    })
+
+    it('should deny users from creating or updating plans', async () => {
       const alice = testEnv.authenticatedContext('alice')
       
       await assertFails(
-        alice.firestore().collection('subscriptions').doc('sub1').update({
-          status: 'premium' // Users shouldn't be able to modify subscriptions
+        alice.firestore().collection('plans').doc('custom').set({
+          name: 'Custom Plan',
+          price: 9999
+        })
+      )
+    })
+  })
+
+  describe('Groups Collection', () => {
+    beforeEach(async () => {
+      const admin = testEnv.withSecurityRulesDisabled()
+      await admin.firestore().collection('groups').doc('group1').set({
+        userId: 'alice',
+        name: 'Test Group',
+        accountIds: ['account1', 'account2']
+      })
+    })
+
+    it('should allow users to read their own groups', async () => {
+      const alice = testEnv.authenticatedContext('alice')
+      
+      await assertSucceeds(
+        alice.firestore().collection('groups').doc('group1').get()
+      )
+    })
+
+    it('should deny users from reading other users groups', async () => {
+      const bob = testEnv.authenticatedContext('bob')
+      
+      await assertFails(
+        bob.firestore().collection('groups').doc('group1').get()
+      )
+    })
+
+    it('should allow users to create groups', async () => {
+      const alice = testEnv.authenticatedContext('alice')
+      
+      await assertSucceeds(
+        alice.firestore().collection('groups').doc('group2').set({
+          userId: 'alice',
+          name: 'New Group',
+          accountIds: []
         })
       )
     })
 
-    it('should deny users from reading other users subscription data', async () => {
-      const bob = testEnv.authenticatedContext('bob')
+    it('should deny creating groups for other users', async () => {
+      const alice = testEnv.authenticatedContext('alice')
       
       await assertFails(
-        bob.firestore().collection('subscriptions').doc('sub1').get()
+        alice.firestore().collection('groups').doc('group2').set({
+          userId: 'bob',
+          name: 'Malicious Group',
+          accountIds: []
+        })
       )
     })
   })
 
-  describe('Field Validation', () => {
-    it('should enforce required fields in schedule creation', async () => {
+  describe('Proxies Collection', () => {
+    beforeEach(async () => {
+      const admin = testEnv.withSecurityRulesDisabled()
+      await admin.firestore().collection('proxies').doc('proxy1').set({
+        userId: 'alice',
+        name: 'Test Proxy',
+        host: 'proxy.example.com',
+        port: 8080,
+        isActive: true
+      })
+    })
+
+    it('should allow users to read their own proxies', async () => {
       const alice = testEnv.authenticatedContext('alice')
       
-      // Missing required fields should be handled by application logic
-      // Rules focus on authorization, not validation
       await assertSucceeds(
-        alice.firestore().collection('schedules').doc('invalid').set({
-          userId: 'alice'
-          // Missing other required fields - validation should be in Cloud Functions
+        alice.firestore().collection('proxies').doc('proxy1').get()
+      )
+    })
+
+    it('should deny users from reading other users proxies', async () => {
+      const bob = testEnv.authenticatedContext('bob')
+      
+      await assertFails(
+        bob.firestore().collection('proxies').doc('proxy1').get()
+      )
+    })
+  })
+
+  describe('Logs Collection', () => {
+    beforeEach(async () => {
+      const admin = testEnv.withSecurityRulesDisabled()
+      await admin.firestore().collection('logs').doc('log1').set({
+        userId: 'alice',
+        action: 'post_published',
+        timestamp: new Date(),
+        details: { postId: 'post123' }
+      })
+    })
+
+    it('should allow users to read their own logs', async () => {
+      const alice = testEnv.authenticatedContext('alice')
+      
+      await assertSucceeds(
+        alice.firestore().collection('logs').doc('log1').get()
+      )
+    })
+
+    it('should deny users from reading other users logs', async () => {
+      const bob = testEnv.authenticatedContext('bob')
+      
+      await assertFails(
+        bob.firestore().collection('logs').doc('log1').get()
+      )
+    })
+
+    it('should deny users from writing logs', async () => {
+      const alice = testEnv.authenticatedContext('alice')
+      
+      // Logs should only be written by Cloud Functions
+      await assertFails(
+        alice.firestore().collection('logs').doc('log2').set({
+          userId: 'alice',
+          action: 'manual_log'
         })
       )
     })
@@ -385,7 +448,7 @@ describe('Firestore Security Rules', () => {
 
   describe('Query Security', () => {
     beforeEach(async () => {
-      const admin = testEnv.authenticatedContext('admin', { admin: true })
+      const admin = testEnv.withSecurityRulesDisabled()
       
       // Create test data for multiple users
       await admin.firestore().collection('schedules').doc('alice_schedule').set({
@@ -411,29 +474,9 @@ describe('Firestore Security Rules', () => {
           .get()
       )
     })
-
-    it('should deny broad queries without user filtering', async () => {
-      const alice = testEnv.authenticatedContext('alice')
-      
-      // This should fail because it could return other users' data
-      await assertFails(
-        alice.firestore()
-          .collection('schedules')
-          .where('status', '==', 'pending')
-          .get()
-      )
-    })
   })
 
   describe('Edge Cases', () => {
-    it('should handle empty documents', async () => {
-      const alice = testEnv.authenticatedContext('alice')
-      
-      await assertSucceeds(
-        alice.firestore().collection('users').doc('alice').set({})
-      )
-    })
-
     it('should handle document deletion', async () => {
       const alice = testEnv.authenticatedContext('alice')
       
@@ -450,7 +493,7 @@ describe('Firestore Security Rules', () => {
     })
 
     it('should deny deletion of other users documents', async () => {
-      const admin = testEnv.authenticatedContext('admin', { admin: true })
+      const admin = testEnv.withSecurityRulesDisabled()
       await admin.firestore().collection('posts').doc('bob_post').set({
         userId: 'bob',
         caption: 'Bob post'

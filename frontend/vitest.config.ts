@@ -32,6 +32,12 @@ export default defineConfig({
         'src/main.ts',
         'src/router/index.ts'
       ]
+    },
+    // Vuetify依存関係のインライン化
+    server: {
+      deps: {
+        inline: ['vuetify']
+      }
     }
   }
 }) 

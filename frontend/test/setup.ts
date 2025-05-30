@@ -1,5 +1,8 @@
 import { vi } from 'vitest'
 import { config } from '@vue/test-utils'
+import { createVuetify } from 'vuetify'
+import * as components from 'vuetify/components'
+import * as directives from 'vuetify/directives'
 
 // Global test setup
 global.console = {
@@ -9,7 +12,14 @@ global.console = {
   log: vi.fn()
 }
 
+// Create Vuetify instance for testing
+const vuetify = createVuetify({
+  components,
+  directives,
+})
+
 // Vue Test Utils global configuration
+config.global.plugins = [vuetify]
 config.global.mocks = {
   $t: (key: string) => key,
   $i18n: {
