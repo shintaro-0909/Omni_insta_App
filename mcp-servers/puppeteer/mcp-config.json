@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "puppeteer": {
+      "command": "node",
+      "args": ["dist/index.js"],
+      "cwd": "/Users/sh/AI-tool-project/web-apps/Omni_insta/mcp-servers/puppeteer",
+      "env": {
+        "NODE_ENV": "production"
+      }
+    }
+  }
+}
