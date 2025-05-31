@@ -342,9 +342,9 @@ export const deletePost = functions.https.onCall(async (data, context) => {
 // 投稿回数を増加させる（内部使用）
 export const incrementPostUsage = async (postId: string): Promise<void> => {
   try {
+    // Firestore FieldValue.increment()を使用して原子的操作で最適化
     await db.collection("posts").doc(postId).update({
-      timesPosted: (await db.collection("posts").doc(postId).get())
-        .data()?.timesPosted + 1 || 1,
+      timesPosted: db.FieldValue.increment(1),
       updatedAt: new Date(),
     });
   } catch (error) {
