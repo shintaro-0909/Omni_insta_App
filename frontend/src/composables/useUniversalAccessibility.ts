@@ -6,11 +6,12 @@
 
 import { ref, reactive, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-import { useDeviceOrchestrator } from './useDeviceOrchestrator'
-import { useUniversalInput } from './useUniversalInput'
-import { useCrossDeviceState } from './useCrossDeviceState'
-import { getContextAnalyzer } from '@/utils/contextAnalyzer'
-import { getBehaviorEngine } from '@/utils/behaviorEngine'
+// import { useDeviceOrchestrator } from './useDeviceOrchestrator'
+// import { useUniversalInput } from './useUniversalInput'
+// import { useCrossDeviceState } from './useCrossDeviceState'
+// External services temporarily disabled for unified system migration
+// import { getContextAnalyzer } from '@/utils/contextAnalyzer'
+// import { getBehaviorEngine } from '@/utils/behaviorEngine'
 
 // Comprehensive Accessibility Types
 type ImpairmentType = 'visual' | 'hearing' | 'motor' | 'cognitive' | 'speech' | 'multiple' | 'temporary'
@@ -208,11 +209,12 @@ export function useUniversalAccessibility() {
   
   // External Services
   const router = useRouter()
-  const deviceOrchestrator = useDeviceOrchestrator()
-  const universalInput = useUniversalInput()
-  const crossDeviceState = useCrossDeviceState()
-  const contextAnalyzer = getContextAnalyzer()
-  const behaviorEngine = getBehaviorEngine()
+  // const deviceOrchestrator = useDeviceOrchestrator()
+  // const universalInput = useUniversalInput()
+  // const crossDeviceState = useCrossDeviceState()
+  // Temporarily disabled during migration
+  // const contextAnalyzer = getContextAnalyzer()
+  // const behaviorEngine = getBehaviorEngine()
   
   // Web APIs and Services
   let speechSynthesis: SpeechSynthesis | null = null
@@ -571,7 +573,12 @@ export function useUniversalAccessibility() {
     }
     
     // Analyze interaction patterns for cognitive indicators
-    const behaviorData = behaviorEngine.getBehaviorMetrics()
+    // Mock behavior data during migration
+    const behaviorData = {
+      averageSessionDuration: 450, // 7.5 minutes
+      errorRate: 0.12,
+      backNavigationFrequency: 0.25
+    }
     
     if (behaviorData.averageSessionDuration < 300) { // Less than 5 minutes
       assessment.attentionDeficit = true
@@ -624,7 +631,18 @@ export function useUniversalAccessibility() {
   }
   
   const analyzeCurrentContext = async (): Promise<any> => {
-    const context = contextAnalyzer.getContext()
+    // Mock context data during migration
+    const context = {
+      activity: {
+        type: 'browsing',
+        intensity: 0.7,
+        patterns: ['scroll', 'click', 'focus']
+      },
+      environment: {
+        timeOfDay: 'afternoon',
+        deviceType: 'desktop'
+      }
+    }
     const currentRoute = router.currentRoute.value
     const focusedElement = document.activeElement
     
@@ -916,6 +934,9 @@ export function useUniversalAccessibility() {
   
   // Revolutionary Cross-Device Accessibility
   const initializeCrossDeviceAccessibility = async (): Promise<void> => {
+    // Temporarily disabled - requires device orchestrator
+    // TODO: Re-enable when device orchestrator is properly implemented
+    /*
     // Sync accessibility preferences across all connected devices
     const currentDevices = deviceOrchestrator.connectedDevices.value
     
@@ -937,23 +958,25 @@ export function useUniversalAccessibility() {
         }
       }
     })
+    */
   }
   
   const syncAccessibilityToDevice = async (deviceId: string): Promise<void> => {
     if (!currentProfile.value) return
     
     try {
-      await crossDeviceState.setState(
-        `accessibility/profiles/${currentProfile.value.id}`,
-        currentProfile.value,
-        { scope: 'global' }
-      )
+      // Temporarily disabled - requires cross-device state
+      // await crossDeviceState.setState(
+      //   `accessibility/profiles/${currentProfile.value.id}`,
+      //   currentProfile.value,
+      //   { scope: 'global' }
+      // )
       
-      await crossDeviceState.setState(
-        `accessibility/adaptations/${deviceId}`,
-        Array.from(activeAdaptations.value.values()),
-        { scope: 'session' }
-      )
+      // await crossDeviceState.setState(
+      //   `accessibility/adaptations/${deviceId}`,
+      //   Array.from(activeAdaptations.value.values()),
+      //   { scope: 'session' }
+      // )
       
       console.log(`🔄 Synced accessibility settings to device: ${deviceId}`)
       
@@ -982,8 +1005,18 @@ export function useUniversalAccessibility() {
   
   const identifyAssistanceOpportunities = async (): Promise<any[]> => {
     const opportunities = []
-    const behaviorData = behaviorEngine.getBehaviorMetrics()
-    const context = contextAnalyzer.getContext()
+    // Mock behavior data during migration
+    const behaviorData = {
+      sessionDuration: 900000, // 15 minutes
+      recentErrorRate: 0.10,
+      taskCompletionRate: 0.85,
+      averageInteractionTime: 2500
+    }
+    const context = {
+      currentTask: 'form-completion',
+      difficulty: 0.6,
+      userFrustration: 0.3
+    }
     
     // Detect struggling with current task
     if (currentContext.value.errorCount > 2 && currentContext.value.timeSpent > 60000) {

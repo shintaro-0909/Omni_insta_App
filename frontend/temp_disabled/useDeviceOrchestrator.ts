@@ -4,7 +4,7 @@
  * Seamless cross-device experience with AI-driven synchronization
  */
 
-import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getContextAnalyzer } from '@/utils/contextAnalyzer'
 import { getBehaviorEngine } from '@/utils/behaviorEngine'
@@ -106,13 +106,13 @@ interface ContinuityContext {
   urgency: 'immediate' | 'when-convenient' | 'background'
 }
 
-interface ProximityEvent {
-  type: 'approach' | 'leave' | 'gesture' | 'voice' | 'eye'
-  deviceId: string
-  distance: number
-  confidence: number
-  data: any
-}
+// interface ProximityEvent {
+//   type: 'approach' | 'leave' | 'gesture' | 'voice' | 'eye'
+//   deviceId: string
+//   distance: number
+//   confidence: number
+//   data: any
+// }
 
 export function useDeviceOrchestrator() {
   // Core State
@@ -137,12 +137,12 @@ export function useDeviceOrchestrator() {
   // Advanced Features
   const continuityQueue = ref<ContinuityContext[]>([])
   const deviceHistory = ref<Array<{deviceId: string, action: string, timestamp: number}>>([])
-  const collaborationPatterns = ref<Map<string, number>>(new Map())
-  const intelligentRouting = ref<Map<string, string[]>>(new Map())
+  const _collaborationPatterns = ref<Map<string, number>>(new Map())
+  const _intelligentRouting = ref<Map<string, string[]>>(new Map())
   
   // External Services
-  const contextAnalyzer = getContextAnalyzer()
-  const behaviorEngine = getBehaviorEngine()
+  const _contextAnalyzer = getContextAnalyzer()
+  const _behaviorEngine = getBehaviorEngine()
   const router = useRouter()
   
   // WebRTC & Communication

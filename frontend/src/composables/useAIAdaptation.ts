@@ -1,9 +1,10 @@
 import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue'
 import { usePredictiveUI } from './usePredictiveUI'
 import { useIntelligentAnimations } from './useIntelligentAnimations'
-import { getContextAnalyzer } from '@/utils/contextAnalyzer'
-import { getBehaviorEngine } from '@/utils/behaviorEngine'
-import { getAdaptationEngine } from '@/utils/adaptationEngine'
+// Old engine imports temporarily disabled for unified system migration  
+// import { getContextAnalyzer } from '@/utils/contextAnalyzer'
+// import { getBehaviorEngine } from '@/utils/behaviorEngine'
+// import { getAdaptationEngine } from '@/utils/adaptationEngine'
 
 interface UserBehaviorPattern {
   id: string

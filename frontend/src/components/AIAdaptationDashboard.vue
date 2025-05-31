@@ -322,13 +322,72 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { useAIAdaptation } from '@/composables/useAIAdaptation'
-import { getContextAnalyzer } from '@/utils/contextAnalyzer'
-import type { UIAdaptation } from '@/utils/adaptationEngine'
+import { useUnifiedAIIntelligence } from '@/utils/unifiedAIIntelligenceSystem'
+import type { UIAdaptation } from '@/utils/unifiedAIIntelligenceSystem'
 
 // Composables
-const aiAdaptation = useAIAdaptation()
-const contextAnalyzer = getContextAnalyzer()
+const { 
+  state,
+  isLearning,
+  adaptationScore,
+  userType,
+  updatePreferences,
+  executeRecommendation,
+  applyAdaptation,
+  getInsights
+} = useUnifiedAIIntelligence()
+
+// Create compatibility layer for old aiAdaptation interface
+const aiAdaptation = {
+  isEnabled: ref(true),
+  isLearning: computed(() => isLearning),
+  adaptationConfidence: computed(() => ({ value: adaptationScore.value || 0 })),
+  currentAdaptations: computed(() => ({ 
+    value: [] as UIAdaptation[],
+    length: 0 
+  })),
+  behaviorPatterns: computed(() => ({ 
+    value: [] as Array<{
+      id: string
+      name: string
+      description: string
+      confidence: number
+      frequency: number
+      recency: number
+      triggers: string[]
+      preferences: Record<string, any>
+      adaptations: UIAdaptation[]
+    }>,
+    length: 0
+  })),
+  adaptationSuggestions: computed(() => ({ 
+    value: [] as Array<{
+      id: string
+      type: string
+      title: string
+      description: string
+      confidence: number
+      impact: number
+      actions: Array<{ label: string; action: () => void }>
+    }>,
+    length: 0
+  })),
+  adaptationMode: ref('balanced' as 'conservative' | 'balanced' | 'aggressive'),
+  adaptationState: {
+    metrics: {},
+    currentContext: {}
+  },
+  learningConfig: {
+    confidenceThreshold: ref(0.7),
+    maxActiveAdaptations: ref(5),
+    learningRate: ref(0.1)
+  },
+  analyzeUserBehavior: () => getInsights(),
+  applyAdaptation: async (adaptation: UIAdaptation) => {
+    await applyAdaptation(adaptation)
+  },
+  rollbackAdaptation: (target: string) => Promise.resolve(true)
+}
 
 // Local state
 const showSettings = ref(false)

@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { getFunctions, httpsCallable } from 'firebase/functions'
+import { usePersistedCache, createCachedStoreAction } from '@/composables/usePersistedCache'
 
 // スケジュールタイプの定義
 export type ScheduleType = 'one_time' | 'recurring' | 'random'
@@ -133,6 +134,36 @@ export const useSchedulesStore = defineStore('schedules', () => {
     }
   }
 
+  // Create cached fetcher for schedules
+  const cachedSchedulesFetcher = createCachedStoreAction(
+    (filters?: { status?: ScheduleStatus; type?: ScheduleType; igAccountId?: string }, lastScheduleId?: string | null) => 
+      `schedules_${JSON.stringify(filters || {})}_${lastScheduleId || 'first'}`,
+    async (filters?: { status?: ScheduleStatus; type?: ScheduleType; igAccountId?: string }, lastScheduleId?: string | null) => {
+      const params: any = {
+        limit: 20,
+        ...filters
+      }
+
+      if (lastScheduleId) {
+        params.lastScheduleId = lastScheduleId
+      }
+
+      const result = await getSchedulesFunc(params)
+      const response = result.data as any
+
+      if (response.success) {
+        return {
+          schedules: response.schedules,
+          hasMore: response.hasMore,
+          lastScheduleId: response.lastScheduleId
+        }
+      } else {
+        throw new Error(response.message || 'Failed to fetch schedules')
+      }
+    },
+    { ttl: 5 * 60 * 1000 } // 5 minutes cache for schedules
+  )
+
   const fetchSchedules = async (
     reset: boolean = false,
     filters?: {
@@ -145,32 +176,26 @@ export const useSchedulesStore = defineStore('schedules', () => {
       loading.value = true
       if (reset) {
         error.value = null
+        schedules.value = []
+        lastScheduleId.value = null
+        hasMore.value = true
       }
 
-      const params: any = {
-        limit: 20,
-        ...filters
+      if (!hasMore.value && !reset) {
+        return
       }
 
-      if (!reset && lastScheduleId.value) {
-        params.lastScheduleId = lastScheduleId.value
-      }
+      // Use cached fetcher for better performance
+      const result = await cachedSchedulesFetcher(filters, lastScheduleId.value)
 
-      const result = await getSchedulesFunc(params)
-      const response = result.data as any
-
-      if (response.success) {
-        if (reset) {
-          schedules.value = response.schedules
-        } else {
-          schedules.value.push(...response.schedules)
-        }
-        
-        hasMore.value = response.hasMore
-        lastScheduleId.value = response.lastScheduleId
+      if (reset) {
+        schedules.value = result.schedules
       } else {
-        throw new Error(response.message || 'Failed to fetch schedules')
+        schedules.value.push(...result.schedules)
       }
+      
+      hasMore.value = result.hasMore
+      lastScheduleId.value = result.lastScheduleId
     } catch (err: any) {
       error.value = err.message || 'スケジュールの取得に失敗しました'
       throw err

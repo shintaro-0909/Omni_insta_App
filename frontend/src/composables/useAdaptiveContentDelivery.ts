@@ -4,11 +4,10 @@
  * Revolutionary content optimization and delivery based on device capabilities
  */
 
-import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { debounce, throttle } from 'lodash-es'
-import { getContextAnalyzer } from '@/utils/contextAnalyzer'
-import { getBehaviorEngine } from '@/utils/behaviorEngine'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+// Old engine imports temporarily disabled for unified system migration
+// import { getContextAnalyzer } from '@/utils/contextAnalyzer'
+// import { getBehaviorEngine } from '@/utils/behaviorEngine'
 
 // Content Types
 type ContentType = 'text' | 'image' | 'video' | 'audio' | 'interactive' | 'ar' | 'vr' | '3d'
@@ -201,12 +200,11 @@ export function useAdaptiveContentDelivery() {
   })
   
   // External Services
-  const router = useRouter()
-  const contextAnalyzer = getContextAnalyzer()
-  const behaviorEngine = getBehaviorEngine()
+  const _contextAnalyzer = getContextAnalyzer()
+  const _behaviorEngine = getBehaviorEngine()
   
   // Web APIs
-  let serviceWorker: ServiceWorkerRegistration | null = null
+  let _serviceWorker: ServiceWorkerRegistration | null = null
   let intersectionObserver: IntersectionObserver | null = null
   let performanceObserver: PerformanceObserver | null = null
   

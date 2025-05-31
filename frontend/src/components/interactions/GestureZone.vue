@@ -66,7 +66,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useTheme } from 'vuetify'
-import { GestureRecognizer, GestureType, GestureEvent } from '@/utils/gestureRecognition'
+import { GestureType, GestureEvent, getUnifiedInteractionSystem } from '@/utils/unifiedInteractionSystem'
 import { useIntelligentAnimations } from '@/composables/useIntelligentAnimations'
 
 interface Props {
@@ -118,7 +118,7 @@ const theme = useTheme()
 const animations = useIntelligentAnimations()
 
 // Gesture recognizer
-let recognizer: GestureRecognizer | null = null
+let recognizer: any | null = null
 let feedbackTimeout: number | null = null
 let trailCleanupInterval: number | null = null
 
@@ -370,13 +370,18 @@ const startTrailFadeOut = () => {
 onMounted(() => {
   if (!zoneRef.value) return
   
-  recognizer = new GestureRecognizer(zoneRef.value, {
+  // Use unified interaction system for gesture recognition
+  const unifiedSystem = getUnifiedInteractionSystem()
+  recognizer = unifiedSystem.createGestureRecognizer?.(zoneRef.value, {
     enableMultiTouch: true,
     onGestureStart,
     onGestureUpdate,
     onGestureEnd,
     onGestureCancel
-  })
+  }) || {
+    // Fallback mock recognizer for development
+    destroy: () => {}
+  }
   
   // Cleanup old trail points periodically
   trailCleanupInterval = window.setInterval(() => {

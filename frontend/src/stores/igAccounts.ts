@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { httpsCallable } from 'firebase/functions'
 import { functions } from '@/services/firebase'
+import { usePersistedCache, createCachedStoreAction } from '@/composables/usePersistedCache'
 
 // IGアカウントの型定義
 export interface IGAccount {
@@ -86,17 +87,16 @@ export const useIgAccountsStore = defineStore('igAccounts', () => {
     }
   }
 
-  const loadAccounts = async () => {
-    try {
-      loading.value = true
-      error.value = null
-
+  // Create cached fetcher for IG accounts
+  const cachedAccountsFetcher = createCachedStoreAction(
+    () => 'igaccounts_all',
+    async () => {
       const getAccountsFn = httpsCallable(functions, 'getInstagramAccounts')
       const result = await getAccountsFn({})
       const data = result.data as any
 
       if (data.success) {
-        accounts.value = data.accounts.map((account: any) => ({
+        return data.accounts.map((account: any) => ({
           ...account,
           tokenExpiresAt: new Date(account.tokenExpiresAt.seconds * 1000),
           createdAt: new Date(account.createdAt.seconds * 1000),
@@ -105,6 +105,17 @@ export const useIgAccountsStore = defineStore('igAccounts', () => {
       } else {
         throw new Error('Failed to load Instagram accounts')
       }
+    },
+    { ttl: 30 * 60 * 1000 } // 30 minutes cache for IG accounts (rarely change)
+  )
+
+  const loadAccounts = async () => {
+    try {
+      loading.value = true
+      error.value = null
+
+      // Use cached fetcher for better performance
+      accounts.value = await cachedAccountsFetcher()
     } catch (err: any) {
       error.value = err.message || 'Instagram アカウントの読み込みに失敗しました'
       console.error('Instagram アカウント読み込みエラー:', err)

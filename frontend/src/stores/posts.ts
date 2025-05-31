@@ -4,6 +4,7 @@ import { httpsCallable } from 'firebase/functions'
 import { functions } from '@/services/firebase'
 import { measureAsync } from '@/utils/performance'
 import { useOptimizedFetch } from '@/composables/useOptimizedFetch'
+import { usePersistedCache, createCachedStoreAction } from '@/composables/usePersistedCache'
 
 // 投稿コンテンツの型定義
 export interface Post {
@@ -108,6 +109,36 @@ export const usePostsStore = defineStore('posts', () => {
     }
   }
 
+  // Create cached fetcher for posts
+  const cachedPostsFetcher = createCachedStoreAction(
+    (tags?: string[], lastPostId?: string | null) => 
+      `posts_${tags ? JSON.stringify(tags) : 'all'}_${lastPostId || 'first'}`,
+    async (tags?: string[], lastPostId?: string | null) => {
+      const getPostsFn = httpsCallable(functions, 'getPosts')
+      const result = await getPostsFn({
+        limit: 20,
+        lastPostId: lastPostId,
+        tags: tags
+      })
+      const data = result.data as any
+
+      if (data.success) {
+        return {
+          posts: data.posts.map((post: any) => ({
+            ...post,
+            createdAt: new Date(post.createdAt.seconds * 1000),
+            updatedAt: new Date(post.updatedAt.seconds * 1000)
+          })),
+          hasMore: data.hasMore,
+          lastPostId: data.lastPostId
+        }
+      } else {
+        throw new Error('Failed to load posts')
+      }
+    },
+    { ttl: 10 * 60 * 1000 } // 10 minutes cache for posts
+  )
+
   const loadPosts = async (refresh = false, tags?: string[]) => {
     try {
       loading.value = true
@@ -123,32 +154,17 @@ export const usePostsStore = defineStore('posts', () => {
         return
       }
 
-      const getPostsFn = httpsCallable(functions, 'getPosts')
-      const result = await getPostsFn({
-        limit: 20,
-        lastPostId: lastPostId.value,
-        tags: tags
-      })
-      const data = result.data as any
+      // Use cached fetcher for better performance
+      const result = await cachedPostsFetcher(tags, lastPostId.value)
 
-      if (data.success) {
-        const newPosts = data.posts.map((post: any) => ({
-          ...post,
-          createdAt: new Date(post.createdAt.seconds * 1000),
-          updatedAt: new Date(post.updatedAt.seconds * 1000)
-        }))
-
-        if (refresh) {
-          posts.value = newPosts
-        } else {
-          posts.value.push(...newPosts)
-        }
-
-        hasMore.value = data.hasMore
-        lastPostId.value = data.lastPostId
+      if (refresh) {
+        posts.value = result.posts
       } else {
-        throw new Error('Failed to load posts')
+        posts.value.push(...result.posts)
       }
+
+      hasMore.value = result.hasMore
+      lastPostId.value = result.lastPostId
     } catch (err: any) {
       error.value = err.message || '投稿の読み込みに失敗しました'
       console.error('投稿読み込みエラー:', err)

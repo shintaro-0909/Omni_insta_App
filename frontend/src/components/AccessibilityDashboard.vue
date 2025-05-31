@@ -112,7 +112,7 @@
         <!-- Visual Preferences -->
         <v-expansion-panel>
           <v-expansion-panel-title>
-            <template v-slot:default="{ expanded }">
+            <template v-slot:default="{ expanded: _expanded }">
               <v-icon class="me-2">mdi-eye</v-icon>
               {{ $t('accessibility.visual.title') }}
             </template>
@@ -454,7 +454,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUniversalAccessibility } from '@/composables/useUniversalAccessibility'
 

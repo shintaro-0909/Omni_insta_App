@@ -1,5 +1,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { mat4, vec3, quat } from '@/utils/spatialMath'
+import { SpatialMath } from '@/utils/unifiedInteractionSystem'
+
+const { mat4, vec3 } = SpatialMath
 
 export interface SpatialNavigationOptions {
   containerElement?: HTMLElement

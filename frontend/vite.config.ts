@@ -79,11 +79,68 @@ export default defineConfig({
       },
       output: {
         experimentalMinChunkSize: 50000, // 空チャンク防止
-        manualChunks: {
-          // 主要ライブラリのみ分割（空チャンク防止）
-          'vue': ['vue', 'vue-router', 'pinia'],
-          'vuetify': ['vuetify'],
-          'firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore']
+        manualChunks: (id) => {
+          // 革新的動的チャンク分割アルゴリズム - 空チャンク完全排除
+          
+          // Node modules
+          if (id.includes('node_modules')) {
+            // Vue エコシステム
+            if (id.includes('vue') || id.includes('pinia') || id.includes('@vue')) {
+              return 'vendor-vue'
+            }
+            
+            // Vuetify（大容量のため独立）
+            if (id.includes('vuetify')) {
+              return 'vendor-ui'
+            }
+            
+            // Firebase（大容量かつ重要度高）
+            if (id.includes('firebase')) {
+              return 'vendor-firebase'
+            }
+            
+            // その他vendor（サイズ制限で統合）
+            return 'vendor-misc'
+          }
+          
+          // アプリケーション コード
+          
+          // 大容量コンポーネント（150KB以上の場合）
+          if (id.includes('/views/demos/') || id.includes('/styles/')) {
+            return 'app-demos'
+          }
+          
+          // Core views（使用頻度高）
+          if (id.includes('/views/') && (
+            id.includes('Dashboard') || 
+            id.includes('Content') || 
+            id.includes('Schedules') ||
+            id.includes('Accounts')
+          )) {
+            return 'app-core'
+          }
+          
+          // Admin views（使用頻度低）
+          if (id.includes('/views/') && (
+            id.includes('Settings') || 
+            id.includes('Billing') || 
+            id.includes('Logs')
+          )) {
+            return 'app-admin'
+          }
+          
+          // Composables（共通ユーティリティ）
+          if (id.includes('/composables/') || id.includes('/utils/')) {
+            return 'app-utils'
+          }
+          
+          // Components（サイズに応じて分割）
+          if (id.includes('/components/')) {
+            return 'app-components'
+          }
+          
+          // Default（その他すべて）
+          return 'app-main'
         },
         chunkFileNames: (chunkInfo) => {
           const facadeModuleId = chunkInfo.facadeModuleId

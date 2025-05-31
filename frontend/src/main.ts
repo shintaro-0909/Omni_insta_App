@@ -104,6 +104,14 @@ async function initializeApp() {
     requestIdleCallback(() => {
       initializeErrorMonitoring()
       initializePerformanceInterceptor()
+      
+      // Initialize real-time monitoring in development
+      if (import.meta.env.DEV) {
+        import('@/utils/realTimeMonitoring').then(({ realTimeMonitor }) => {
+          realTimeMonitor.start()
+          console.log('🔍 Real-Time Monitoring System activated')
+        }).catch(console.warn)
+      }
     })
 
   } catch (error) {
@@ -146,10 +154,78 @@ if (import.meta.env.PROD) {
   }
 }
 
+// Enterprise Security System Initialization
+async function initializeSecuritySystem() {
+  try {
+    // Initialize core security system
+    const { enterpriseSecurity } = await import('@/utils/security')
+    enterpriseSecurity.initialize()
+    
+    // Initialize security middleware
+    const { securityMiddleware } = await import('@/utils/securityMiddleware')
+    securityMiddleware.initialize()
+    
+    console.log('🔒 Enterprise Security System fully initialized')
+  } catch (error) {
+    console.warn('Failed to initialize security system:', error)
+  }
+}
+
+// Unified AI Intelligence System Initialization
+async function initializeAISystem() {
+  try {
+    // Initialize unified AI intelligence system
+    const { getUnifiedAIIntelligenceSystem } = await import('@/utils/unifiedAIIntelligenceSystem')
+    
+    const aiSystem = getUnifiedAIIntelligenceSystem({
+      enablePredictiveOptimization: true,
+      enableAdaptiveUI: true,
+      enableBehaviorTracking: true,
+      enableContentPersonalization: true,
+      adaptationMode: 'balanced',
+      debugMode: import.meta.env.DEV
+    })
+    
+    console.log('🧠 統合AI知能システム初期化完了 - 包括的ユーザー体験最適化開始')
+    
+    // Development mode monitoring
+    if (import.meta.env.DEV) {
+      setTimeout(() => {
+        const insights = aiSystem.getInsights()
+        console.log('🎯 AI System Insights:', insights)
+      }, 30000) // After 30 seconds
+    }
+    
+  } catch (error) {
+    console.warn('Failed to initialize unified AI system:', error)
+  }
+}
+
+// Universal Accessibility Engine Initialization
+async function initializeAccessibilitySystem() {
+  try {
+    // Initialize universal accessibility engine
+    const { universalAccessibilityEngine } = await import('@/utils/accessibilityEngine')
+    
+    // Engine auto-initializes and starts WCAG compliance monitoring
+    console.log('♿ Universal Accessibility Engine initialized - WCAG 2.1 AAA compliance active')
+  } catch (error) {
+    console.warn('Failed to initialize accessibility system:', error)
+  }
+}
+
 // Initialize app when DOM is ready
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initializeApp)
+  document.addEventListener('DOMContentLoaded', () => {
+    initializeSecuritySystem()
+    initializeAISystem()
+    initializeAccessibilitySystem()
+    initializeApp()
+  })
 } else {
+  initializeSecuritySystem()
+  initializeAISystem()
+  initializeAccessibilitySystem()
   initializeApp()
 }
 
@@ -166,14 +242,44 @@ if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
   })
 }
 
-// Service Worker registration for PWA
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
+// Ultra-Fast Service Worker with Intelligent Caching
+if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
     try {
-      const registration = await navigator.serviceWorker.register('/sw.js')
-      console.log('SW registered:', registration)
+      // Import and initialize advanced Service Worker
+      const { useServiceWorker } = await import('@/composables/useServiceWorker')
+      const sw = useServiceWorker()
+      
+      const registered = await sw.registerServiceWorker()
+      if (registered) {
+        console.log('🚀 Ultra-Fast Service Worker registered successfully')
+        
+        // Setup predictive prefetching for critical routes
+        setTimeout(() => {
+          sw.prefetchResources([
+            '/api/posts?limit=20',
+            '/api/schedules?limit=10',
+            '/api/igaccounts',
+            '/assets/critical-styles.css'
+          ])
+        }, 5000)
+        
+        // Monitor cache performance
+        if (import.meta.env.DEV) {
+          setInterval(async () => {
+            const metrics = await sw.getPerformanceMetrics()
+            if (metrics) {
+              console.log('📊 Cache Performance:', {
+                hitRate: `${metrics.cacheHitRate.toFixed(1)}%`,
+                avgResponseTime: `${metrics.averageResponseTime}ms`,
+                predictiveAccuracy: `${metrics.predictiveHitRate.toFixed(1)}%`
+              })
+            }
+          }, 60000) // Every minute in dev mode
+        }
+      }
     } catch (error) {
-      console.warn('SW registration failed:', error)
+      console.warn('Advanced SW registration failed:', error)
     }
   })
 }

@@ -1,5 +1,5 @@
 import { ref, onMounted, onUnmounted, Ref } from 'vue'
-import { GestureRecognizer, GestureType, GestureEvent } from '@/utils/gestureRecognition'
+import { GestureRecognizer, GestureType, GestureEvent } from '@/utils/unifiedInteractionSystem'
 
 export interface AdvancedGestureOptions {
   element?: Ref<HTMLElement | null>
