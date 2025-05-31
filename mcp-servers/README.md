@@ -1,8 +1,29 @@
+Claude Rules :look👀
+
 # Omniy MCP Servers
 
-This directory contains Model Context Protocol (MCP) servers specifically designed for the Omniy Instagram Scheduler project.
+この directory には Model Context Protocol (MCP) サーバーが含まれています。
 
 ## Project-Specific MCP Servers
+
+### 🌐 Puppeteer MCP Server
+**Path:** `./puppeteer/`
+**Purpose:** ブラウザの自動化とスクリーンショット機能
+
+**Features:**
+- Webページの自動スクリーンショット撮影
+- ページコンテンツの抽出
+- 要素の自動クリック
+- フォームの自動入力
+- Claude Code統合によるブラウザ表示
+
+**Setup:**
+```bash
+cd mcp-servers/puppeteer
+npm install
+npm run build
+npm start
+```
 
 ### 📸 Instagram API Server
 **Path:** `./instagram-api/`
