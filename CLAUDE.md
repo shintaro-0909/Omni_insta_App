@@ -4,6 +4,225 @@ Claude Rules :look👀
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## 🏗️ **Directory Structure Rules (ALWAYS FOLLOW)**
+
+### **New File/Folder Creation Rules**
+
+**CRITICAL: All new files and folders MUST follow professional directory structure patterns:**
+
+#### **Frontend Structure (Vue.js + TypeScript)**
+```
+frontend/src/
+├── components/           # UI Components (PascalCase naming)
+│   ├── common/          # Reusable base components (BaseButton.vue, BaseCard.vue)
+│   ├── forms/           # Form-related components (PostFormDialog.vue)
+│   ├── layouts/         # Layout components (AppHeader.vue, AppSidebar.vue)
+│   └── widgets/         # Complex composite components (UsageDashboard.vue)
+├── views/               # Page-level components (PascalCase)
+│   ├── auth/           # Authentication pages (LoginView.vue)
+│   ├── dashboard/      # Dashboard pages (DashboardView.vue)
+│   └── content/        # Content management pages (ContentView.vue)
+├── stores/             # State management (camelCase files)
+│   ├── auth.ts         # Authentication state
+│   ├── posts.ts        # Posts data
+│   └── index.ts        # Store aggregation (ALWAYS create)
+├── composables/        # Logic reuse (camelCase)
+│   ├── api/           # API-related composables (useFirestore.ts)
+│   ├── ui/            # UI-related composables (useModal.ts)
+│   └── business/      # Business logic composables (useImageUpload.ts)
+├── utils/             # Utility functions (camelCase)
+│   ├── api/           # API utilities
+│   ├── date/          # Date processing
+│   ├── validation/    # Validation helpers
+│   └── constants.ts   # Constants definition
+├── types/             # TypeScript type definitions
+│   ├── api.ts         # API types
+│   ├── auth.ts        # Authentication types
+│   └── global.d.ts    # Global types
+└── assets/           # Static resources
+    ├── images/
+    ├── icons/
+    └── styles/
+```
+
+#### **Backend Structure (Firebase Functions)**
+```
+functions/src/
+├── api/                # HTTP API endpoints
+│   ├── v1/            # Version 1 APIs (auth.ts, posts.ts)
+│   └── v2/            # Version 2 APIs (posts.ts)
+├── schedulers/         # Background jobs (camelCase)
+│   ├── postExecutor.ts
+│   └── healthMonitor.ts
+├── services/          # Business logic services
+│   ├── auth/          # Authentication services
+│   ├── instagram/     # Instagram API integration
+│   └── storage/       # File processing
+├── utils/             # Shared utilities
+│   ├── database/      # Database operations
+│   ├── validation/    # Input validation
+│   └── constants.ts   # Backend constants
+├── types/             # TypeScript types
+│   ├── api.ts
+│   └── services.ts
+└── config/            # Configuration
+    ├── firebase.ts
+    └── environment.ts
+```
+
+### **File Creation Rules**
+
+1. **Components (frontend/src/components/)**
+   - MUST use PascalCase: `PostFormDialog.vue`
+   - MUST categorize by function: forms/, common/, layouts/, widgets/
+   - MUST include TypeScript: `<script setup lang="ts">`
+   - MUST create corresponding types if complex props
+
+2. **API Endpoints (functions/src/api/)**
+   - MUST use camelCase: `createPost.ts`
+   - MUST include version folder: v1/, v2/
+   - MUST include input validation
+   - MUST include error handling
+   - MUST update firestore.rules if database access
+
+3. **Stores (frontend/src/stores/)**
+   - MUST use camelCase: `auth.ts`, `posts.ts`
+   - MUST update index.ts barrel export
+   - MUST include TypeScript interfaces
+   - MUST follow Pinia patterns
+
+4. **Composables (frontend/src/composables/)**
+   - MUST start with 'use': `useImageUpload.ts`
+   - MUST categorize: api/, ui/, business/
+   - MUST be reusable across components
+   - MUST include TypeScript return types
+
+5. **Utils (both frontend/backend)**
+   - MUST be pure functions when possible
+   - MUST categorize by domain: api/, date/, validation/
+   - MUST include unit tests for complex logic
+   - MUST update index.ts exports
+
+### **Index.ts Barrel Pattern (ALWAYS IMPLEMENT)**
+
+```typescript
+// Every major folder MUST have index.ts
+// stores/index.ts
+export { useAuthStore } from './auth'
+export { usePostsStore } from './posts'
+
+// components/index.ts  
+export { default as PostFormDialog } from './forms/PostFormDialog.vue'
+export { default as UsageDashboard } from './widgets/UsageDashboard.vue'
+
+// utils/index.ts
+export * from './date'
+export * from './validation'
+export { default as constants } from './constants'
+```
+
+### **Path Alias Configuration (ALWAYS SET UP)**
+
+```typescript
+// vite.config.ts - MUST include these aliases
+resolve: {
+  alias: {
+    '@': path.resolve(__dirname, './src'),
+    '@components': path.resolve(__dirname, './src/components'),
+    '@stores': path.resolve(__dirname, './src/stores'),
+    '@utils': path.resolve(__dirname, './src/utils'),
+    '@types': path.resolve(__dirname, './src/types'),
+    '@composables': path.resolve(__dirname, './src/composables')
+  }
+}
+
+// Usage examples:
+import { PostFormDialog } from '@components/forms'
+import { useAuthStore } from '@stores'
+import { formatDate } from '@utils/date'
+```
+
+### **Naming Conventions (STRICTLY ENFORCE)**
+
+1. **Files & Folders:**
+   - Vue Components: PascalCase (`PostFormDialog.vue`)
+   - TypeScript files: camelCase (`useImageUpload.ts`)
+   - Folders: kebab-case (`user-management/`)
+   - API endpoints: camelCase (`createPost.ts`)
+
+2. **Code:**
+   - Variables/Functions: camelCase (`userName`, `getUserData()`)
+   - Classes: PascalCase (`ImageProcessor`)
+   - Constants: UPPER_SNAKE_CASE (`API_ENDPOINTS`)
+   - Types/Interfaces: PascalCase (`UserProfile`, `ApiResponse`)
+
+### **README.md Pattern (ALWAYS CREATE)**
+
+```markdown
+# Each major folder MUST have README.md
+
+# Components
+
+## Structure
+- common/: Base reusable components
+- forms/: Form-related components  
+- layouts/: Layout components
+- widgets/: Complex composite components
+
+## Naming Convention
+- Use PascalCase for all component files
+- Be descriptive: PostFormDialog.vue not Form.vue
+
+## Usage
+```vue
+import { PostFormDialog } from '@components/forms'
+```
+
+### **Automatic Structure Enforcement**
+
+**When creating new functionality, ALWAYS:**
+
+1. **Identify the correct category** (component/view/store/composable/util)
+2. **Place in appropriate subfolder** (common/forms/api/ui/etc.)
+3. **Follow naming conventions** (PascalCase/camelCase/kebab-case)
+4. **Update index.ts** barrel exports
+5. **Create README.md** if new folder
+6. **Add TypeScript types** if complex
+7. **Include unit tests** for utilities/composables
+
+**Examples of CORRECT placement:**
+
+```
+✅ New form component: frontend/src/components/forms/ScheduleFormDialog.vue
+✅ New API endpoint: functions/src/api/v1/schedules.ts  
+✅ New store: frontend/src/stores/schedules.ts (+ update index.ts)
+✅ New utility: frontend/src/utils/date/formatInstagramDate.ts
+✅ New composable: frontend/src/composables/business/useScheduler.ts
+```
+
+**Examples of INCORRECT placement:**
+
+```
+❌ frontend/src/ScheduleForm.vue (missing categorization)
+❌ functions/src/scheduleApi.ts (missing api/ folder)
+❌ frontend/src/schedule-utils.ts (missing utils/ categorization)
+❌ frontend/src/useSchedule.ts (missing composables/ folder)
+```
+
+### **Quality Gates (ENFORCE BEFORE COMPLETION)**
+
+Before any new file/folder creation is complete, verify:
+
+- [ ] File is in correct category folder
+- [ ] Naming convention is followed
+- [ ] index.ts is updated (if applicable)
+- [ ] Path aliases work correctly
+- [ ] README.md exists for new folders
+- [ ] TypeScript types are defined
+- [ ] Related files are updated (stores, routes, etc.)
+
+This directory structure ensures scalability, maintainability, and team collaboration effectiveness.
+
 ## Project Overview
 
 Omniy is an Instagram scheduling app for influencers and small businesses. It provides scheduled posting, recurring posts, and random posting through Instagram Graph API integration. The app uses Firebase/GCP infrastructure with Vue.js frontend and Cloud Functions backend.
@@ -45,6 +264,14 @@ firebase deploy --only hosting   # Deploy frontend only
 ./tools/scripts/start-claude.sh -c     # Force devcontainer mode
 ./tools/scripts/start-claude.sh -d     # Direct start (if in container)
 claude --dangerously-skip-permissions  # Direct command (in secure container)
+```
+
+### MCP Server Operations
+```bash
+# Puppeteer MCP Server (browser automation and screenshots)
+cd mcp-servers/puppeteer
+npm run build                          # Build TypeScript
+npm start                             # Start MCP server
 ```
 
 ### Emulator Ports
@@ -273,3 +500,60 @@ Claude Rules :look👀
 ```
 
 このルールにより、プロジェクトの進捗が常に可視化され、タスクの抜け漏れを防ぐことができます。
+
+## アーキテクチャ更新ルール (必須)
+
+### 自動アーキテクチャ図更新
+
+**重要**: プロジェクト更新時は必ずアーキテクチャ図を最新状態に保つこと。
+
+1. **更新対象ファイル**
+   - メインアーキテクチャ図: `tools/docs/ULTRATHINK_ARCHITECTURE_DIAGRAM.md`
+   - 必要に応じてシステム概要図も更新
+
+2. **更新トリガー**
+   - 新機能追加時（composables、components、utils追加）
+   - システム構成変更時（統合、分離、リファクタリング）
+   - 外部サービス統合時（API、ライブラリ追加）
+   - アーキテクチャパターン変更時
+   - 重要なバグ修正後（システムフロー影響時）
+
+3. **更新内容**
+   - Mermaid図の関係性を最新状態に更新
+   - 新しいコンポーネント・システムを図に追加
+   - 削除されたコンポーネントを図から削除
+   - データフローの変更を反映
+   - メトリクス・成果指標を最新数値に更新
+
+4. **更新手順**
+   ```markdown
+   1. 変更内容を分析
+   2. 影響するアーキテクチャ層を特定
+   3. Mermaid図を更新
+   4. メトリクス・成果を更新
+   5. 関係図の整合性を確認
+   6. コミットメッセージに「docs(architecture): 📐」を含める
+   ```
+
+5. **品質保証**
+   - 図の論理的整合性確認
+   - 全コンポーネントの関係性チェック
+   - 実装と図の一致性検証
+   - 見やすさ・理解しやすさの確保
+
+### 例: 更新が必要なケース
+
+✅ **更新必要**
+- 新しいComposableシステム追加
+- 統合システム導入
+- データベース構成変更
+- API エンドポイント追加・変更
+- セキュリティシステム強化
+
+❌ **更新不要**
+- 小さなバグ修正
+- スタイル調整のみ
+- テキスト変更のみ
+- 設定ファイル微調整
+
+このルールにより、プロジェクトのアーキテクチャ文書は常に最新かつ正確な状態を維持できます。
