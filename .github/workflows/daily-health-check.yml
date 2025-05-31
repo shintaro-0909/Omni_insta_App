@@ -1,0 +1,228 @@
+name: 🏥 Daily Health Check
+
+on:
+  schedule:
+    # 毎日 日本時間 9:00 (UTC 0:00) に実行
+    - cron: '0 0 * * *'
+  workflow_dispatch: # 手動実行も可能
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📋 Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: 🔧 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: |
+          frontend/package-lock.json
+          functions/package-lock.json
+    
+    - name: 🌐 Check website accessibility
+      run: |
+        echo "🌐 ウェブサイトアクセシビリティチェック..."
+        
+        # プロジェクト ID を取得（firebase.json から）
+        PROJECT_ID=$(grep -o '"projectId": "[^"]*' firebase.json | cut -d'"' -f4)
+        echo "📋 プロジェクト: $PROJECT_ID"
+        
+        # メインサイトの確認
+        SITE_URL="https://${PROJECT_ID}.web.app"
+        STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$SITE_URL" || echo "000")
+        
+        if [ "$STATUS_CODE" = "200" ]; then
+          echo "✅ メインサイト正常 ($SITE_URL)"
+          echo "SITE_STATUS=✅ 正常" >> $GITHUB_ENV
+        else
+          echo "❌ メインサイトエラー ($SITE_URL) - HTTP: $STATUS_CODE"
+          echo "SITE_STATUS=❌ エラー (HTTP: $STATUS_CODE)" >> $GITHUB_ENV
+          echo "HAS_ERROR=true" >> $GITHUB_ENV
+        fi
+    
+    - name: 🔒 Security vulnerability check
+      run: |
+        echo "🔒 セキュリティ脆弱性チェック..."
+        
+        # フロントエンドの脆弱性チェック
+        echo "📱 フロントエンド脆弱性スキャン..."
+        cd frontend
+        FRONTEND_AUDIT=$(npm audit --audit-level moderate --json 2>/dev/null || echo '{"vulnerabilities":{}}')
+        FRONTEND_VULNS=$(echo "$FRONTEND_AUDIT" | jq '.metadata.vulnerabilities.total // 0')
+        
+        if [ "$FRONTEND_VULNS" -eq 0 ]; then
+          echo "✅ フロントエンド: 脆弱性なし"
+          echo "FRONTEND_SECURITY=✅ 安全" >> $GITHUB_ENV
+        else
+          echo "⚠️ フロントエンド: $FRONTEND_VULNS 件の脆弱性"
+          echo "FRONTEND_SECURITY=⚠️ $FRONTEND_VULNS 件の脆弱性" >> $GITHUB_ENV
+          echo "HAS_WARNING=true" >> $GITHUB_ENV
+        fi
+        
+        # バックエンドの脆弱性チェック
+        echo "⚡ バックエンド脆弱性スキャン..."
+        cd ../functions
+        BACKEND_AUDIT=$(npm audit --audit-level moderate --json 2>/dev/null || echo '{"vulnerabilities":{}}')
+        BACKEND_VULNS=$(echo "$BACKEND_AUDIT" | jq '.metadata.vulnerabilities.total // 0')
+        
+        if [ "$BACKEND_VULNS" -eq 0 ]; then
+          echo "✅ バックエンド: 脆弱性なし"
+          echo "BACKEND_SECURITY=✅ 安全" >> $GITHUB_ENV
+        else
+          echo "⚠️ バックエンド: $BACKEND_VULNS 件の脆弱性"
+          echo "BACKEND_SECURITY=⚠️ $BACKEND_VULNS 件の脆弱性" >> $GITHUB_ENV
+          echo "HAS_WARNING=true" >> $GITHUB_ENV
+        fi
+        
+        cd ..
+    
+    - name: 📁 File structure verification
+      run: |
+        echo "📁 重要ファイル構造チェック..."
+        
+        REQUIRED_FILES=(
+          "frontend/package.json"
+          "functions/package.json"
+          "firestore.rules"
+          "firestore.indexes.json"
+          "firebase.json"
+        )
+        
+        MISSING_FILES=""
+        for file in "${REQUIRED_FILES[@]}"; do
+          if [ -f "$file" ]; then
+            echo "✅ $file"
+          else
+            echo "❌ $file が見つかりません"
+            MISSING_FILES="$MISSING_FILES $file"
+            echo "HAS_ERROR=true" >> $GITHUB_ENV
+          fi
+        done
+        
+        if [ -z "$MISSING_FILES" ]; then
+          echo "FILE_STRUCTURE=✅ 正常" >> $GITHUB_ENV
+        else
+          echo "FILE_STRUCTURE=❌ 不足:$MISSING_FILES" >> $GITHUB_ENV
+        fi
+    
+    - name: 📊 Generate health report
+      run: |
+        echo "📊 ヘルスレポート生成..."
+        
+        # 日付取得
+        REPORT_DATE=$(date '+%Y-%m-%d %H:%M:%S JST')
+        
+        # 全体的な健康状態判定
+        OVERALL_STATUS="✅ 正常"
+        if [ "${HAS_ERROR:-false}" = "true" ]; then
+          OVERALL_STATUS="❌ 要対応"
+        elif [ "${HAS_WARNING:-false}" = "true" ]; then
+          OVERALL_STATUS="⚠️ 監視継続"
+        fi
+        
+        # レポート作成
+        cat > daily-health-report.md << EOF
+        # 🏥 Omniy Daily Health Report
+        
+        **日時**: $REPORT_DATE  
+        **全体状況**: $OVERALL_STATUS
+        
+        ## 📊 システム状況
+        
+        | 項目 | 状況 |
+        |------|------|
+        | 🌐 ウェブサイト | ${SITE_STATUS:-未確認} |
+        | 📁 ファイル構造 | ${FILE_STRUCTURE:-未確認} |
+        | 🔒 フロントエンド | ${FRONTEND_SECURITY:-未確認} |
+        | 🔒 バックエンド | ${BACKEND_SECURITY:-未確認} |
+        
+        ## 📋 次のアクション
+        
+        $(if [ "${HAS_ERROR:-false}" = "true" ]; then
+          echo "🚨 **緊急対応が必要**"
+          echo "- Firebase Console でエラー詳細を確認"
+          echo "- 不足ファイルがあれば復旧"
+          echo "- サイトアクセスエラーの原因調査"
+        elif [ "${HAS_WARNING:-false}" = "true" ]; then
+          echo "⚠️ **要監視**"
+          echo "- 脆弱性の詳細確認"
+          echo "- 今日中の対応を検討"
+          echo "- セキュリティアップデート実行"
+        else
+          echo "✅ **問題なし**"
+          echo "- 通常運用継続"
+          echo "- 定期的な監視継続"
+        fi)
+        
+        ## 🔗 便利リンク
+        
+        - [Firebase Console](https://console.firebase.google.com/project/$PROJECT_ID)
+        - [アプリURL](https://$PROJECT_ID.web.app)
+        - [GitHub Actions](https://github.com/${{ github.repository }}/actions)
+        
+        ---
+        *自動生成レポート by GitHub Actions*
+        EOF
+        
+        echo "OVERALL_STATUS=$OVERALL_STATUS" >> $GITHUB_ENV
+        
+        # レポート内容を表示
+        cat daily-health-report.md
+    
+    - name: 📧 Send notification (Discord)
+      if: always()
+      uses: sarisia/actions-status-discord@v1
+      with:
+        webhook: ${{ secrets.DISCORD_WEBHOOK }}
+        title: "🏥 Omniy Daily Health Check"
+        description: |
+          **全体状況**: ${{ env.OVERALL_STATUS }}
+          
+          **詳細**:
+          🌐 サイト: ${{ env.SITE_STATUS }}
+          📁 構造: ${{ env.FILE_STRUCTURE }}
+          🔒 セキュリティ: ${{ env.FRONTEND_SECURITY }} / ${{ env.BACKEND_SECURITY }}
+          
+          [詳細レポート](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+        color: |
+          ${{ 
+            env.HAS_ERROR == 'true' && 0xFF0000 ||
+            env.HAS_WARNING == 'true' && 0xFFA500 ||
+            0x00FF00
+          }}
+    
+    - name: 📧 Send email notification (Critical only)
+      if: env.HAS_ERROR == 'true'
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: smtp.gmail.com
+        server_port: 587
+        username: ${{ secrets.EMAIL_USERNAME }}
+        password: ${{ secrets.EMAIL_PASSWORD }}
+        subject: "🚨 Omniy Critical Issue Detected"
+        to: ${{ secrets.ALERT_EMAIL }}
+        from: "Omniy Monitor <${{ secrets.EMAIL_USERNAME }}>"
+        body: |
+          Omniyに重要な問題が検出されました。
+          
+          全体状況: ${{ env.OVERALL_STATUS }}
+          
+          詳細:
+          - サイト状況: ${{ env.SITE_STATUS }}
+          - ファイル構造: ${{ env.FILE_STRUCTURE }}
+          
+          早急な確認をお願いします。
+          
+          詳細レポート: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    
+    - name: 📄 Upload health report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: daily-health-report-${{ github.run_number }}
+        path: daily-health-report.md
+        retention-days: 30
