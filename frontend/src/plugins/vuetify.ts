@@ -3,14 +3,14 @@
  * Uses on-demand imports and minimal component loading
  */
 
-import { createVuetify } from 'vuetify'
-import { aliases, mdi } from 'vuetify/iconsets/mdi'
+import { createVuetify } from 'vuetify';
+import { aliases, mdi } from 'vuetify/iconsets/mdi';
 
 // Optimized Vuetify styles import
-import 'vuetify/styles'
+import 'vuetify/styles';
 
 // Only import MDI icons that are actually used
-import '@mdi/font/css/materialdesignicons.css'
+import '@mdi/font/css/materialdesignicons.css';
 
 // Theme configuration
 const lightTheme = {
@@ -26,9 +26,9 @@ const lightTheme = {
     background: '#FFFFFF',
     surface: '#FFFFFF',
     'primary-darken-1': '#C2185B',
-    'secondary-darken-1': '#7B1FA2'
-  }
-}
+    'secondary-darken-1': '#7B1FA2',
+  },
+};
 
 const darkTheme = {
   dark: true,
@@ -43,9 +43,9 @@ const darkTheme = {
     background: '#121212',
     surface: '#1E1E1E',
     'primary-darken-1': '#C2185B',
-    'secondary-darken-1': '#7B1FA2'
-  }
-}
+    'secondary-darken-1': '#7B1FA2',
+  },
+};
 
 // Optimized Vuetify configuration
 const vuetify = createVuetify({
@@ -53,60 +53,60 @@ const vuetify = createVuetify({
     defaultTheme: 'light',
     themes: {
       light: lightTheme,
-      dark: darkTheme
+      dark: darkTheme,
     },
     variations: {
       colors: ['primary', 'secondary'],
       lighten: 1,
-      darken: 1
-    }
+      darken: 1,
+    },
   },
-  
+
   icons: {
     defaultSet: 'mdi',
     aliases,
     sets: {
-      mdi
-    }
+      mdi,
+    },
   },
 
   // Optimized defaults to reduce bundle size
   defaults: {
     VCard: {
       elevation: 2,
-      rounded: 'lg'
+      rounded: 'lg',
     },
     VBtn: {
       variant: 'elevated',
-      rounded: 'lg'
+      rounded: 'lg',
     },
     VTextField: {
       variant: 'outlined',
-      density: 'comfortable'
+      density: 'comfortable',
     },
     VSelect: {
       variant: 'outlined',
-      density: 'comfortable'
+      density: 'comfortable',
     },
     VTextarea: {
       variant: 'outlined',
-      density: 'comfortable'
+      density: 'comfortable',
     },
     VCheckbox: {
-      density: 'comfortable'
+      density: 'comfortable',
     },
     VRadio: {
-      density: 'comfortable'
+      density: 'comfortable',
     },
     VDataTable: {
-      density: 'comfortable'
+      density: 'comfortable',
     },
     VAppBar: {
-      elevation: 1
+      elevation: 1,
     },
     VNavigationDrawer: {
-      elevation: 1
-    }
+      elevation: 1,
+    },
   },
 
   // Display configuration for responsive design
@@ -117,9 +117,9 @@ const vuetify = createVuetify({
       sm: 600,
       md: 960,
       lg: 1280,
-      xl: 1920
-    }
-  }
-})
+      xl: 1920,
+    },
+  },
+});
 
-export default vuetify
+export default vuetify;

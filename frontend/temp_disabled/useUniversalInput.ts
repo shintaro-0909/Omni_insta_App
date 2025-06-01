@@ -152,7 +152,7 @@ export function useUniversalInput() {
   let environmentalHandler: EnvironmentalInputHandler | null = null
   
   // Web APIs
-  let speechRecognition: SpeechRecognition | null = null
+  const speechRecognition: SpeechRecognition | null = null
   let gamepadHandler: GamepadInputHandler | null = null
   let midiAccess: WebMidi.MIDIAccess | null = null
   

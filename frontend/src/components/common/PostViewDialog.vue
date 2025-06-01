@@ -23,15 +23,8 @@
           hide-delimiter-background
           show-arrows="hover"
         >
-          <v-carousel-item
-            v-for="(url, index) in post.mediaUrls"
-            :key="index"
-          >
-            <v-img
-              :src="url"
-              height="400"
-              cover
-            >
+          <v-carousel-item v-for="(url, index) in post.mediaUrls" :key="index">
+            <v-img :src="url" height="400" cover>
               <template #placeholder>
                 <div class="d-flex align-center justify-center fill-height">
                   <v-progress-circular indeterminate />
@@ -74,7 +67,7 @@
           <!-- キャプション -->
           <div class="mb-4">
             <h3 class="text-h6 font-weight-bold mb-2">キャプション</h3>
-            <div class="text-body-1" style="white-space: pre-wrap;">
+            <div class="text-body-1" style="white-space: pre-wrap">
               {{ post.caption }}
             </div>
           </div>
@@ -104,9 +97,7 @@
                   <div class="text-h5 font-weight-bold text-primary">
                     {{ post.mediaUrls.length }}
                   </div>
-                  <div class="text-caption text-grey-darken-1">
-                    画像数
-                  </div>
+                  <div class="text-caption text-grey-darken-1">画像数</div>
                 </v-card>
               </v-col>
               <v-col cols="6" sm="3">
@@ -114,9 +105,7 @@
                   <div class="text-h5 font-weight-bold text-success">
                     {{ post.timesPosted }}
                   </div>
-                  <div class="text-caption text-grey-darken-1">
-                    投稿回数
-                  </div>
+                  <div class="text-caption text-grey-darken-1">投稿回数</div>
                 </v-card>
               </v-col>
               <v-col cols="6" sm="3">
@@ -124,9 +113,7 @@
                   <div class="text-h5 font-weight-bold text-info">
                     {{ post.tags.length }}
                   </div>
-                  <div class="text-caption text-grey-darken-1">
-                    タグ数
-                  </div>
+                  <div class="text-caption text-grey-darken-1">タグ数</div>
                 </v-card>
               </v-col>
               <v-col cols="6" sm="3">
@@ -134,9 +121,7 @@
                   <div class="text-h5 font-weight-bold text-warning">
                     {{ post.caption.length }}
                   </div>
-                  <div class="text-caption text-grey-darken-1">
-                    文字数
-                  </div>
+                  <div class="text-caption text-grey-darken-1">文字数</div>
                 </v-card>
               </v-col>
             </v-row>
@@ -179,27 +164,16 @@
       </v-card-text>
 
       <v-card-actions class="pa-6 pt-0">
-        <v-btn
-          color="primary"
-          variant="flat"
-          @click="$emit('edit', post)"
-        >
+        <v-btn color="primary" variant="flat" @click="$emit('edit', post)">
           <v-icon start>mdi-pencil</v-icon>
           編集
         </v-btn>
-        <v-btn
-          color="error"
-          variant="outlined"
-          @click="$emit('delete', post)"
-        >
+        <v-btn color="error" variant="outlined" @click="$emit('delete', post)">
           <v-icon start>mdi-delete</v-icon>
           削除
         </v-btn>
         <v-spacer />
-        <v-btn
-          variant="text"
-          @click="$emit('update:modelValue', false)"
-        >
+        <v-btn variant="text" @click="$emit('update:modelValue', false)">
           閉じる
         </v-btn>
       </v-card-actions>
@@ -208,33 +182,33 @@
 </template>
 
 <script setup lang="ts">
-import { format } from 'date-fns'
-import { ja } from 'date-fns/locale'
-import type { Post } from '@/stores/posts'
+  import { format } from 'date-fns';
+  import { ja } from 'date-fns/locale';
+  import type { Post } from '@/stores';
 
-interface Props {
-  modelValue: boolean
-  post?: Post | null
-}
+  interface Props {
+    modelValue: boolean;
+    post?: Post | null;
+  }
 
-interface Emits {
-  (e: 'update:modelValue', value: boolean): void
-  (e: 'edit', post: Post): void
-  (e: 'delete', post: Post): void
-}
+  interface Emits {
+    (e: 'update:modelValue', value: boolean): void;
+    (e: 'edit', post: Post): void;
+    (e: 'delete', post: Post): void;
+  }
 
-defineProps<Props>()
-defineEmits<Emits>()
+  defineProps<Props>();
+  defineEmits<Emits>();
 
-// Methods
-const formatDateTime = (date: Date) => {
-  return format(date, 'yyyy/MM/dd HH:mm:ss', { locale: ja })
-}
+  // Methods
+  const formatDateTime = (date: Date) => {
+    return format(date, 'yyyy/MM/dd HH:mm:ss', { locale: ja });
+  };
 </script>
 
 <style scoped>
-.v-card {
-  overflow-y: auto;
-  max-height: 90vh;
-}
-</style> 
+  .v-card {
+    overflow-y: auto;
+    max-height: 90vh;
+  }
+</style>

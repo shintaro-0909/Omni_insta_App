@@ -259,6 +259,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 // Handle tool calls
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
+  
+  if (!args) {
+    throw new Error('Arguments are required');
+  }
 
   try {
     switch (name) {
@@ -292,7 +296,7 @@ ${accounts.map((account: any) => `- Account ID: ${account.id}`).join('\n')}
       }
 
       case 'get_account_info': {
-        const fields = args.fields?.join(',') || 'id,username,account_type,media_count,followers_count';
+        const fields = (args as any).fields?.join(',') || 'id,username,account_type,media_count,followers_count';
         
         const response = await axios.get(`${INSTAGRAM_API_BASE}/${args.accountId}`, {
           params: {
@@ -392,7 +396,7 @@ ${accounts.map((account: any) => `- Account ID: ${account.id}`).join('\n')}
       }
 
       case 'get_media_list': {
-        const fields = args.fields?.join(',') || 'id,caption,media_type,media_url,timestamp,like_count,comments_count';
+        const fields = (args as any).fields?.join(',') || 'id,caption,media_type,media_url,timestamp,like_count,comments_count';
         
         const response = await axios.get(`${INSTAGRAM_API_BASE}/${args.accountId}/media`, {
           params: {
@@ -428,7 +432,7 @@ ${mediaList}
       }
 
       case 'get_media_insights': {
-        const metrics = args.metrics?.join(',') || 'impressions,reach,likes,comments,shares,saves';
+        const metrics = (args as any).metrics?.join(',') || 'impressions,reach,likes,comments,shares,saves';
         
         const response = await axios.get(`${INSTAGRAM_API_BASE}/${args.mediaId}/insights`, {
           params: {

@@ -20,7 +20,7 @@
     --animation-duration-normal: 0.01ms;
     --animation-duration-slow: 0.01ms;
   }
-  
+
   *,
   *::before,
   *::after {
@@ -133,10 +133,15 @@
 }
 
 @keyframes bounce {
-  0%, 20%, 53%, 80%, 100% {
+  0%,
+  20%,
+  53%,
+  80%,
+  100% {
     transform: translateY(0);
   }
-  40%, 43% {
+  40%,
+  43% {
     transform: translateY(-8px);
   }
   70% {
@@ -171,36 +176,48 @@
 
 /* Shake animation */
 @keyframes shake {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateX(0);
   }
-  10%, 30%, 50%, 70%, 90% {
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
     transform: translateX(-2px);
   }
-  20%, 40%, 60%, 80% {
+  20%,
+  40%,
+  60%,
+  80% {
     transform: translateX(2px);
   }
 }
 
 /* Glow animations */
 @keyframes glow {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 5px currentColor;
   }
   50% {
-    box-shadow: 0 0 20px currentColor, 0 0 30px currentColor;
+    box-shadow:
+      0 0 20px currentColor,
+      0 0 30px currentColor;
   }
 }
 
 @keyframes neonGlow {
-  0%, 100% {
-    text-shadow: 
+  0%,
+  100% {
+    text-shadow:
       0 0 5px currentColor,
       0 0 10px currentColor,
       0 0 15px currentColor;
   }
   50% {
-    text-shadow: 
+    text-shadow:
       0 0 10px currentColor,
       0 0 20px currentColor,
       0 0 30px currentColor,
@@ -210,7 +227,8 @@
 
 /* Cyberpunk specific animations */
 @keyframes glitch {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateX(0);
   }
   10% {
@@ -240,10 +258,12 @@
 }
 
 @keyframes blink {
-  0%, 50% {
+  0%,
+  50% {
     opacity: 1;
   }
-  51%, 100% {
+  51%,
+  100% {
     opacity: 0;
   }
 }
@@ -251,12 +271,12 @@
 /* Neumorphism animations */
 @keyframes neumorphPress {
   0% {
-    box-shadow: 
+    box-shadow:
       8px 8px 16px #bebebe,
       -8px -8px 16px #ffffff;
   }
   100% {
-    box-shadow: 
+    box-shadow:
       inset 8px 8px 16px #bebebe,
       inset -8px -8px 16px #ffffff;
   }
@@ -264,12 +284,12 @@
 
 @keyframes neumorphRelease {
   0% {
-    box-shadow: 
+    box-shadow:
       inset 8px 8px 16px #bebebe,
       inset -8px -8px 16px #ffffff;
   }
   100% {
-    box-shadow: 
+    box-shadow:
       8px 8px 16px #bebebe,
       -8px -8px 16px #ffffff;
   }
@@ -287,43 +307,53 @@
 
 /* Utility classes */
 .animate-fade-in {
-  animation: fadeIn var(--animation-duration-normal) var(--animation-easing) forwards;
+  animation: fadeIn var(--animation-duration-normal) var(--animation-easing)
+    forwards;
 }
 
 .animate-fade-out {
-  animation: fadeOut var(--animation-duration-normal) var(--animation-easing) forwards;
+  animation: fadeOut var(--animation-duration-normal) var(--animation-easing)
+    forwards;
 }
 
 .animate-fade-in-scale {
-  animation: fadeInScale var(--animation-duration-normal) var(--animation-easing) forwards;
+  animation: fadeInScale var(--animation-duration-normal)
+    var(--animation-easing) forwards;
 }
 
 .animate-slide-in-up {
-  animation: slideInUp var(--animation-duration-normal) var(--animation-easing) forwards;
+  animation: slideInUp var(--animation-duration-normal) var(--animation-easing)
+    forwards;
 }
 
 .animate-slide-in-down {
-  animation: slideInDown var(--animation-duration-normal) var(--animation-easing) forwards;
+  animation: slideInDown var(--animation-duration-normal)
+    var(--animation-easing) forwards;
 }
 
 .animate-slide-in-left {
-  animation: slideInLeft var(--animation-duration-normal) var(--animation-easing) forwards;
+  animation: slideInLeft var(--animation-duration-normal)
+    var(--animation-easing) forwards;
 }
 
 .animate-slide-in-right {
-  animation: slideInRight var(--animation-duration-normal) var(--animation-easing) forwards;
+  animation: slideInRight var(--animation-duration-normal)
+    var(--animation-easing) forwards;
 }
 
 .animate-scale-in {
-  animation: scaleIn var(--animation-duration-normal) var(--animation-easing) forwards;
+  animation: scaleIn var(--animation-duration-normal) var(--animation-easing)
+    forwards;
 }
 
 .animate-scale-out {
-  animation: scaleOut var(--animation-duration-normal) var(--animation-easing) forwards;
+  animation: scaleOut var(--animation-duration-normal) var(--animation-easing)
+    forwards;
 }
 
 .animate-bounce {
-  animation: bounce var(--animation-duration-slow) var(--animation-easing) forwards;
+  animation: bounce var(--animation-duration-slow) var(--animation-easing)
+    forwards;
 }
 
 .animate-pulse {
@@ -335,7 +365,8 @@
 }
 
 .animate-shake {
-  animation: shake var(--animation-duration-slow) var(--animation-easing) forwards;
+  animation: shake var(--animation-duration-slow) var(--animation-easing)
+    forwards;
 }
 
 .animate-glow {
@@ -355,11 +386,13 @@
 }
 
 .animate-neumorph-press {
-  animation: neumorphPress var(--animation-duration-fast) var(--animation-easing) forwards;
+  animation: neumorphPress var(--animation-duration-fast)
+    var(--animation-easing) forwards;
 }
 
 .animate-neumorph-release {
-  animation: neumorphRelease var(--animation-duration-fast) var(--animation-easing) forwards;
+  animation: neumorphRelease var(--animation-duration-fast)
+    var(--animation-easing) forwards;
 }
 
 .animate-glass-shimmer {
@@ -379,9 +412,10 @@
 }
 
 .transition-colors {
-  transition: color var(--animation-duration-normal) var(--animation-easing),
-              background-color var(--animation-duration-normal) var(--animation-easing),
-              border-color var(--animation-duration-normal) var(--animation-easing);
+  transition:
+    color var(--animation-duration-normal) var(--animation-easing),
+    background-color var(--animation-duration-normal) var(--animation-easing),
+    border-color var(--animation-duration-normal) var(--animation-easing);
 }
 
 .transition-opacity {
@@ -393,7 +427,8 @@
 }
 
 .transition-shadow {
-  transition: box-shadow var(--animation-duration-normal) var(--animation-easing);
+  transition: box-shadow var(--animation-duration-normal)
+    var(--animation-easing);
 }
 
 /* Hardware acceleration */
@@ -403,13 +438,27 @@
 }
 
 /* Animation delays */
-.delay-0 { animation-delay: 0ms; }
-.delay-100 { animation-delay: 100ms; }
-.delay-200 { animation-delay: 200ms; }
-.delay-300 { animation-delay: 300ms; }
-.delay-500 { animation-delay: 500ms; }
-.delay-700 { animation-delay: 700ms; }
-.delay-1000 { animation-delay: 1000ms; }
+.delay-0 {
+  animation-delay: 0ms;
+}
+.delay-100 {
+  animation-delay: 100ms;
+}
+.delay-200 {
+  animation-delay: 200ms;
+}
+.delay-300 {
+  animation-delay: 300ms;
+}
+.delay-500 {
+  animation-delay: 500ms;
+}
+.delay-700 {
+  animation-delay: 700ms;
+}
+.delay-1000 {
+  animation-delay: 1000ms;
+}
 
 /* Stagger animations */
 .stagger-children > * {
@@ -434,7 +483,8 @@
 }
 
 .hover-glow {
-  transition: box-shadow var(--animation-duration-normal) var(--animation-easing);
+  transition: box-shadow var(--animation-duration-normal)
+    var(--animation-easing);
 }
 
 .hover-glow:hover {
@@ -452,7 +502,9 @@
 }
 
 @keyframes loading-dots {
-  0%, 80%, 100% {
+  0%,
+  80%,
+  100% {
     transform: scale(0);
     opacity: 0.5;
   }
@@ -482,9 +534,15 @@
   animation: loading-dots 1.4s ease-in-out infinite both;
 }
 
-.loading-dots > *:nth-child(1) { animation-delay: -0.32s; }
-.loading-dots > *:nth-child(2) { animation-delay: -0.16s; }
-.loading-dots > *:nth-child(3) { animation-delay: 0s; }
+.loading-dots > *:nth-child(1) {
+  animation-delay: -0.32s;
+}
+.loading-dots > *:nth-child(2) {
+  animation-delay: -0.16s;
+}
+.loading-dots > *:nth-child(3) {
+  animation-delay: 0s;
+}
 
 .loading-bar {
   animation: loading-bar 2s ease-in-out infinite;
@@ -503,7 +561,7 @@
 
 /* Dark mode transitions */
 .dark-mode-transition {
-  transition: 
+  transition:
     background-color var(--animation-duration-normal) var(--animation-easing),
     color var(--animation-duration-normal) var(--animation-easing),
     border-color var(--animation-duration-normal) var(--animation-easing);
@@ -531,7 +589,7 @@
 .animate-on-scroll {
   opacity: 0;
   transform: translateY(20px);
-  transition: 
+  transition:
     opacity 0.6s var(--animation-easing),
     transform 0.6s var(--animation-easing);
 }

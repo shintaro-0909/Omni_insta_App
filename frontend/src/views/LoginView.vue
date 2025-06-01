@@ -39,12 +39,12 @@
 
           <!-- 機能紹介 -->
           <v-divider class="my-6" />
-          
+
           <v-card-text>
             <h3 class="text-h6 font-weight-bold mb-4 text-center">
               Omniyでできること
             </h3>
-            
+
             <v-list density="compact">
               <v-list-item
                 v-for="feature in features"
@@ -65,64 +65,64 @@
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+  import { useRouter } from 'vue-router';
+  import { useAuthStore } from '@/stores';
 
-const router = useRouter()
-const authStore = useAuthStore()
+  const router = useRouter();
+  const authStore = useAuthStore();
 
-// 機能一覧
-const features = [
-  {
-    icon: 'mdi-calendar-clock',
-    text: '日時指定で自動投稿'
-  },
-  {
-    icon: 'mdi-repeat',
-    text: '曜日・時刻の繰り返し投稿'
-  },
-  {
-    icon: 'mdi-shuffle',
-    text: 'コンテンツからランダム投稿'
-  },
-  {
-    icon: 'mdi-account-multiple',
-    text: '複数アカウントの一元管理'
-  },
-  {
-    icon: 'mdi-shield-check',
-    text: 'Instagram公式API使用で安全'
-  }
-]
+  // 機能一覧
+  const features = [
+    {
+      icon: 'mdi-calendar-clock',
+      text: '日時指定で自動投稿',
+    },
+    {
+      icon: 'mdi-repeat',
+      text: '曜日・時刻の繰り返し投稿',
+    },
+    {
+      icon: 'mdi-shuffle',
+      text: 'コンテンツからランダム投稿',
+    },
+    {
+      icon: 'mdi-account-multiple',
+      text: '複数アカウントの一元管理',
+    },
+    {
+      icon: 'mdi-shield-check',
+      text: 'Instagram公式API使用で安全',
+    },
+  ];
 
-// Methods
-const handleGoogleLogin = async () => {
-  try {
-    await authStore.loginWithGoogle()
-    
-    // ログイン成功後、ダッシュボードへリダイレクト
-    router.push('/dashboard')
-  } catch (error) {
-    console.error('ログインエラー:', error)
-    // エラーはauthStoreで管理されているため、ここでは何もしない
-  }
-}
+  // Methods
+  const handleGoogleLogin = async () => {
+    try {
+      await authStore.loginWithGoogle();
+
+      // ログイン成功後、ダッシュボードへリダイレクト
+      router.push('/dashboard');
+    } catch (error) {
+      console.error('ログインエラー:', error);
+      // エラーはauthStoreで管理されているため、ここでは何もしない
+    }
+  };
 </script>
 
 <style scoped>
-.fill-height {
-  min-height: 100vh;
-}
+  .fill-height {
+    min-height: 100vh;
+  }
 
-.v-card {
-  max-width: 100%;
-}
+  .v-card {
+    max-width: 100%;
+  }
 
-a {
-  text-decoration: none;
-}
+  a {
+    text-decoration: none;
+  }
 
-a:hover {
-  text-decoration: underline;
-}
-</style> 
+  a:hover {
+    text-decoration: underline;
+  }
+</style>

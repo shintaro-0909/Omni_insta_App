@@ -1,58 +1,58 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { mount } from '@vue/test-utils'
-import { createPinia, setActivePinia } from 'pinia'
-import PostFormDialog from '../PostFormDialog.vue'
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { mount } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
+import PostFormDialog from '../PostFormDialog.vue';
 
 // Mock the stores
 vi.mock('@/stores/posts', () => ({
   usePostsStore: vi.fn(() => ({
     createPost: vi.fn(),
     loading: false,
-    error: null
-  }))
-}))
+    error: null,
+  })),
+}));
 
 describe('PostFormDialog', () => {
   beforeEach(() => {
-    setActivePinia(createPinia())
-  })
+    setActivePinia(createPinia());
+  });
 
   it('component can be imported', async () => {
-    const module = await import('../PostFormDialog.vue')
-    expect(module.default).toBeDefined()
-    expect(typeof module.default).toBe('object')
-  })
+    const module = await import('../PostFormDialog.vue');
+    expect(module.default).toBeDefined();
+    expect(typeof module.default).toBe('object');
+  });
 
   it('renders post form dialog correctly', () => {
     const wrapper = mount(PostFormDialog, {
       props: {
-        modelValue: true
-      }
-    })
-    
-    expect(wrapper.exists()).toBe(true)
-  })
+        modelValue: true,
+      },
+    });
+
+    expect(wrapper.exists()).toBe(true);
+  });
 
   it('shows dialog when modelValue is true', () => {
     const wrapper = mount(PostFormDialog, {
       props: {
-        modelValue: true
-      }
-    })
+        modelValue: true,
+      },
+    });
 
-    expect(wrapper.props('modelValue')).toBe(true)
-  })
+    expect(wrapper.props('modelValue')).toBe(true);
+  });
 
   it('emits close event', async () => {
     const wrapper = mount(PostFormDialog, {
       props: {
-        modelValue: true
-      }
-    })
+        modelValue: true,
+      },
+    });
 
-    await wrapper.vm.$emit('update:modelValue', false)
+    await wrapper.vm.$emit('update:modelValue', false);
 
-    expect(wrapper.emitted('update:modelValue')).toBeTruthy()
-    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([false])
-  })
-})
+    expect(wrapper.emitted('update:modelValue')).toBeTruthy();
+    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([false]);
+  });
+});

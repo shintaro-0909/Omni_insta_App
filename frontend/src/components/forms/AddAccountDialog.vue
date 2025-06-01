@@ -25,10 +25,7 @@
               title="アカウント確認"
             />
             <v-divider />
-            <v-stepper-item
-              :value="3"
-              title="完了"
-            />
+            <v-stepper-item :value="3" title="完了" />
           </v-stepper-header>
 
           <v-stepper-window>
@@ -40,7 +37,7 @@
                     Instagram アクセストークンを入力
                   </h3>
                   <p class="text-body-2 text-grey-darken-1 mb-4">
-                    Instagram Graph API のアクセストークンが必要です。<br>
+                    Instagram Graph API のアクセストークンが必要です。<br />
                     Meta for Developers で取得してください。
                   </p>
                 </div>
@@ -55,16 +52,12 @@
                   class="mb-4"
                 />
 
-                <v-alert
-                  type="info"
-                  variant="tonal"
-                  class="mb-4"
-                >
+                <v-alert type="info" variant="tonal" class="mb-4">
                   <div class="text-body-2">
-                    <strong>アクセストークンの取得方法:</strong><br>
-                    1. Meta for Developers にアクセス<br>
-                    2. アプリを作成し、Instagram Graph API を有効化<br>
-                    3. 長期有効トークンを生成<br>
+                    <strong>アクセストークンの取得方法:</strong><br />
+                    1. Meta for Developers にアクセス<br />
+                    2. アプリを作成し、Instagram Graph API を有効化<br />
+                    3. 長期有効トークンを生成<br />
                     4. 上記のフィールドに貼り付け
                   </div>
                 </v-alert>
@@ -96,12 +89,8 @@
                   </v-card-text>
                 </v-card>
 
-                <v-alert
-                  type="success"
-                  variant="tonal"
-                  class="mb-4"
-                >
-                  アカウント情報を正常に取得しました。<br>
+                <v-alert type="success" variant="tonal" class="mb-4">
+                  アカウント情報を正常に取得しました。<br />
                   このアカウントを追加してもよろしいですか？
                 </v-alert>
               </div>
@@ -114,9 +103,7 @@
                     color="primary"
                     class="mb-4"
                   />
-                  <div class="text-h6">
-                    アカウント情報を取得中...
-                  </div>
+                  <div class="text-h6">アカウント情報を取得中...</div>
                 </div>
               </div>
             </v-stepper-window-item>
@@ -124,18 +111,14 @@
             <!-- ステップ3: 完了 -->
             <v-stepper-window-item :value="3">
               <div class="text-center py-8">
-                <v-icon
-                  size="80"
-                  color="success"
-                  class="mb-4"
-                >
+                <v-icon size="80" color="success" class="mb-4">
                   mdi-check-circle
                 </v-icon>
                 <h3 class="text-h6 font-weight-bold mb-2">
                   アカウントを追加しました！
                 </h3>
                 <p class="text-body-1 text-grey-darken-1">
-                  Instagram アカウント「@{{ userInfo?.username }}」が<br>
+                  Instagram アカウント「@{{ userInfo?.username }}」が<br />
                   正常に追加されました。
                 </p>
               </div>
@@ -146,15 +129,10 @@
 
       <v-card-actions>
         <v-spacer />
-        
+
         <!-- ステップ1のボタン -->
         <template v-if="currentStep === 1">
-          <v-btn
-            variant="text"
-            @click="handleCancel"
-          >
-            キャンセル
-          </v-btn>
+          <v-btn variant="text" @click="handleCancel"> キャンセル </v-btn>
           <v-btn
             color="primary"
             variant="flat"
@@ -168,11 +146,7 @@
 
         <!-- ステップ2のボタン -->
         <template v-if="currentStep === 2">
-          <v-btn
-            variant="text"
-            @click="currentStep = 1"
-            :disabled="loading"
-          >
+          <v-btn variant="text" @click="currentStep = 1" :disabled="loading">
             戻る
           </v-btn>
           <v-btn
@@ -187,11 +161,7 @@
 
         <!-- ステップ3のボタン -->
         <template v-if="currentStep === 3">
-          <v-btn
-            color="primary"
-            variant="flat"
-            @click="handleComplete"
-          >
+          <v-btn color="primary" variant="flat" @click="handleComplete">
             完了
           </v-btn>
         </template>
@@ -201,119 +171,124 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue'
-import { useIgAccountsStore } from '@/stores/igAccounts'
+  import { ref, watch, nextTick } from 'vue';
+  import { useIgAccountsStore } from '@/stores';
 
-interface Props {
-  modelValue: boolean
-}
-
-interface Emits {
-  (e: 'update:modelValue', value: boolean): void
-  (e: 'added'): void
-}
-
-const props = defineProps<Props>()
-const emit = defineEmits<Emits>()
-
-const igAccountsStore = useIgAccountsStore()
-
-// State
-const currentStep = ref(1)
-const tokenFormRef = ref()
-const isTokenFormValid = ref(false)
-const loading = ref(false)
-const userInfo = ref<any>(null)
-
-// Form data
-const form = ref({
-  accessToken: ''
-})
-
-// Validation rules
-const rules = {
-  required: (value: string) => !!value || '必須項目です'
-}
-
-// Methods
-const resetForm = () => {
-  form.value = {
-    accessToken: ''
+  interface Props {
+    modelValue: boolean;
   }
-  currentStep.value = 1
-  userInfo.value = null
-  if (tokenFormRef.value) {
-    tokenFormRef.value.resetValidation()
+
+  interface Emits {
+    (e: 'update:modelValue', value: boolean): void;
+    (e: 'added'): void;
   }
-}
 
-const handleCancel = () => {
-  emit('update:modelValue', false)
-  nextTick(() => {
-    resetForm()
-  })
-}
+  const props = defineProps<Props>();
+  const emit = defineEmits<Emits>();
 
-const handleNext = async () => {
-  if (!isTokenFormValid.value) return
+  const igAccountsStore = useIgAccountsStore();
 
-  try {
-    loading.value = true
-    
-    // Instagram ユーザー情報を取得
-    userInfo.value = await igAccountsStore.getInstagramUserInfo(form.value.accessToken)
-    
-    currentStep.value = 2
-  } catch (error) {
-    console.error('ユーザー情報取得エラー:', error)
-    // エラーはストアで管理されているため、ここでは何もしない
-  } finally {
-    loading.value = false
-  }
-}
+  // State
+  const currentStep = ref(1);
+  const tokenFormRef = ref();
+  const isTokenFormValid = ref(false);
+  const loading = ref(false);
+  const userInfo = ref<any>(null);
 
-const handleAddAccount = async () => {
-  if (!userInfo.value) return
+  // Form data
+  const form = ref({
+    accessToken: '',
+  });
 
-  try {
-    loading.value = true
+  // Validation rules
+  const rules = {
+    required: (value: string) => !!value || '必須項目です',
+  };
 
-    await igAccountsStore.addAccount({
-      accessToken: form.value.accessToken,
-      instagramUserId: userInfo.value.instagramUserId,
-      username: userInfo.value.username
-    })
+  // Methods
+  const resetForm = () => {
+    form.value = {
+      accessToken: '',
+    };
+    currentStep.value = 1;
+    userInfo.value = null;
+    if (tokenFormRef.value) {
+      tokenFormRef.value.resetValidation();
+    }
+  };
 
-    currentStep.value = 3
-  } catch (error) {
-    console.error('アカウント追加エラー:', error)
-    // エラーはストアで管理されているため、ここでは何もしない
-  } finally {
-    loading.value = false
-  }
-}
-
-const handleComplete = () => {
-  emit('added')
-  emit('update:modelValue', false)
-  nextTick(() => {
-    resetForm()
-  })
-}
-
-// Watch for dialog open/close
-watch(() => props.modelValue, (newValue) => {
-  if (newValue) {
+  const handleCancel = () => {
+    emit('update:modelValue', false);
     nextTick(() => {
-      resetForm()
-    })
-  }
-})
+      resetForm();
+    });
+  };
+
+  const handleNext = async () => {
+    if (!isTokenFormValid.value) return;
+
+    try {
+      loading.value = true;
+
+      // Instagram ユーザー情報を取得
+      userInfo.value = await igAccountsStore.getInstagramUserInfo(
+        form.value.accessToken
+      );
+
+      currentStep.value = 2;
+    } catch (error) {
+      console.error('ユーザー情報取得エラー:', error);
+      // エラーはストアで管理されているため、ここでは何もしない
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const handleAddAccount = async () => {
+    if (!userInfo.value) return;
+
+    try {
+      loading.value = true;
+
+      await igAccountsStore.addAccount({
+        accessToken: form.value.accessToken,
+        instagramUserId: userInfo.value.instagramUserId,
+        username: userInfo.value.username,
+      });
+
+      currentStep.value = 3;
+    } catch (error) {
+      console.error('アカウント追加エラー:', error);
+      // エラーはストアで管理されているため、ここでは何もしない
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const handleComplete = () => {
+    emit('added');
+    emit('update:modelValue', false);
+    nextTick(() => {
+      resetForm();
+    });
+  };
+
+  // Watch for dialog open/close
+  watch(
+    () => props.modelValue,
+    newValue => {
+      if (newValue) {
+        nextTick(() => {
+          resetForm();
+        });
+      }
+    }
+  );
 </script>
 
 <style scoped>
-.v-card {
-  overflow-y: auto;
-  max-height: 90vh;
-}
-</style> 
+  .v-card {
+    overflow-y: auto;
+    max-height: 90vh;
+  }
+</style>

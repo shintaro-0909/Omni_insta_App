@@ -282,27 +282,31 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 // Handle tool calls
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
+  
+  if (!args) {
+    throw new Error('Arguments are required');
+  }
 
   try {
     switch (name) {
       case 'query_collection': {
-        let query: any = db.collection(args.collection);
+        let query: any = db.collection((args as any).collection);
 
         // Apply where conditions
-        if (args.where) {
-          for (const condition of args.where) {
+        if ((args as any).where) {
+          for (const condition of (args as any).where) {
             query = query.where(condition.field, condition.operator as any, condition.value);
           }
         }
 
         // Apply ordering
-        if (args.orderBy) {
-          query = query.orderBy(args.orderBy.field, args.orderBy.direction as any);
+        if ((args as any).orderBy) {
+          query = query.orderBy((args as any).orderBy.field, (args as any).orderBy.direction as any);
         }
 
         // Apply limit
-        if (args.limit) {
-          query = query.limit(args.limit);
+        if ((args as any).limit) {
+          query = query.limit((args as any).limit);
         }
 
         const snapshot = await query.get();
@@ -320,14 +324,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 📊 **Found:** ${documents.length} documents
 
 📄 **Documents:**
-${documents.map(doc => `
+${documents.map((doc: any) => `
 🆔 **ID:** ${doc.id}
 📝 **Data:** ${JSON.stringify(doc.data, null, 2)}
 `).join('\n')}
 
-${args.where ? `🔍 **Filters Applied:** ${args.where.map(w => `${w.field} ${w.operator} ${w.value}`).join(', ')}` : ''}
-${args.orderBy ? `📈 **Ordered By:** ${args.orderBy.field} (${args.orderBy.direction})` : ''}
-${args.limit ? `🔢 **Limit:** ${args.limit}` : ''}`,
+${(args as any).where ? `🔍 **Filters Applied:** ${(args as any).where.map((w: any) => `${w.field} ${w.operator} ${w.value}`).join(', ')}` : ''}
+${(args as any).orderBy ? `📈 **Ordered By:** ${(args as any).orderBy.field} (${(args as any).orderBy.direction})` : ''}
+${(args as any).limit ? `🔢 **Limit:** ${(args as any).limit}` : ''}`,
             },
           ],
         };

@@ -3,24 +3,24 @@
  * Centralized export point for all Vue composables
  */
 
-// API-related composables
-export { default as useBatchOperations } from './api/useBatchOperations'
-export { default as useOptimizedFetch } from './api/useOptimizedFetch'
-export { default as usePersistedCache } from './api/usePersistedCache'
+// API-related composables (temporarily disabled for release)
+// export { useBatchOperations } from './api/useBatchOperations'
+// export { useOptimizedFetch } from './api/useOptimizedFetch'
+// export { usePersistedCache } from './api/usePersistedCache'
 
-// UI-related composables
-export { default as useAdaptiveLayout } from './ui/useAdaptiveLayout'
-export { default as useAdvancedGestures } from './ui/useAdvancedGestures'
-export { default as useIntelligentAnimations } from './ui/useIntelligentAnimations'
-export { default as usePredictiveUI } from './ui/usePredictiveUI'
-export { default as useSpatialNavigation } from './ui/useSpatialNavigation'
-export { default as useUniversalAccessibility } from './ui/useUniversalAccessibility'
+// UI-related composables (temporarily disabled for release)
+// export { useAdaptiveLayout } from './ui/useAdaptiveLayout'
+// export { useAdvancedGestures } from './ui/useAdvancedGestures'
+// export { useIntelligentAnimations } from './ui/useIntelligentAnimations'
+// export { usePredictiveUI } from './ui/usePredictiveUI'
+// export { useSpatialNavigation } from './ui/useSpatialNavigation'
+// export { useUniversalAccessibility } from './ui/useUniversalAccessibility'
 
-// Business logic composables
-export { default as useAIAdaptation } from './business/useAIAdaptation'
-export { default as useAdaptiveContentDelivery } from './business/useAdaptiveContentDelivery'
-export { default as useAdvancedMonitoring } from './business/useAdvancedMonitoring'
-export { default as useCrossDeviceState } from './business/useCrossDeviceState'
-export { default as useImageOptimization } from './business/useImageOptimization'
-export { default as useImageUpload } from './business/useImageUpload'
-export { default as useServiceWorker } from './business/useServiceWorker'
+// Business logic composables (temporarily disabled for release)
+// export { useAIAdaptation } from './business/useAIAdaptation'
+// export { useAdaptiveContentDelivery } from './business/useAdaptiveContentDelivery'
+// export { useAdvancedMonitoring } from './business/useAdvancedMonitoring'
+// export { useCrossDeviceState } from './business/useCrossDeviceState'
+// export { useImageOptimization } from './business/useImageOptimization'
+// export { useImageUpload } from './business/useImageUpload'
+// export { useServiceWorker } from './business/useServiceWorker'

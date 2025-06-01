@@ -1,15 +1,10 @@
 <template>
-  <v-dialog 
-    v-model="dialogModel"
-    max-width="600px"
-    persistent
-    scrollable
-  >
+  <v-dialog v-model="dialogModel" max-width="600px" persistent scrollable>
     <v-card class="proxy-form-card" rounded="xl">
       <!-- ヘッダー -->
       <v-card-title class="proxy-form-header">
         <div class="d-flex align-center">
-          <v-icon 
+          <v-icon
             :icon="isEditing ? 'mdi-pencil' : 'mdi-plus-circle'"
             class="mr-3"
             :color="isEditing ? 'warning' : 'primary'"
@@ -19,7 +14,9 @@
               {{ isEditing ? 'プロキシ編集' : '新しいプロキシ' }}
             </h3>
             <p class="text-subtitle-2 text-grey-darken-1 ma-0">
-              {{ isEditing ? 'プロキシ設定を変更します' : 'プロキシを追加します' }}
+              {{
+                isEditing ? 'プロキシ設定を変更します' : 'プロキシを追加します'
+              }}
             </p>
           </div>
         </div>
@@ -29,7 +26,11 @@
 
       <!-- フォーム -->
       <v-card-text class="pa-6">
-        <v-form ref="formRef" v-model="formValid" @submit.prevent="handleSubmit">
+        <v-form
+          ref="formRef"
+          v-model="formValid"
+          @submit.prevent="handleSubmit"
+        >
           <v-row>
             <!-- プロキシ名 -->
             <v-col cols="12">
@@ -160,12 +161,8 @@
       <!-- アクション -->
       <v-card-actions class="pa-6">
         <v-spacer />
-        
-        <v-btn
-          variant="text"
-          @click="handleCancel"
-          :disabled="loading"
-        >
+
+        <v-btn variant="text" @click="handleCancel" :disabled="loading">
           キャンセル
         </v-btn>
 
@@ -184,220 +181,231 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick } from 'vue'
-import { useProxiesStore, type Proxy } from '@/stores/proxies'
+  import { ref, computed, watch, nextTick } from 'vue';
+  import { useProxiesStore, type Proxy } from '@/stores';
 
-// Props & Emits
-interface Props {
-  modelValue: boolean
-  proxy?: Proxy
-}
-
-interface Emits {
-  (e: 'update:modelValue', value: boolean): void
-  (e: 'saved'): void
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  proxy: undefined
-})
-
-const emit = defineEmits<Emits>()
-
-// Stores
-const proxiesStore = useProxiesStore()
-
-// State
-const formRef = ref()
-const formValid = ref(false)
-const loading = ref(false)
-const useAuth = ref(false)
-const showPassword = ref(false)
-
-// フォームデータ
-const formData = ref({
-  name: '',
-  host: '',
-  port: 8080,
-  protocol: 'http' as 'http' | 'https' | 'socks5',
-  username: '',
-  password: '',
-  location: '',
-  provider: '',
-  isActive: true
-})
-
-// プロトコルオプション
-const protocolOptions = [
-  { title: 'HTTP', value: 'http' },
-  { title: 'HTTPS', value: 'https' },
-  { title: 'SOCKS5', value: 'socks5' }
-]
-
-// バリデーションルール
-const nameRules = [
-  (v: string) => !!v || 'プロキシ名は必須です',
-  (v: string) => v.length >= 2 || 'プロキシ名は2文字以上で入力してください',
-  (v: string) => v.length <= 50 || 'プロキシ名は50文字以下で入力してください'
-]
-
-const hostRules = [
-  (v: string) => !!v || 'ホストは必須です',
-  (v: string) => {
-    // IPアドレスまたはドメインの簡易チェック
-    const ipPattern = /^(\d{1,3}\.){3}\d{1,3}$/
-    const domainPattern = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/
-    return ipPattern.test(v) || domainPattern.test(v) || '有効なIPアドレスまたはドメイン名を入力してください'
+  // Props & Emits
+  interface Props {
+    modelValue: boolean;
+    proxy?: Proxy;
   }
-]
 
-const portRules = [
-  (v: number) => !!v || 'ポートは必須です',
-  (v: number) => v >= 1 && v <= 65535 || 'ポートは1-65535の範囲で入力してください'
-]
+  interface Emits {
+    (e: 'update:modelValue', value: boolean): void;
+    (e: 'saved'): void;
+  }
 
-const usernameRules = [
-  (v: string) => !!v || 'ユーザー名は必須です',
-  (v: string) => v.length >= 2 || 'ユーザー名は2文字以上で入力してください'
-]
+  const props = withDefaults(defineProps<Props>(), {
+    proxy: undefined,
+  });
 
-const passwordRules = [
-  (v: string) => !!v || 'パスワードは必須です',
-  (v: string) => v.length >= 4 || 'パスワードは4文字以上で入力してください'
-]
+  const emit = defineEmits<Emits>();
 
-// Computed
-const dialogModel = computed({
-  get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value)
-})
+  // Stores
+  const proxiesStore = useProxiesStore();
 
-const isEditing = computed(() => !!props.proxy)
+  // State
+  const formRef = ref();
+  const formValid = ref(false);
+  const loading = ref(false);
+  const useAuth = ref(false);
+  const showPassword = ref(false);
 
-// Methods
-const resetForm = () => {
-  formData.value = {
+  // フォームデータ
+  const formData = ref({
     name: '',
     host: '',
     port: 8080,
-    protocol: 'http',
+    protocol: 'http' as 'http' | 'https' | 'socks5',
     username: '',
     password: '',
     location: '',
     provider: '',
-    isActive: true
-  }
-  useAuth.value = false
-  showPassword.value = false
-  
-  nextTick(() => {
-    formRef.value?.resetValidation()
-  })
-}
+    isActive: true,
+  });
 
-const loadProxyData = () => {
-  if (props.proxy) {
+  // プロトコルオプション
+  const protocolOptions = [
+    { title: 'HTTP', value: 'http' },
+    { title: 'HTTPS', value: 'https' },
+    { title: 'SOCKS5', value: 'socks5' },
+  ];
+
+  // バリデーションルール
+  const nameRules = [
+    (v: string) => !!v || 'プロキシ名は必須です',
+    (v: string) => v.length >= 2 || 'プロキシ名は2文字以上で入力してください',
+    (v: string) => v.length <= 50 || 'プロキシ名は50文字以下で入力してください',
+  ];
+
+  const hostRules = [
+    (v: string) => !!v || 'ホストは必須です',
+    (v: string) => {
+      // IPアドレスまたはドメインの簡易チェック
+      const ipPattern = /^(\d{1,3}\.){3}\d{1,3}$/;
+      const domainPattern =
+        /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+      return (
+        ipPattern.test(v) ||
+        domainPattern.test(v) ||
+        '有効なIPアドレスまたはドメイン名を入力してください'
+      );
+    },
+  ];
+
+  const portRules = [
+    (v: number) => !!v || 'ポートは必須です',
+    (v: number) =>
+      (v >= 1 && v <= 65535) || 'ポートは1-65535の範囲で入力してください',
+  ];
+
+  const usernameRules = [
+    (v: string) => !!v || 'ユーザー名は必須です',
+    (v: string) => v.length >= 2 || 'ユーザー名は2文字以上で入力してください',
+  ];
+
+  const passwordRules = [
+    (v: string) => !!v || 'パスワードは必須です',
+    (v: string) => v.length >= 4 || 'パスワードは4文字以上で入力してください',
+  ];
+
+  // Computed
+  const dialogModel = computed({
+    get: () => props.modelValue,
+    set: value => emit('update:modelValue', value),
+  });
+
+  const isEditing = computed(() => !!props.proxy);
+
+  // Methods
+  const resetForm = () => {
     formData.value = {
-      name: props.proxy.name,
-      host: props.proxy.host,
-      port: props.proxy.port,
-      protocol: props.proxy.protocol,
-      username: props.proxy.username || '',
-      password: props.proxy.password || '',
-      location: props.proxy.location || '',
-      provider: props.proxy.provider || '',
-      isActive: props.proxy.isActive
-    }
-    useAuth.value = !!(props.proxy.username && props.proxy.password)
-  }
-}
+      name: '',
+      host: '',
+      port: 8080,
+      protocol: 'http',
+      username: '',
+      password: '',
+      location: '',
+      provider: '',
+      isActive: true,
+    };
+    useAuth.value = false;
+    showPassword.value = false;
 
-const handleSubmit = async () => {
-  if (!formValid.value) return
+    nextTick(() => {
+      formRef.value?.resetValidation();
+    });
+  };
 
-  try {
-    loading.value = true
-
-    const proxyData = {
-      ...formData.value,
-      // 認証を使用しない場合はusername/passwordをundefinedに
-      username: useAuth.value ? formData.value.username : undefined,
-      password: useAuth.value ? formData.value.password : undefined
-    }
-
-    if (isEditing.value && props.proxy) {
-      await proxiesStore.updateProxy(props.proxy.id, proxyData)
-    } else {
-      await proxiesStore.createProxy(proxyData)
-    }
-
-    emit('saved')
-    dialogModel.value = false
-    resetForm()
-
-  } catch (error) {
-    console.error('プロキシ保存エラー:', error)
-  } finally {
-    loading.value = false
-  }
-}
-
-const handleCancel = () => {
-  dialogModel.value = false
-  resetForm()
-}
-
-// Watchers
-watch(() => props.modelValue, (newValue) => {
-  if (newValue) {
+  const loadProxyData = () => {
     if (props.proxy) {
-      loadProxyData()
-    } else {
-      resetForm()
+      formData.value = {
+        name: props.proxy.name,
+        host: props.proxy.host,
+        port: props.proxy.port,
+        protocol: props.proxy.protocol,
+        username: props.proxy.username || '',
+        password: props.proxy.password || '',
+        location: props.proxy.location || '',
+        provider: props.proxy.provider || '',
+        isActive: props.proxy.isActive,
+      };
+      useAuth.value = !!(props.proxy.username && props.proxy.password);
     }
-  }
-})
+  };
 
-watch(() => props.proxy, () => {
-  if (props.modelValue && props.proxy) {
-    loadProxyData()
-  }
-})
+  const handleSubmit = async () => {
+    if (!formValid.value) return;
+
+    try {
+      loading.value = true;
+
+      const proxyData = {
+        ...formData.value,
+        // 認証を使用しない場合はusername/passwordをundefinedに
+        username: useAuth.value ? formData.value.username : undefined,
+        password: useAuth.value ? formData.value.password : undefined,
+      };
+
+      if (isEditing.value && props.proxy) {
+        await proxiesStore.updateProxy(props.proxy.id, proxyData);
+      } else {
+        await proxiesStore.createProxy(proxyData);
+      }
+
+      emit('saved');
+      dialogModel.value = false;
+      resetForm();
+    } catch (error) {
+      console.error('プロキシ保存エラー:', error);
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const handleCancel = () => {
+    dialogModel.value = false;
+    resetForm();
+  };
+
+  // Watchers
+  watch(
+    () => props.modelValue,
+    newValue => {
+      if (newValue) {
+        if (props.proxy) {
+          loadProxyData();
+        } else {
+          resetForm();
+        }
+      }
+    }
+  );
+
+  watch(
+    () => props.proxy,
+    () => {
+      if (props.modelValue && props.proxy) {
+        loadProxyData();
+      }
+    }
+  );
 </script>
 
 <style scoped>
-.proxy-form-card {
-  background: white;
-  border: 1px solid #e2e8f0;
-}
-
-.proxy-form-header {
-  background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
-  border-bottom: 1px solid #e2e8f0;
-  padding: 20px 24px;
-}
-
-.v-text-field :deep(.v-field__outline) {
-  border-radius: 12px;
-}
-
-.v-select :deep(.v-field__outline) {
-  border-radius: 12px;
-}
-
-/* アニメーション */
-.proxy-form-card {
-  animation: slideInUp 0.3s ease-out;
-}
-
-@keyframes slideInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
+  .proxy-form-card {
+    background: white;
+    border: 1px solid #e2e8f0;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+
+  .proxy-form-header {
+    background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+    border-bottom: 1px solid #e2e8f0;
+    padding: 20px 24px;
   }
-}
+
+  .v-text-field :deep(.v-field__outline) {
+    border-radius: 12px;
+  }
+
+  .v-select :deep(.v-field__outline) {
+    border-radius: 12px;
+  }
+
+  /* アニメーション */
+  .proxy-form-card {
+    animation: slideInUp 0.3s ease-out;
+  }
+
+  @keyframes slideInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 </style>

@@ -26,9 +26,9 @@
               @click="refreshTest"
             />
           </template>
-          
+
           <p>This is a test of the dashboard card component.</p>
-          
+
           <template #footer>
             <v-btn text>Test Action</v-btn>
           </template>
@@ -47,7 +47,7 @@
           color="success"
         />
       </v-col>
-      
+
       <v-col cols="12" md="6">
         <status-card
           title="Failed Tests"
@@ -70,7 +70,7 @@
           status="good"
         />
       </v-col>
-      
+
       <v-col cols="12" md="4">
         <metric-card
           icon="mdi-memory"
@@ -80,7 +80,7 @@
           status="warning"
         />
       </v-col>
-      
+
       <v-col cols="12" md="4">
         <metric-card
           icon="mdi-database"
@@ -109,7 +109,7 @@
           </v-card-text>
         </v-card>
       </v-col>
-      
+
       <v-col cols="12" md="6">
         <v-card>
           <v-card-title>Progress Metrics Test</v-card-title>
@@ -140,20 +140,20 @@
 </template>
 
 <script setup lang="ts">
-import {
-  DashboardCard,
-  StatusCard,
-  MetricCard,
-  StatusChip,
-  DashboardActionButton,
-  ProgressMetric
-} from './index'
+  import {
+    DashboardCard,
+    StatusCard,
+    MetricCard,
+    StatusChip,
+    DashboardActionButton,
+    ProgressMetric,
+  } from './index';
 
-const refreshTest = () => {
-  console.log('Refresh test triggered')
-}
+  const refreshTest = () => {
+    console.log('Refresh test triggered');
+  };
 </script>
 
 <style scoped>
-/* Test-specific styles */
+  /* Test-specific styles */
 </style>

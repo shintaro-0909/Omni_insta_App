@@ -1,4 +1,5 @@
 import * as functions from "firebase-functions";
+import * as admin from "firebase-admin";
 import {db} from "../index";
 
 // 投稿コンテンツの型定義
@@ -344,7 +345,7 @@ export const incrementPostUsage = async (postId: string): Promise<void> => {
   try {
     // Firestore FieldValue.increment()を使用して原子的操作で最適化
     await db.collection("posts").doc(postId).update({
-      timesPosted: db.FieldValue.increment(1),
+      timesPosted: admin.firestore.FieldValue.increment(1),
       updatedAt: new Date(),
     });
   } catch (error) {

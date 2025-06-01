@@ -8,9 +8,10 @@
             Simple, Transparent Pricing
           </h1>
           <p class="page-subtitle" data-aos="fade-up" data-aos-delay="200">
-            Choose the perfect plan to scale your Instagram presence and grow your business
+            Choose the perfect plan to scale your Instagram presence and grow
+            your business
           </p>
-          
+
           <!-- Billing Toggle -->
           <div class="billing-toggle" data-aos="fade-up" data-aos-delay="400">
             <v-btn-toggle
@@ -22,7 +23,9 @@
               <v-btn value="monthly">Monthly</v-btn>
               <v-btn value="yearly">
                 Yearly
-                <v-chip size="small" color="success" class="ml-2">Save 20%</v-chip>
+                <v-chip size="small" color="success" class="ml-2"
+                  >Save 20%</v-chip
+                >
               </v-btn>
             </v-btn-toggle>
           </div>
@@ -45,7 +48,7 @@
             class="pricing-plan-card"
             :class="{
               featured: plan.featured,
-              enterprise: plan.name === 'Enterprise'
+              enterprise: plan.name === 'Enterprise',
             }"
             elevation="0"
             data-aos="fade-up"
@@ -60,7 +63,10 @@
             <!-- Plan Header -->
             <div class="plan-header">
               <div class="plan-icon">
-                <v-avatar size="64" :class="`plan-avatar plan-avatar--${plan.color}`">
+                <v-avatar
+                  size="64"
+                  :class="`plan-avatar plan-avatar--${plan.color}`"
+                >
                   <v-icon :icon="plan.icon" size="32"></v-icon>
                 </v-avatar>
               </div>
@@ -73,10 +79,15 @@
               <div class="price-display">
                 <span class="currency">$</span>
                 <span class="amount">{{ getCurrentPrice(plan) }}</span>
-                <span class="period">/{{ billingPeriod === 'yearly' ? 'year' : 'month' }}</span>
+                <span class="period"
+                  >/{{ billingPeriod === 'yearly' ? 'year' : 'month' }}</span
+                >
               </div>
-              <div v-if="billingPeriod === 'yearly' && plan.yearlyPrice" class="savings">
-                Save ${{ (plan.monthlyPrice * 12 - plan.yearlyPrice) }} per year
+              <div
+                v-if="billingPeriod === 'yearly' && plan.yearlyPrice"
+                class="savings"
+              >
+                Save ${{ plan.monthlyPrice * 12 - plan.yearlyPrice }} per year
               </div>
             </div>
 
@@ -93,7 +104,11 @@
                 >
                   <template v-slot:prepend>
                     <v-icon
-                      :icon="feature.included ? 'mdi-check-circle' : 'mdi-close-circle'"
+                      :icon="
+                        feature.included
+                          ? 'mdi-check-circle'
+                          : 'mdi-close-circle'
+                      "
                       :color="feature.included ? 'success' : 'error'"
                       size="20"
                     ></v-icon>
@@ -144,15 +159,18 @@
     <!-- Feature Comparison -->
     <v-container class="comparison-section">
       <div class="section-header text-center">
-        <h2 class="section-title" data-aos="fade-up">
-          Compare All Features
-        </h2>
+        <h2 class="section-title" data-aos="fade-up">Compare All Features</h2>
         <p class="section-subtitle" data-aos="fade-up" data-aos-delay="200">
           See exactly what's included in each plan
         </p>
       </div>
 
-      <v-card class="comparison-table-card" elevation="2" data-aos="fade-up" data-aos-delay="400">
+      <v-card
+        class="comparison-table-card"
+        elevation="2"
+        data-aos="fade-up"
+        data-aos-delay="400"
+      >
         <div class="table-responsive">
           <table class="comparison-table">
             <thead>
@@ -167,7 +185,9 @@
                   <div class="plan-header-content">
                     <div class="plan-name">{{ plan.name }}</div>
                     <div class="plan-price">
-                      ${{ getCurrentPrice(plan) }}/{{ billingPeriod === 'yearly' ? 'yr' : 'mo' }}
+                      ${{ getCurrentPrice(plan) }}/{{
+                        billingPeriod === 'yearly' ? 'yr' : 'mo'
+                      }}
                     </div>
                   </div>
                 </th>
@@ -203,9 +223,20 @@
                 >
                   <div class="value-content">
                     <v-icon
-                      v-if="typeof feature.values[plan.name.toLowerCase()] === 'boolean'"
-                      :icon="feature.values[plan.name.toLowerCase()] ? 'mdi-check' : 'mdi-close'"
-                      :color="feature.values[plan.name.toLowerCase()] ? 'success' : 'error'"
+                      v-if="
+                        typeof feature.values[plan.name.toLowerCase()] ===
+                        'boolean'
+                      "
+                      :icon="
+                        feature.values[plan.name.toLowerCase()]
+                          ? 'mdi-check'
+                          : 'mdi-close'
+                      "
+                      :color="
+                        feature.values[plan.name.toLowerCase()]
+                          ? 'success'
+                          : 'error'
+                      "
                       size="20"
                     ></v-icon>
                     <span v-else class="value-text">
@@ -246,7 +277,11 @@
           >
             <div class="testimonial-content">
               <div class="quote-icon">
-                <v-icon icon="mdi-format-quote-close" size="24" color="primary"></v-icon>
+                <v-icon
+                  icon="mdi-format-quote-close"
+                  size="24"
+                  color="primary"
+                ></v-icon>
               </div>
               <p class="testimonial-text">{{ testimonial.text }}</p>
               <div class="testimonial-author">
@@ -256,7 +291,9 @@
                 <div class="author-info">
                   <div class="author-name">{{ testimonial.name }}</div>
                   <div class="author-title">{{ testimonial.title }}</div>
-                  <div class="author-stats">{{ testimonial.followers }} followers</div>
+                  <div class="author-stats">
+                    {{ testimonial.followers }} followers
+                  </div>
                 </div>
               </div>
             </div>
@@ -308,7 +345,8 @@
             Ready to Transform Your Instagram Strategy?
           </h2>
           <p class="cta-subtitle" data-aos="fade-up" data-aos-delay="200">
-            Join thousands of creators and businesses already using Omniy to grow their Instagram presence
+            Join thousands of creators and businesses already using Omniy to
+            grow their Instagram presence
           </p>
           <div class="cta-actions" data-aos="fade-up" data-aos-delay="400">
             <v-btn
@@ -365,7 +403,7 @@
                 </v-list-item>
               </v-list>
             </div>
-            
+
             <v-form class="enterprise-form">
               <v-text-field
                 v-model="enterpriseForm.name"
@@ -403,17 +441,10 @@
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn
-            variant="text"
-            @click="showEnterpriseModal = false"
-          >
+          <v-btn variant="text" @click="showEnterpriseModal = false">
             Cancel
           </v-btn>
-          <v-btn
-            color="primary"
-            variant="flat"
-            @click="submitEnterpriseForm"
-          >
+          <v-btn color="primary" variant="flat" @click="submitEnterpriseForm">
             Contact Sales
           </v-btn>
         </v-card-actions>
@@ -423,959 +454,965 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import AOS from 'aos'
-import 'aos/dist/aos.css'
+  import { ref, computed, onMounted } from 'vue';
+  import AOS from 'aos';
+  import 'aos/dist/aos.css';
 
-// Reactive data
-const billingPeriod = ref('monthly')
-const showEnterpriseModal = ref(false)
-const enterpriseForm = ref({
-  name: '',
-  email: '',
-  company: '',
-  teamSize: '',
-  message: ''
-})
-
-// Pricing plans
-const pricingPlans = ref([
-  {
-    name: 'Starter',
-    icon: 'mdi-rocket-launch-outline',
-    color: 'blue',
-    description: 'Perfect for getting started with Instagram automation',
-    monthlyPrice: 9,
-    yearlyPrice: 86,
-    featured: false,
-    ctaText: 'Start Free Trial',
-    trialDays: 14,
-    features: [
-      { name: '1 Instagram Account', included: true },
-      { name: '50 Scheduled Posts/Month', included: true },
-      { name: 'Basic Analytics', included: true },
-      { name: 'Post Templates', included: true },
-      { name: 'Email Support', included: true },
-      { name: 'Advanced Analytics', included: false },
-      { name: 'AI Caption Generation', included: false },
-      { name: 'Priority Support', included: false }
-    ]
-  },
-  {
-    name: 'Professional',
-    icon: 'mdi-star-outline',
-    color: 'purple',
-    description: 'Ideal for growing creators and small businesses',
-    monthlyPrice: 29,
-    yearlyPrice: 278,
-    featured: true,
-    ctaText: 'Start Free Trial',
-    trialDays: 14,
-    features: [
-      { name: '5 Instagram Accounts', included: true },
-      { name: 'Unlimited Scheduled Posts', included: true },
-      { name: 'Advanced Analytics', included: true },
-      { name: 'AI Caption Generation', included: true },
-      { name: 'Content Calendar', included: true },
-      { name: 'Priority Support', included: true },
-      { name: 'White-label Reports', included: false },
-      { name: 'API Access', included: false }
-    ]
-  },
-  {
-    name: 'Business',
-    icon: 'mdi-office-building-outline',
-    color: 'green',
-    description: 'Built for teams and agencies managing multiple brands',
-    monthlyPrice: 79,
-    yearlyPrice: 758,
-    featured: false,
-    ctaText: 'Start Free Trial',
-    trialDays: 14,
-    features: [
-      { name: '15 Instagram Accounts', included: true },
-      { name: 'Unlimited Everything', included: true },
-      { name: 'Team Collaboration', included: true },
-      { name: 'White-label Reports', included: true },
-      { name: 'API Access', included: true },
-      { name: 'Custom Integrations', included: true },
-      { name: 'Dedicated Account Manager', included: false },
-      { name: 'Custom SLA', included: false }
-    ]
-  },
-  {
-    name: 'Enterprise',
-    icon: 'mdi-domain',
-    color: 'orange',
-    description: 'Custom solutions for large organizations',
-    monthlyPrice: null,
-    yearlyPrice: null,
-    featured: false,
-    ctaText: 'Contact Sales',
-    trialDays: null,
-    features: [
-      { name: 'Unlimited Accounts', included: true },
-      { name: 'Custom Features', included: true },
-      { name: 'Dedicated Account Manager', included: true },
-      { name: 'Custom SLA', included: true },
-      { name: 'On-premise Deployment', included: true },
-      { name: 'Advanced Security', included: true },
-      { name: 'Custom Training', included: true },
-      { name: '24/7 Phone Support', included: true }
-    ]
-  }
-])
-
-// Comparison features
-const comparisonFeatures = ref([
-  {
-    name: 'Instagram Accounts',
-    tooltip: 'Number of Instagram accounts you can connect',
-    values: {
-      starter: '1',
-      professional: '5',
-      business: '15',
-      enterprise: 'Unlimited'
-    }
-  },
-  {
-    name: 'Scheduled Posts/Month',
-    tooltip: 'Monthly limit for scheduled posts',
-    values: {
-      starter: '50',
-      professional: 'Unlimited',
-      business: 'Unlimited',
-      enterprise: 'Unlimited'
-    }
-  },
-  {
-    name: 'AI Caption Generation',
-    tooltip: 'AI-powered caption suggestions and optimization',
-    values: {
-      starter: false,
-      professional: true,
-      business: true,
-      enterprise: true
-    }
-  },
-  {
-    name: 'Advanced Analytics',
-    tooltip: 'Detailed insights and performance metrics',
-    values: {
-      starter: false,
-      professional: true,
-      business: true,
-      enterprise: true
-    }
-  },
-  {
-    name: 'Team Collaboration',
-    tooltip: 'Multiple users and role-based permissions',
-    values: {
-      starter: false,
-      professional: false,
-      business: true,
-      enterprise: true
-    }
-  },
-  {
-    name: 'White-label Reports',
-    tooltip: 'Branded reports for clients',
-    values: {
-      starter: false,
-      professional: false,
-      business: true,
-      enterprise: true
-    }
-  },
-  {
-    name: 'API Access',
-    tooltip: 'Custom integrations and API access',
-    values: {
-      starter: false,
-      professional: false,
-      business: true,
-      enterprise: true
-    }
-  },
-  {
-    name: 'Priority Support',
-    tooltip: 'Faster response times and dedicated support',
-    values: {
-      starter: false,
-      professional: true,
-      business: true,
-      enterprise: true
-    }
-  }
-])
-
-// Testimonials
-const testimonials = ref([
-  {
-    text: "Omniy has transformed how I manage my Instagram. The AI features save me hours every week, and my engagement has increased by 300%!",
-    name: "Sarah Johnson",
-    title: "Travel Influencer",
-    followers: "125K",
-    avatar: "https://randomuser.me/api/portraits/women/1.jpg"
-  },
-  {
-    text: "The analytics insights are incredible. I finally understand what content resonates with my audience and when to post for maximum reach.",
-    name: "Mike Chen",
-    title: "Fitness Coach",
-    followers: "89K",
-    avatar: "https://randomuser.me/api/portraits/men/1.jpg"
-  },
-  {
-    text: "Managing multiple client accounts used to be a nightmare. Omniy's team features make collaboration seamless and efficient.",
-    name: "Emma Rodriguez",
-    title: "Social Media Manager",
-    followers: "45K",
-    avatar: "https://randomuser.me/api/portraits/women/2.jpg"
-  }
-])
-
-// FAQs
-const faqs = ref([
-  {
-    question: "Can I change my plan at any time?",
-    answer: "Yes! You can upgrade or downgrade your plan at any time. Changes take effect immediately, and we'll prorate any billing differences."
-  },
-  {
-    question: "What happens if I exceed my account or post limits?",
-    answer: "We'll notify you when you're approaching your limits. You can upgrade your plan to increase limits, or wait until the next billing cycle for limits to reset."
-  },
-  {
-    question: "Do you offer refunds?",
-    answer: "We offer a 14-day free trial, so you can test all features before paying. If you're not satisfied within the first 30 days of paid service, we offer a full refund."
-  },
-  {
-    question: "Is my Instagram data secure?",
-    answer: "Absolutely. We use enterprise-grade encryption and follow Instagram's official API guidelines. Your data is never shared with third parties."
-  },
-  {
-    question: "Can I cancel my subscription anytime?",
-    answer: "Yes, you can cancel your subscription at any time from your account settings. Your plan will remain active until the end of your current billing period."
-  },
-  {
-    question: "Do you offer custom enterprise solutions?",
-    answer: "Yes! Our Enterprise plan includes custom features, dedicated support, and can be tailored to your organization's specific needs. Contact our sales team for more information."
-  }
-])
-
-// Enterprise features
-const enterpriseFeatures = ref([
-  'Unlimited Instagram accounts',
-  'Custom feature development',
-  'Dedicated account manager',
-  'Custom SLA and uptime guarantees',
-  'On-premise deployment options',
-  'Advanced security and compliance',
-  'Custom training and onboarding',
-  '24/7 phone and priority support'
-])
-
-// Team size options
-const teamSizeOptions = ref([
-  '1-10 employees',
-  '11-50 employees',
-  '51-200 employees',
-  '201-1000 employees',
-  '1000+ employees'
-])
-
-// Computed properties
-const getCurrentPrice = (plan: any) => {
-  if (!plan.monthlyPrice) return 'Custom'
-  
-  if (billingPeriod.value === 'yearly' && plan.yearlyPrice) {
-    return Math.round(plan.yearlyPrice / 12)
-  }
-  
-  return plan.monthlyPrice
-}
-
-// Methods
-const selectPlan = (plan: any) => {
-  if (plan.name === 'Enterprise') {
-    showEnterpriseModal.value = true
-  } else {
-    console.log('Selected plan:', plan.name)
-    // Handle plan selection
-  }
-}
-
-const startFreeTrial = () => {
-  console.log('Start free trial')
-}
-
-const scheduleDemo = () => {
-  console.log('Schedule demo')
-}
-
-const submitEnterpriseForm = () => {
-  console.log('Enterprise form submitted:', enterpriseForm.value)
-  showEnterpriseModal.value = false
-  // Reset form
-  enterpriseForm.value = {
+  // Reactive data
+  const billingPeriod = ref('monthly');
+  const showEnterpriseModal = ref(false);
+  const enterpriseForm = ref({
     name: '',
     email: '',
     company: '',
     teamSize: '',
-    message: ''
-  }
-}
+    message: '',
+  });
 
-// Lifecycle
-onMounted(() => {
-  AOS.init({
-    duration: 800,
-    easing: 'ease-out-cubic',
-    once: true
-  })
-})
+  // Pricing plans
+  const pricingPlans = ref([
+    {
+      name: 'Starter',
+      icon: 'mdi-rocket-launch-outline',
+      color: 'blue',
+      description: 'Perfect for getting started with Instagram automation',
+      monthlyPrice: 9,
+      yearlyPrice: 86,
+      featured: false,
+      ctaText: 'Start Free Trial',
+      trialDays: 14,
+      features: [
+        { name: '1 Instagram Account', included: true },
+        { name: '50 Scheduled Posts/Month', included: true },
+        { name: 'Basic Analytics', included: true },
+        { name: 'Post Templates', included: true },
+        { name: 'Email Support', included: true },
+        { name: 'Advanced Analytics', included: false },
+        { name: 'AI Caption Generation', included: false },
+        { name: 'Priority Support', included: false },
+      ],
+    },
+    {
+      name: 'Professional',
+      icon: 'mdi-star-outline',
+      color: 'purple',
+      description: 'Ideal for growing creators and small businesses',
+      monthlyPrice: 29,
+      yearlyPrice: 278,
+      featured: true,
+      ctaText: 'Start Free Trial',
+      trialDays: 14,
+      features: [
+        { name: '5 Instagram Accounts', included: true },
+        { name: 'Unlimited Scheduled Posts', included: true },
+        { name: 'Advanced Analytics', included: true },
+        { name: 'AI Caption Generation', included: true },
+        { name: 'Content Calendar', included: true },
+        { name: 'Priority Support', included: true },
+        { name: 'White-label Reports', included: false },
+        { name: 'API Access', included: false },
+      ],
+    },
+    {
+      name: 'Business',
+      icon: 'mdi-office-building-outline',
+      color: 'green',
+      description: 'Built for teams and agencies managing multiple brands',
+      monthlyPrice: 79,
+      yearlyPrice: 758,
+      featured: false,
+      ctaText: 'Start Free Trial',
+      trialDays: 14,
+      features: [
+        { name: '15 Instagram Accounts', included: true },
+        { name: 'Unlimited Everything', included: true },
+        { name: 'Team Collaboration', included: true },
+        { name: 'White-label Reports', included: true },
+        { name: 'API Access', included: true },
+        { name: 'Custom Integrations', included: true },
+        { name: 'Dedicated Account Manager', included: false },
+        { name: 'Custom SLA', included: false },
+      ],
+    },
+    {
+      name: 'Enterprise',
+      icon: 'mdi-domain',
+      color: 'orange',
+      description: 'Custom solutions for large organizations',
+      monthlyPrice: null,
+      yearlyPrice: null,
+      featured: false,
+      ctaText: 'Contact Sales',
+      trialDays: null,
+      features: [
+        { name: 'Unlimited Accounts', included: true },
+        { name: 'Custom Features', included: true },
+        { name: 'Dedicated Account Manager', included: true },
+        { name: 'Custom SLA', included: true },
+        { name: 'On-premise Deployment', included: true },
+        { name: 'Advanced Security', included: true },
+        { name: 'Custom Training', included: true },
+        { name: '24/7 Phone Support', included: true },
+      ],
+    },
+  ]);
+
+  // Comparison features
+  const comparisonFeatures = ref([
+    {
+      name: 'Instagram Accounts',
+      tooltip: 'Number of Instagram accounts you can connect',
+      values: {
+        starter: '1',
+        professional: '5',
+        business: '15',
+        enterprise: 'Unlimited',
+      },
+    },
+    {
+      name: 'Scheduled Posts/Month',
+      tooltip: 'Monthly limit for scheduled posts',
+      values: {
+        starter: '50',
+        professional: 'Unlimited',
+        business: 'Unlimited',
+        enterprise: 'Unlimited',
+      },
+    },
+    {
+      name: 'AI Caption Generation',
+      tooltip: 'AI-powered caption suggestions and optimization',
+      values: {
+        starter: false,
+        professional: true,
+        business: true,
+        enterprise: true,
+      },
+    },
+    {
+      name: 'Advanced Analytics',
+      tooltip: 'Detailed insights and performance metrics',
+      values: {
+        starter: false,
+        professional: true,
+        business: true,
+        enterprise: true,
+      },
+    },
+    {
+      name: 'Team Collaboration',
+      tooltip: 'Multiple users and role-based permissions',
+      values: {
+        starter: false,
+        professional: false,
+        business: true,
+        enterprise: true,
+      },
+    },
+    {
+      name: 'White-label Reports',
+      tooltip: 'Branded reports for clients',
+      values: {
+        starter: false,
+        professional: false,
+        business: true,
+        enterprise: true,
+      },
+    },
+    {
+      name: 'API Access',
+      tooltip: 'Custom integrations and API access',
+      values: {
+        starter: false,
+        professional: false,
+        business: true,
+        enterprise: true,
+      },
+    },
+    {
+      name: 'Priority Support',
+      tooltip: 'Faster response times and dedicated support',
+      values: {
+        starter: false,
+        professional: true,
+        business: true,
+        enterprise: true,
+      },
+    },
+  ]);
+
+  // Testimonials
+  const testimonials = ref([
+    {
+      text: 'Omniy has transformed how I manage my Instagram. The AI features save me hours every week, and my engagement has increased by 300%!',
+      name: 'Sarah Johnson',
+      title: 'Travel Influencer',
+      followers: '125K',
+      avatar: 'https://randomuser.me/api/portraits/women/1.jpg',
+    },
+    {
+      text: 'The analytics insights are incredible. I finally understand what content resonates with my audience and when to post for maximum reach.',
+      name: 'Mike Chen',
+      title: 'Fitness Coach',
+      followers: '89K',
+      avatar: 'https://randomuser.me/api/portraits/men/1.jpg',
+    },
+    {
+      text: "Managing multiple client accounts used to be a nightmare. Omniy's team features make collaboration seamless and efficient.",
+      name: 'Emma Rodriguez',
+      title: 'Social Media Manager',
+      followers: '45K',
+      avatar: 'https://randomuser.me/api/portraits/women/2.jpg',
+    },
+  ]);
+
+  // FAQs
+  const faqs = ref([
+    {
+      question: 'Can I change my plan at any time?',
+      answer:
+        "Yes! You can upgrade or downgrade your plan at any time. Changes take effect immediately, and we'll prorate any billing differences.",
+    },
+    {
+      question: 'What happens if I exceed my account or post limits?',
+      answer:
+        "We'll notify you when you're approaching your limits. You can upgrade your plan to increase limits, or wait until the next billing cycle for limits to reset.",
+    },
+    {
+      question: 'Do you offer refunds?',
+      answer:
+        "We offer a 14-day free trial, so you can test all features before paying. If you're not satisfied within the first 30 days of paid service, we offer a full refund.",
+    },
+    {
+      question: 'Is my Instagram data secure?',
+      answer:
+        "Absolutely. We use enterprise-grade encryption and follow Instagram's official API guidelines. Your data is never shared with third parties.",
+    },
+    {
+      question: 'Can I cancel my subscription anytime?',
+      answer:
+        'Yes, you can cancel your subscription at any time from your account settings. Your plan will remain active until the end of your current billing period.',
+    },
+    {
+      question: 'Do you offer custom enterprise solutions?',
+      answer:
+        "Yes! Our Enterprise plan includes custom features, dedicated support, and can be tailored to your organization's specific needs. Contact our sales team for more information.",
+    },
+  ]);
+
+  // Enterprise features
+  const enterpriseFeatures = ref([
+    'Unlimited Instagram accounts',
+    'Custom feature development',
+    'Dedicated account manager',
+    'Custom SLA and uptime guarantees',
+    'On-premise deployment options',
+    'Advanced security and compliance',
+    'Custom training and onboarding',
+    '24/7 phone and priority support',
+  ]);
+
+  // Team size options
+  const teamSizeOptions = ref([
+    '1-10 employees',
+    '11-50 employees',
+    '51-200 employees',
+    '201-1000 employees',
+    '1000+ employees',
+  ]);
+
+  // Computed properties
+  const getCurrentPrice = (plan: any) => {
+    if (!plan.monthlyPrice) return 'Custom';
+
+    if (billingPeriod.value === 'yearly' && plan.yearlyPrice) {
+      return Math.round(plan.yearlyPrice / 12);
+    }
+
+    return plan.monthlyPrice;
+  };
+
+  // Methods
+  const selectPlan = (plan: any) => {
+    if (plan.name === 'Enterprise') {
+      showEnterpriseModal.value = true;
+    } else {
+      console.log('Selected plan:', plan.name);
+      // Handle plan selection
+    }
+  };
+
+  const startFreeTrial = () => {
+    console.log('Start free trial');
+  };
+
+  const scheduleDemo = () => {
+    console.log('Schedule demo');
+  };
+
+  const submitEnterpriseForm = () => {
+    console.log('Enterprise form submitted:', enterpriseForm.value);
+    showEnterpriseModal.value = false;
+    // Reset form
+    enterpriseForm.value = {
+      name: '',
+      email: '',
+      company: '',
+      teamSize: '',
+      message: '',
+    };
+  };
+
+  // Lifecycle
+  onMounted(() => {
+    AOS.init({
+      duration: 800,
+      easing: 'ease-out-cubic',
+      once: true,
+    });
+  });
 </script>
 
 <style scoped>
-.modern-pricing-page {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  min-height: 100vh;
-}
+  .modern-pricing-page {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+  }
+
+  /* Header */
+  .pricing-header {
+    padding: 4rem 0;
+    color: white;
+    text-align: center;
+  }
 
-/* Header */
-.pricing-header {
-  padding: 4rem 0;
-  color: white;
-  text-align: center;
-}
-
-.page-title {
-  font-size: 3.5rem;
-  font-weight: 900;
-  margin-bottom: 1.5rem;
-  line-height: 1.2;
-}
-
-.page-subtitle {
-  font-size: 1.3rem;
-  opacity: 0.9;
-  max-width: 600px;
-  margin: 0 auto 3rem;
-  line-height: 1.6;
-}
-
-.billing-toggle {
-  display: flex;
-  justify-content: center;
-}
-
-.toggle-buttons {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 50px;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.toggle-buttons .v-btn {
-  border-radius: 25px;
-  color: white;
-  font-weight: 600;
-}
-
-.toggle-buttons .v-btn--active {
-  background: white;
-  color: #667eea;
-}
-
-/* Plans Section */
-.plans-section {
-  padding: 4rem 0;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-}
-
-.pricing-plan-card {
-  background: white;
-  border-radius: 24px;
-  padding: 2rem;
-  position: relative;
-  transition: all 0.3s ease;
-  height: 100%;
-  border: 2px solid transparent;
-}
-
-.pricing-plan-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
-}
-
-.pricing-plan-card.featured {
-  border-color: #667eea;
-  box-shadow: 0 15px 50px rgba(102, 126, 234, 0.2);
-  transform: scale(1.05);
-}
-
-.pricing-plan-card.featured:hover {
-  transform: scale(1.05) translateY(-8px);
-}
-
-.pricing-plan-card.enterprise {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-}
-
-.popular-badge {
-  position: absolute;
-  top: -12px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 8px 20px;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
-}
-
-.plan-header {
-  text-align: center;
-  margin-bottom: 2rem;
-}
-
-.plan-icon {
-  margin-bottom: 1.5rem;
-}
-
-.plan-avatar {
-  background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
-}
-
-.plan-avatar--blue {
-  background: linear-gradient(45deg, #2196f3, #90caf9);
-}
-
-.plan-avatar--purple {
-  background: linear-gradient(45deg, #9c27b0, #ce93d8);
-}
-
-.plan-avatar--green {
-  background: linear-gradient(45deg, #4caf50, #a5d6a7);
-}
-
-.plan-avatar--orange {
-  background: linear-gradient(45deg, #ff9800, #ffcc02);
-}
-
-.plan-name {
-  font-size: 1.8rem;
-  font-weight: 700;
-  margin: 0 0 0.5rem;
-  color: #2c3e50;
-}
-
-.enterprise .plan-name {
-  color: white;
-}
-
-.plan-description {
-  color: #7f8c8d;
-  margin: 0;
-  line-height: 1.5;
-}
-
-.enterprise .plan-description {
-  color: rgba(255, 255, 255, 0.9);
-}
-
-.plan-pricing {
-  text-align: center;
-  margin-bottom: 2rem;
-  padding-bottom: 2rem;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.enterprise .plan-pricing {
-  border-bottom-color: rgba(255, 255, 255, 0.2);
-}
-
-.price-display {
-  display: flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: 0.25rem;
-  margin-bottom: 0.5rem;
-}
-
-.currency {
-  font-size: 1.5rem;
-  color: #7f8c8d;
-  font-weight: 600;
-}
-
-.amount {
-  font-size: 3.5rem;
-  font-weight: 900;
-  color: #2c3e50;
-  line-height: 1;
-}
-
-.enterprise .amount {
-  color: white;
-}
-
-.period {
-  font-size: 1.2rem;
-  color: #7f8c8d;
-  font-weight: 500;
-}
-
-.enterprise .period {
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.savings {
-  font-size: 0.9rem;
-  color: #4caf50;
-  font-weight: 600;
-  background: rgba(76, 175, 80, 0.1);
-  padding: 4px 12px;
-  border-radius: 12px;
-  display: inline-block;
-}
-
-.plan-features {
-  margin-bottom: 2rem;
-}
-
-.features-header h4 {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #2c3e50;
-  margin: 0 0 1rem;
-  text-align: center;
-}
-
-.enterprise .features-header h4 {
-  color: white;
-}
-
-.feature-list {
-  background: transparent;
-  padding: 0;
-}
-
-.feature-item {
-  padding: 8px 0;
-  min-height: auto;
-}
-
-.feature-item .v-list-item-title {
-  font-size: 0.95rem;
-  line-height: 1.4;
-}
-
-.plan-action {
-  text-align: center;
-}
-
-.plan-cta-btn {
-  font-weight: 600;
-  border-radius: 50px;
-  padding: 16px 32px;
-  font-size: 1.1rem;
-  transition: all 0.3s ease;
-  margin-bottom: 1rem;
-}
-
-.plan-cta-btn:hover {
-  transform: translateY(-2px);
-}
-
-.trial-info {
-  font-size: 0.85rem;
-  color: #7f8c8d;
-  margin: 0;
-  line-height: 1.4;
-}
-
-.enterprise .trial-info {
-  color: rgba(255, 255, 255, 0.8);
-}
-
-/* Comparison Section */
-.comparison-section {
-  padding: 4rem 0;
-  background: white;
-}
-
-.section-title {
-  font-size: 2.5rem;
-  font-weight: 800;
-  color: #2c3e50;
-  margin-bottom: 1rem;
-}
-
-.section-subtitle {
-  font-size: 1.2rem;
-  color: #7f8c8d;
-  max-width: 600px;
-  margin: 0 auto 3rem;
-}
-
-.comparison-table-card {
-  border-radius: 20px;
-  overflow: hidden;
-}
-
-.table-responsive {
-  overflow-x: auto;
-}
-
-.comparison-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.comparison-table th,
-.comparison-table td {
-  padding: 1.5rem 1rem;
-  text-align: center;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.feature-header {
-  text-align: left;
-  background: #f8f9fa;
-  font-weight: 600;
-  color: #2c3e50;
-  position: sticky;
-  left: 0;
-  z-index: 2;
-}
-
-.plan-header {
-  background: #f8f9fa;
-  font-weight: 600;
-  color: #2c3e50;
-  min-width: 150px;
-}
-
-.plan-header.featured {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-}
-
-.plan-header-content {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.plan-name {
-  font-size: 1.1rem;
-  font-weight: 700;
-}
-
-.plan-price {
-  font-size: 0.9rem;
-  opacity: 0.8;
-}
-
-.feature-row:hover {
-  background: #f8f9fa;
-}
-
-.feature-name {
-  text-align: left;
-  font-weight: 500;
-  color: #2c3e50;
-  position: sticky;
-  left: 0;
-  background: white;
-  z-index: 1;
-}
-
-.feature-row:hover .feature-name {
-  background: #f8f9fa;
-}
-
-.feature-content {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.feature-value.featured {
-  background: rgba(102, 126, 234, 0.05);
-}
-
-.value-content {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-}
-
-.value-text {
-  font-weight: 500;
-  color: #2c3e50;
-}
-
-/* Testimonials Section */
-.testimonials-section {
-  padding: 4rem 0;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-}
-
-.testimonial-card {
-  background: white;
-  border-radius: 20px;
-  padding: 2rem;
-  height: 100%;
-  transition: all 0.3s ease;
-}
-
-.testimonial-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
-}
-
-.testimonial-content {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.quote-icon {
-  margin-bottom: 1rem;
-}
-
-.testimonial-text {
-  font-size: 1.1rem;
-  line-height: 1.6;
-  color: #2c3e50;
-  margin: 0 0 2rem;
-  flex: 1;
-  font-style: italic;
-}
-
-.testimonial-author {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.author-info {
-  flex: 1;
-}
-
-.author-name {
-  font-weight: 600;
-  color: #2c3e50;
-  margin-bottom: 0.25rem;
-}
-
-.author-title {
-  color: #7f8c8d;
-  font-size: 0.9rem;
-  margin-bottom: 0.25rem;
-}
-
-.author-stats {
-  color: #667eea;
-  font-size: 0.85rem;
-  font-weight: 500;
-}
-
-/* FAQ Section */
-.faq-section {
-  padding: 4rem 0;
-  background: white;
-}
-
-.faq-panels {
-  border-radius: 20px;
-  overflow: hidden;
-}
-
-.faq-panel {
-  margin-bottom: 1rem;
-  border-radius: 15px;
-  overflow: hidden;
-  border: 1px solid #f0f0f0;
-}
-
-.faq-question {
-  font-weight: 600;
-  color: #2c3e50;
-  font-size: 1.1rem;
-}
-
-.faq-answer {
-  color: #5a6c7d;
-  line-height: 1.6;
-}
-
-/* Final CTA */
-.final-cta-section {
-  padding: 4rem 0;
-  background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
-  color: white;
-}
-
-.cta-title {
-  font-size: 2.5rem;
-  font-weight: 800;
-  margin-bottom: 1rem;
-}
-
-.cta-subtitle {
-  font-size: 1.2rem;
-  opacity: 0.9;
-  margin-bottom: 2rem;
-  max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.cta-actions {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  flex-wrap: wrap;
-}
-
-.cta-primary-btn,
-.cta-secondary-btn {
-  font-size: 1.1rem;
-  font-weight: 600;
-  padding: 16px 32px;
-  border-radius: 50px;
-  transition: all 0.3s ease;
-}
-
-.cta-primary-btn {
-  background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
-  box-shadow: 0 8px 32px rgba(240, 147, 251, 0.3);
-}
-
-.cta-primary-btn:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 40px rgba(240, 147, 251, 0.4);
-}
-
-.cta-secondary-btn {
-  border-color: rgba(255, 255, 255, 0.3);
-  color: white;
-}
-
-.cta-secondary-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  transform: translateY(-3px);
-}
-
-.cta-note {
-  font-size: 0.9rem;
-  opacity: 0.8;
-  margin: 0;
-}
-
-/* Enterprise Modal */
-.enterprise-modal {
-  border-radius: 20px;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.modal-header h3 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #2c3e50;
-  margin: 0;
-}
-
-.enterprise-content {
-  padding: 1rem 0;
-}
-
-.enterprise-features {
-  margin-bottom: 2rem;
-}
-
-.enterprise-features h4 {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #2c3e50;
-  margin-bottom: 1rem;
-}
-
-.enterprise-form {
-  background: #f8f9fa;
-  padding: 1.5rem;
-  border-radius: 15px;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
   .page-title {
-    font-size: 2.5rem;
+    font-size: 3.5rem;
+    font-weight: 900;
+    margin-bottom: 1.5rem;
+    line-height: 1.2;
   }
-  
+
   .page-subtitle {
-    font-size: 1.1rem;
+    font-size: 1.3rem;
+    opacity: 0.9;
+    max-width: 600px;
+    margin: 0 auto 3rem;
+    line-height: 1.6;
   }
-  
-  .pricing-plan-card.featured {
-    transform: none;
+
+  .billing-toggle {
+    display: flex;
+    justify-content: center;
   }
-  
-  .pricing-plan-card.featured:hover {
+
+  .toggle-buttons {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .toggle-buttons .v-btn {
+    border-radius: 25px;
+    color: white;
+    font-weight: 600;
+  }
+
+  .toggle-buttons .v-btn--active {
+    background: white;
+    color: #667eea;
+  }
+
+  /* Plans Section */
+  .plans-section {
+    padding: 4rem 0;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  }
+
+  .pricing-plan-card {
+    background: white;
+    border-radius: 24px;
+    padding: 2rem;
+    position: relative;
+    transition: all 0.3s ease;
+    height: 100%;
+    border: 2px solid transparent;
+  }
+
+  .pricing-plan-card:hover {
     transform: translateY(-8px);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
   }
-  
+
+  .pricing-plan-card.featured {
+    border-color: #667eea;
+    box-shadow: 0 15px 50px rgba(102, 126, 234, 0.2);
+    transform: scale(1.05);
+  }
+
+  .pricing-plan-card.featured:hover {
+    transform: scale(1.05) translateY(-8px);
+  }
+
+  .pricing-plan-card.enterprise {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+  }
+
+  .popular-badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+  }
+
+  .plan-header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  .plan-icon {
+    margin-bottom: 1.5rem;
+  }
+
+  .plan-avatar {
+    background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+  }
+
+  .plan-avatar--blue {
+    background: linear-gradient(45deg, #2196f3, #90caf9);
+  }
+
+  .plan-avatar--purple {
+    background: linear-gradient(45deg, #9c27b0, #ce93d8);
+  }
+
+  .plan-avatar--green {
+    background: linear-gradient(45deg, #4caf50, #a5d6a7);
+  }
+
+  .plan-avatar--orange {
+    background: linear-gradient(45deg, #ff9800, #ffcc02);
+  }
+
+  .plan-name {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem;
+    color: #2c3e50;
+  }
+
+  .enterprise .plan-name {
+    color: white;
+  }
+
+  .plan-description {
+    color: #7f8c8d;
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  .enterprise .plan-description {
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .plan-pricing {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .enterprise .plan-pricing {
+    border-bottom-color: rgba(255, 255, 255, 0.2);
+  }
+
   .price-display {
-    flex-direction: column;
-    align-items: center;
-    gap: 0;
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 0.25rem;
+    margin-bottom: 0.5rem;
   }
-  
+
+  .currency {
+    font-size: 1.5rem;
+    color: #7f8c8d;
+    font-weight: 600;
+  }
+
   .amount {
+    font-size: 3.5rem;
+    font-weight: 900;
+    color: #2c3e50;
+    line-height: 1;
+  }
+
+  .enterprise .amount {
+    color: white;
+  }
+
+  .period {
+    font-size: 1.2rem;
+    color: #7f8c8d;
+    font-weight: 500;
+  }
+
+  .enterprise .period {
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .savings {
+    font-size: 0.9rem;
+    color: #4caf50;
+    font-weight: 600;
+    background: rgba(76, 175, 80, 0.1);
+    padding: 4px 12px;
+    border-radius: 12px;
+    display: inline-block;
+  }
+
+  .plan-features {
+    margin-bottom: 2rem;
+  }
+
+  .features-header h4 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0 0 1rem;
+    text-align: center;
+  }
+
+  .enterprise .features-header h4 {
+    color: white;
+  }
+
+  .feature-list {
+    background: transparent;
+    padding: 0;
+  }
+
+  .feature-item {
+    padding: 8px 0;
+    min-height: auto;
+  }
+
+  .feature-item .v-list-item-title {
+    font-size: 0.95rem;
+    line-height: 1.4;
+  }
+
+  .plan-action {
+    text-align: center;
+  }
+
+  .plan-cta-btn {
+    font-weight: 600;
+    border-radius: 50px;
+    padding: 16px 32px;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    margin-bottom: 1rem;
+  }
+
+  .plan-cta-btn:hover {
+    transform: translateY(-2px);
+  }
+
+  .trial-info {
+    font-size: 0.85rem;
+    color: #7f8c8d;
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  .enterprise .trial-info {
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  /* Comparison Section */
+  .comparison-section {
+    padding: 4rem 0;
+    background: white;
+  }
+
+  .section-title {
     font-size: 2.5rem;
+    font-weight: 800;
+    color: #2c3e50;
+    margin-bottom: 1rem;
   }
-  
-  .cta-actions {
-    flex-direction: column;
-    align-items: center;
+
+  .section-subtitle {
+    font-size: 1.2rem;
+    color: #7f8c8d;
+    max-width: 600px;
+    margin: 0 auto 3rem;
   }
-  
-  .cta-primary-btn,
-  .cta-secondary-btn {
+
+  .comparison-table-card {
+    border-radius: 20px;
+    overflow: hidden;
+  }
+
+  .table-responsive {
+    overflow-x: auto;
+  }
+
+  .comparison-table {
     width: 100%;
-    max-width: 300px;
+    border-collapse: collapse;
   }
-  
+
   .comparison-table th,
   .comparison-table td {
-    padding: 1rem 0.5rem;
-    font-size: 0.9rem;
+    padding: 1.5rem 1rem;
+    text-align: center;
+    border-bottom: 1px solid #f0f0f0;
   }
-  
+
   .feature-header {
-    min-width: 200px;
+    text-align: left;
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #2c3e50;
+    position: sticky;
+    left: 0;
+    z-index: 2;
   }
-  
+
   .plan-header {
-    min-width: 120px;
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #2c3e50;
+    min-width: 150px;
   }
-}
+
+  .plan-header.featured {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+  }
+
+  .plan-header-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .plan-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+
+  .plan-price {
+    font-size: 0.9rem;
+    opacity: 0.8;
+  }
+
+  .feature-row:hover {
+    background: #f8f9fa;
+  }
+
+  .feature-name {
+    text-align: left;
+    font-weight: 500;
+    color: #2c3e50;
+    position: sticky;
+    left: 0;
+    background: white;
+    z-index: 1;
+  }
+
+  .feature-row:hover .feature-name {
+    background: #f8f9fa;
+  }
+
+  .feature-content {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .feature-value.featured {
+    background: rgba(102, 126, 234, 0.05);
+  }
+
+  .value-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .value-text {
+    font-weight: 500;
+    color: #2c3e50;
+  }
+
+  /* Testimonials Section */
+  .testimonials-section {
+    padding: 4rem 0;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  }
+
+  .testimonial-card {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    height: 100%;
+    transition: all 0.3s ease;
+  }
+
+  .testimonial-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+  }
+
+  .testimonial-content {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .quote-icon {
+    margin-bottom: 1rem;
+  }
+
+  .testimonial-text {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: #2c3e50;
+    margin: 0 0 2rem;
+    flex: 1;
+    font-style: italic;
+  }
+
+  .testimonial-author {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .author-info {
+    flex: 1;
+  }
+
+  .author-name {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 0.25rem;
+  }
+
+  .author-title {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .author-stats {
+    color: #667eea;
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+
+  /* FAQ Section */
+  .faq-section {
+    padding: 4rem 0;
+    background: white;
+  }
+
+  .faq-panels {
+    border-radius: 20px;
+    overflow: hidden;
+  }
+
+  .faq-panel {
+    margin-bottom: 1rem;
+    border-radius: 15px;
+    overflow: hidden;
+    border: 1px solid #f0f0f0;
+  }
+
+  .faq-question {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 1.1rem;
+  }
+
+  .faq-answer {
+    color: #5a6c7d;
+    line-height: 1.6;
+  }
+
+  /* Final CTA */
+  .final-cta-section {
+    padding: 4rem 0;
+    background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+    color: white;
+  }
+
+  .cta-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+  }
+
+  .cta-subtitle {
+    font-size: 1.2rem;
+    opacity: 0.9;
+    margin-bottom: 2rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .cta-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .cta-primary-btn,
+  .cta-secondary-btn {
+    font-size: 1.1rem;
+    font-weight: 600;
+    padding: 16px 32px;
+    border-radius: 50px;
+    transition: all 0.3s ease;
+  }
+
+  .cta-primary-btn {
+    background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
+    box-shadow: 0 8px 32px rgba(240, 147, 251, 0.3);
+  }
+
+  .cta-primary-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(240, 147, 251, 0.4);
+  }
+
+  .cta-secondary-btn {
+    border-color: rgba(255, 255, 255, 0.3);
+    color: white;
+  }
+
+  .cta-secondary-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-3px);
+  }
+
+  .cta-note {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    margin: 0;
+  }
+
+  /* Enterprise Modal */
+  .enterprise-modal {
+    border-radius: 20px;
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .modal-header h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin: 0;
+  }
+
+  .enterprise-content {
+    padding: 1rem 0;
+  }
+
+  .enterprise-features {
+    margin-bottom: 2rem;
+  }
+
+  .enterprise-features h4 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 1rem;
+  }
+
+  .enterprise-form {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 15px;
+  }
+
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .page-title {
+      font-size: 2.5rem;
+    }
+
+    .page-subtitle {
+      font-size: 1.1rem;
+    }
+
+    .pricing-plan-card.featured {
+      transform: none;
+    }
+
+    .pricing-plan-card.featured:hover {
+      transform: translateY(-8px);
+    }
+
+    .price-display {
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+    }
+
+    .amount {
+      font-size: 2.5rem;
+    }
+
+    .cta-actions {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .cta-primary-btn,
+    .cta-secondary-btn {
+      width: 100%;
+      max-width: 300px;
+    }
+
+    .comparison-table th,
+    .comparison-table td {
+      padding: 1rem 0.5rem;
+      font-size: 0.9rem;
+    }
+
+    .feature-header {
+      min-width: 200px;
+    }
+
+    .plan-header {
+      min-width: 120px;
+    }
+  }
 </style>

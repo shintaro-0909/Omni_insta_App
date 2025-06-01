@@ -291,7 +291,7 @@
       "removedDescription": "The accessibility adaptation has been removed",
       "types": {
         "layout": "Layout Adaptation",
-        "content": "Content Adaptation", 
+        "content": "Content Adaptation",
         "interaction": "Interaction Adaptation",
         "navigation": "Navigation Adaptation",
         "feedback": "Feedback Adaptation"
@@ -327,14 +327,14 @@
       "reducedMotion": "Reduced Motion"
     },
     "motor": {
-      "title": "Motor Preferences", 
+      "title": "Motor Preferences",
       "clickTolerance": "Click Tolerance",
       "dwellTime": "Dwell Time (ms)",
       "stickyKeys": "Sticky Keys",
       "gestureComplexity": "Gesture Complexity",
       "gestureComplexity": {
         "simple": "Simple",
-        "normal": "Normal", 
+        "normal": "Normal",
         "complex": "Complex"
       }
     },
@@ -354,7 +354,7 @@
       "title": "AI Assistance",
       "predictiveInput": "Predictive Input",
       "proactiveAssistance": "Proactive Assistance",
-      "smartSuggestions": "Smart Suggestions", 
+      "smartSuggestions": "Smart Suggestions",
       "contextualHelp": "Contextual Help"
     },
     "insights": {

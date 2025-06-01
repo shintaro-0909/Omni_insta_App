@@ -5,6 +5,7 @@
 
 import * as admin from "firebase-admin";
 import { 
+  createOptimizedFunction,
   createOptimizedScheduledFunction,
   MemoryManager,
   OptimizedFirestore,
@@ -183,11 +184,11 @@ async function optimizedPostToInstagram(
         access_token: accessToken
       };
       
-      const containerResponse = await proxyFetch(containerUrl, {
+      const containerResponse = await proxyFetch(containerUrl, proxyConfig, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(containerPayload)
-      }, proxyConfig);
+      });
       
       if (!containerResponse.ok) {
         const error = await containerResponse.json();
@@ -205,11 +206,11 @@ async function optimizedPostToInstagram(
       access_token: accessToken
     };
     
-    const publishResponse = await proxyFetch(publishUrl, {
+    const publishResponse = await proxyFetch(publishUrl, proxyConfig, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(publishPayload)
-    }, proxyConfig);
+    });
     
     if (!publishResponse.ok) {
       const error = await publishResponse.json();
@@ -231,10 +232,12 @@ async function optimizedPostToInstagram(
 async function processOptimizedSchedule(scheduleDoc: admin.firestore.QueryDocumentSnapshot) {
   const scheduleData = scheduleDoc.data();
   const scheduleId = scheduleDoc.id;
+  let accountData: any;
+  let contentData: any;
   
   try {
     // Get account and content data efficiently
-    const [accountData, contentData] = await Promise.all([
+    [accountData, contentData] = await Promise.all([
       getOptimizedAccountData(scheduleData.ownerUid, scheduleData.igAccountRef.id),
       getOptimizedContentData(scheduleData.contentRef)
     ]);
@@ -263,13 +266,19 @@ async function processOptimizedSchedule(scheduleDoc: admin.firestore.QueryDocume
     );
     
     // Update schedule for next run
-    await updateNextRunAfterExecution(scheduleDoc.ref, true);
+    const nextRunAt = updateNextRunAfterExecution(scheduleData as any);
+    if (nextRunAt) {
+      await scheduleDoc.ref.update({ nextRunAt, lastExecutedAt: new Date() });
+    } else {
+      await scheduleDoc.ref.update({ status: 'completed', lastExecutedAt: new Date() });
+    }
     
     // Send success notification
     await sendPostSuccessNotification(
       scheduleData.ownerUid,
-      accountData.username,
-      contentData.caption.substring(0, 100)
+      scheduleData.title || 'Scheduled Post',
+      instagramPostId,
+      accountData.username
     );
     
     console.log(`Schedule ${scheduleId} executed successfully`);
@@ -290,13 +299,19 @@ async function processOptimizedSchedule(scheduleDoc: admin.firestore.QueryDocume
     );
     
     // Update schedule with retry or mark as failed
-    await updateNextRunAfterExecution(scheduleDoc.ref, false, error instanceof Error ? error.message : "Unknown error");
+    await scheduleDoc.ref.update({ 
+      retryCount: admin.firestore.FieldValue.increment(1),
+      lastErrorAt: new Date(),
+      lastError: error instanceof Error ? error.message : "Unknown error"
+    });
     
     // Send failure notification
     await sendPostFailureNotification(
       scheduleData.ownerUid,
+      scheduleData.title || 'Scheduled Post',
+      error instanceof Error ? error.message : "Unknown error",
       accountData?.username || "Unknown",
-      error instanceof Error ? error.message : "Unknown error"
+      scheduleData.retryCount || 0
     );
   }
 }
@@ -339,7 +354,7 @@ async function logOptimizedExecution(
 /**
  * Main optimized execution function
  */
-const executeOptimizedScheduledPosts = withCleanup(async () => {
+const executeOptimizedScheduledPosts = async (context?: any) => {
   try {
     console.log("Starting optimized scheduled post execution");
     
@@ -380,7 +395,7 @@ const executeOptimizedScheduledPosts = withCleanup(async () => {
   } catch (error) {
     handleFunctionError(error, { function: "executeOptimizedScheduledPosts" });
   }
-});
+};
 
 /**
  * Trigger manual execution with optimization
@@ -391,7 +406,7 @@ const triggerOptimizedScheduleExecution = withCleanup(async (data: any, context:
   }
   
   try {
-    await executeOptimizedScheduledPosts();
+    await executeOptimizedScheduledPosts(context);
     
     return {
       success: true,
@@ -399,7 +414,7 @@ const triggerOptimizedScheduleExecution = withCleanup(async (data: any, context:
       timestamp: new Date().toISOString()
     };
   } catch (error) {
-    handleFunctionError(error, { function: "triggerOptimizedScheduleExecution" });
+    return handleFunctionError(error, { function: "triggerOptimizedScheduleExecution" });
   }
 });
 
@@ -441,7 +456,7 @@ const getOptimizedExecutionLogs = withCleanup(async (data: any, context: any) =>
     };
     
   } catch (error) {
-    handleFunctionError(error, { function: "getOptimizedExecutionLogs" });
+    return handleFunctionError(error, { function: "getOptimizedExecutionLogs" });
   }
 });
 

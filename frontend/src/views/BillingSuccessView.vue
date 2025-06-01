@@ -2,21 +2,15 @@
   <v-container class="pa-6">
     <div class="text-center">
       <!-- 成功アイコン -->
-      <v-icon
-        size="120"
-        color="success"
-        class="mb-6"
-      >
+      <v-icon size="120" color="success" class="mb-6">
         mdi-check-circle
       </v-icon>
 
       <!-- メッセージ -->
-      <h1 class="text-h3 font-weight-bold mb-4">
-        決済が完了しました！
-      </h1>
-      
+      <h1 class="text-h3 font-weight-bold mb-4">決済が完了しました！</h1>
+
       <p class="text-h6 text-medium-emphasis mb-8">
-        プランのアップグレードありがとうございます。<br>
+        プランのアップグレードありがとうございます。<br />
         新しい機能をお楽しみください。
       </p>
 
@@ -31,7 +25,7 @@
         >
           ダッシュボードに戻る
         </v-btn>
-        
+
         <v-btn
           variant="outlined"
           size="large"
@@ -59,7 +53,7 @@
                 複数のアカウントを管理して効率的に投稿しましょう
               </v-list-item-subtitle>
             </v-list-item>
-            
+
             <v-list-item>
               <template #prepend>
                 <v-icon color="primary">mdi-calendar-plus</v-icon>
@@ -69,7 +63,7 @@
                 予約投稿や繰り返し投稿を設定して時間を節約
               </v-list-item-subtitle>
             </v-list-item>
-            
+
             <v-list-item>
               <template #prepend>
                 <v-icon color="primary">mdi-image-multiple</v-icon>
@@ -87,22 +81,22 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
-import { useBillingStore } from '@/stores/billing'
+  import { onMounted } from 'vue';
+  import { useBillingStore } from '@/stores';
 
-const billingStore = useBillingStore()
+  const billingStore = useBillingStore();
 
-// 決済完了後にサブスクリプション情報を更新
-onMounted(async () => {
-  // 少し待ってからWebhookが処理されるのを待つ
-  setTimeout(async () => {
-    await billingStore.fetchSubscription()
-  }, 2000)
-})
+  // 決済完了後にサブスクリプション情報を更新
+  onMounted(async () => {
+    // 少し待ってからWebhookが処理されるのを待つ
+    setTimeout(async () => {
+      await billingStore.fetchSubscription();
+    }, 2000);
+  });
 </script>
 
 <style scoped>
-.gap-4 {
-  gap: 1rem;
-}
-</style> 
+  .gap-4 {
+    gap: 1rem;
+  }
+</style>

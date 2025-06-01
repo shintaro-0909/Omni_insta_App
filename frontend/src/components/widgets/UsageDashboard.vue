@@ -59,7 +59,7 @@
                   {{ accountUsageText }}
                 </div>
               </div>
-              
+
               <v-progress-linear
                 :model-value="accountUsagePercentage"
                 :color="accountUsageColor"
@@ -67,13 +67,15 @@
                 rounded
                 class="mb-2"
               />
-              
+
               <div class="text-caption text-medium-emphasis">
                 <span v-if="limits.instagramAccountLimit === -1">
                   無制限でアカウントを追加できます
                 </span>
                 <span v-else-if="canAddAccount">
-                  あと{{ limits.instagramAccountLimit - usage.instagramAccountCount }}個追加できます
+                  あと{{
+                    limits.instagramAccountLimit - usage.instagramAccountCount
+                  }}個追加できます
                 </span>
                 <span v-else class="text-warning">
                   アカウント追加の上限に達しています
@@ -94,7 +96,7 @@
                   {{ postUsageText }}
                 </div>
               </div>
-              
+
               <v-progress-linear
                 :model-value="postUsagePercentage"
                 :color="postUsageColor"
@@ -102,13 +104,15 @@
                 rounded
                 class="mb-2"
               />
-              
+
               <div class="text-caption text-medium-emphasis">
                 <span v-if="limits.monthlyPostLimit === -1">
                   無制限で投稿できます
                 </span>
                 <span v-else-if="canPost">
-                  あと{{ limits.monthlyPostLimit - usage.monthlyPostCount }}回投稿できます
+                  あと{{
+                    limits.monthlyPostLimit - usage.monthlyPostCount
+                  }}回投稿できます
                 </span>
                 <span v-else class="text-warning">
                   月間投稿数の上限に達しています
@@ -120,13 +124,13 @@
 
         <!-- 機能制限表示 -->
         <v-divider class="my-4" />
-        
+
         <div class="mb-3">
           <div class="text-subtitle-2 font-weight-medium mb-2">
             <v-icon size="small" class="me-1">mdi-feature-search</v-icon>
             利用可能な機能
           </div>
-          
+
           <v-row dense>
             <v-col cols="6" sm="4" md="3">
               <v-chip
@@ -141,7 +145,7 @@
                 予約投稿
               </v-chip>
             </v-col>
-            
+
             <v-col cols="6" sm="4" md="3">
               <v-chip
                 :color="limits.recurringPosts ? 'success' : 'grey'"
@@ -155,7 +159,7 @@
                 繰り返し投稿
               </v-chip>
             </v-col>
-            
+
             <v-col cols="6" sm="4" md="3">
               <v-chip
                 :color="limits.randomPosts ? 'success' : 'grey'"
@@ -169,7 +173,7 @@
                 ランダム投稿
               </v-chip>
             </v-col>
-            
+
             <v-col cols="6" sm="4" md="3">
               <v-chip
                 :color="limits.prioritySupport ? 'success' : 'grey'"
@@ -188,24 +192,17 @@
 
         <!-- アップグレード促進 -->
         <div v-if="shouldShowUpgrade" class="mt-4">
-          <v-alert
-            type="info"
-            variant="tonal"
-            class="mb-3"
-          >
+          <v-alert type="info" variant="tonal" class="mb-3">
             <div class="d-flex align-center">
               <div class="flex-grow-1">
-                <div class="font-weight-medium">プランをアップグレードしませんか？</div>
+                <div class="font-weight-medium">
+                  プランをアップグレードしませんか？
+                </div>
                 <div class="text-body-2 mt-1">
                   より多くのアカウントと投稿、追加機能をご利用いただけます。
                 </div>
               </div>
-              <v-btn
-                color="primary"
-                variant="flat"
-                to="/billing"
-                class="ml-3"
-              >
+              <v-btn color="primary" variant="flat" to="/billing" class="ml-3">
                 プランを見る
               </v-btn>
             </div>
@@ -222,86 +219,86 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
-import { usePlanLimitsStore } from '@/stores/planLimits'
+  import { computed, onMounted } from 'vue';
+  import { usePlanLimitsStore } from '@/stores';
 
-const planLimitsStore = usePlanLimitsStore()
+  const planLimitsStore = usePlanLimitsStore();
 
-// Computed
-const {
-  limits,
-  usage,
-  loading,
-  error,
-  isUnlimited,
-  canAddAccount,
-  canPost,
-  accountUsageText,
-  postUsageText,
-  accountUsagePercentage,
-  postUsagePercentage,
-  accountUsageColor,
-  postUsageColor
-} = planLimitsStore
+  // Computed
+  const {
+    limits,
+    usage,
+    loading,
+    error,
+    isUnlimited,
+    canAddAccount,
+    canPost,
+    accountUsageText,
+    postUsageText,
+    accountUsagePercentage,
+    postUsagePercentage,
+    accountUsageColor,
+    postUsageColor,
+  } = planLimitsStore;
 
-const shouldShowUpgrade = computed(() => {
-  if (!limits || !usage) return false
-  
-  // Freeプランで使用量が多い場合
-  if (getCurrentPlanId() === 'free') {
-    return usage.instagramAccountCount > 0 || usage.monthlyPostCount > 5
-  }
-  
-  // 使用量が70%を超えている場合
-  return accountUsagePercentage > 70 || postUsagePercentage > 70
-})
+  const shouldShowUpgrade = computed(() => {
+    if (!limits || !usage) return false;
 
-// Methods
-const refreshUsage = async () => {
-  await planLimitsStore.fetchLimitsAndUsage()
-}
+    // Freeプランで使用量が多い場合
+    if (getCurrentPlanId() === 'free') {
+      return usage.instagramAccountCount > 0 || usage.monthlyPostCount > 5;
+    }
 
-const getCurrentPlanId = () => {
-  // 実際の実装では認証ストアから取得
-  return 'free' // プレースホルダー
-}
+    // 使用量が70%を超えている場合
+    return accountUsagePercentage > 70 || postUsagePercentage > 70;
+  });
 
-const getPlanName = () => {
-  const planId = getCurrentPlanId()
-  const planNames: Record<string, string> = {
-    free: 'Free',
-    basic: 'Basic',
-    pro: 'Pro',
-    business: 'Business'
-  }
-  return planNames[planId] || 'Unknown'
-}
+  // Methods
+  const refreshUsage = async () => {
+    await planLimitsStore.fetchLimitsAndUsage();
+  };
 
-const formatLastUpdate = () => {
-  return new Date().toLocaleString('ja-JP', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-}
+  const getCurrentPlanId = () => {
+    // 実際の実装では認証ストアから取得
+    return 'free'; // プレースホルダー
+  };
 
-// Lifecycle
-onMounted(async () => {
-  await refreshUsage()
-})
+  const getPlanName = () => {
+    const planId = getCurrentPlanId();
+    const planNames: Record<string, string> = {
+      free: 'Free',
+      basic: 'Basic',
+      pro: 'Pro',
+      business: 'Business',
+    };
+    return planNames[planId] || 'Unknown';
+  };
+
+  const formatLastUpdate = () => {
+    return new Date().toLocaleString('ja-JP', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  // Lifecycle
+  onMounted(async () => {
+    await refreshUsage();
+  });
 </script>
 
 <style scoped>
-.usage-metric {
-  padding: 12px;
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 8px;
-  background-color: rgba(var(--v-theme-surface), 0.5);
-}
+  .usage-metric {
+    padding: 12px;
+    border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+    border-radius: 8px;
+    background-color: rgba(var(--v-theme-surface), 0.5);
+  }
 
-.w-100 {
-  width: 100%;
-}
-</style> 
+  .w-100 {
+    width: 100%;
+  }
+</style>

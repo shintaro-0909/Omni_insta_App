@@ -213,8 +213,8 @@ export function useContinuityManager() {
   // Connection Management
   let proximityWatcher: any = null
   let contextWatcher: any = null
-  let taskStateInterval: number | null = null
-  let handoffTimeoutIds: Map<string, number> = new Map()
+  const taskStateInterval: number | null = null
+  const handoffTimeoutIds: Map<string, number> = new Map()
   
   // Task Management
   const createTask = async (params: {

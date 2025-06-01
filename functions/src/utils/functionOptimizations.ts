@@ -5,6 +5,7 @@
 
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
+import * as v8 from "v8";
 
 // Optimized runtime options for different function types
 export const FUNCTION_CONFIGS = {
@@ -46,9 +47,9 @@ export const FUNCTION_CONFIGS = {
 } as const;
 
 // Function wrapper with optimized settings
-export function createOptimizedFunction<T extends any[], R>(
+export function createOptimizedFunction(
   config: keyof typeof FUNCTION_CONFIGS,
-  handler: (...args: T) => Promise<R> | R
+  handler: (data: any, context: any) => Promise<any> | any
 ) {
   const settings = FUNCTION_CONFIGS[config];
   
@@ -82,9 +83,9 @@ export function createOptimizedFunction<T extends any[], R>(
 }
 
 // HTTP function wrapper with optimizations
-export function createOptimizedHttpFunction<T extends any[], R>(
+export function createOptimizedHttpFunction(
   config: keyof typeof FUNCTION_CONFIGS,
-  handler: (...args: T) => Promise<R> | R
+  handler: (req: functions.Request, res: functions.Response) => Promise<any> | any
 ) {
   const settings = FUNCTION_CONFIGS[config];
   
@@ -115,10 +116,10 @@ export function createOptimizedHttpFunction<T extends any[], R>(
 }
 
 // Scheduled function wrapper
-export function createOptimizedScheduledFunction<T extends any[], R>(
+export function createOptimizedScheduledFunction(
   config: keyof typeof FUNCTION_CONFIGS,
   schedule: string,
-  handler: (...args: T) => Promise<R> | R
+  handler: (context: functions.EventContext) => Promise<any> | any
 ) {
   const settings = FUNCTION_CONFIGS[config];
   
@@ -166,7 +167,7 @@ function optimizeRuntimeEnvironment() {
   ].join(' ');
   
   // Configure V8 for better memory management
-  if (typeof v8 !== 'undefined') {
+  if (v8 && v8.setFlagsFromString) {
     v8.setFlagsFromString('--optimize-for-size');
   }
 }
@@ -404,12 +405,12 @@ export function cleanupResources() {
 }
 
 // Function execution wrapper with automatic cleanup
-export function withCleanup<T extends any[], R>(
-  fn: (...args: T) => Promise<R>
-): (...args: T) => Promise<R> {
-  return async (...args: T): Promise<R> => {
+export function withCleanup(
+  fn: (data: any, context: any) => Promise<any>
+): (data: any, context: any) => Promise<any> {
+  return async (data: any, context: any): Promise<any> => {
     try {
-      const result = await fn(...args);
+      const result = await fn(data, context);
       return result;
     } finally {
       // Always cleanup resources

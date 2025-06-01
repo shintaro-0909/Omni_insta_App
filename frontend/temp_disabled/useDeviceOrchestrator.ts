@@ -146,8 +146,8 @@ export function useDeviceOrchestrator() {
   const router = useRouter()
   
   // WebRTC & Communication
-  let peerConnections = new Map<string, RTCPeerConnection>()
-  let dataChannels = new Map<string, RTCDataChannel>()
+  const peerConnections = new Map<string, RTCPeerConnection>()
+  const dataChannels = new Map<string, RTCDataChannel>()
   let broadcastChannel: BroadcastChannel | null = null
   let proximityWatcher: any = null
   
@@ -160,7 +160,7 @@ export function useDeviceOrchestrator() {
     
     // Enhanced Device Type Detection
     let deviceType: DeviceType = 'desktop'
-    let screenDiagonal = Math.sqrt(screen.width ** 2 + screen.height ** 2) / 96 // inches
+    const screenDiagonal = Math.sqrt(screen.width ** 2 + screen.height ** 2) / 96 // inches
     
     if (/mobile|phone|android|iphone/.test(userAgent)) {
       deviceType = 'smartphone'

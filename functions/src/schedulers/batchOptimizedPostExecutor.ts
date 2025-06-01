@@ -52,6 +52,7 @@ class ScheduleExecutionBatchProcessor {
       maxWaitTime: 30000, // 30 seconds
       maxConcurrentBatches: 2,
       rateLimitDelay: 5000, // 5 seconds between batches
+      retryDelay: 10000, // 10 seconds
       processor: this.processScheduleBatch.bind(this),
       priorityWeights: { high: 3, medium: 2, low: 1 }
     });
@@ -268,7 +269,7 @@ async function batchLogExecutions(logs: any[]) {
 /**
  * Main batch-optimized execution function
  */
-const executeBatchOptimizedScheduledPosts = withCleanup(async () => {
+const executeBatchOptimizedScheduledPosts = async (context?: any) => {
   try {
     console.log("Starting batch-optimized scheduled post execution");
     
@@ -393,14 +394,17 @@ const executeBatchOptimizedScheduledPosts = withCleanup(async () => {
         if (executionResult.success) {
           sendPostSuccessNotification(
             scheduleData.ownerUid,
-            job.accountData.username,
-            job.contentData.caption.substring(0, 100)
+            scheduleData.title || 'Scheduled Post',
+            executionResult.instagramPostId || '',
+            job.accountData.username
           ).catch(console.error);
         } else {
           sendPostFailureNotification(
             scheduleData.ownerUid,
+            scheduleData.title || 'Scheduled Post',
+            executionResult.error || "Unknown error",
             job.accountData.username || "Unknown",
-            executionResult.error || "Unknown error"
+            scheduleData.retryCount || 0
           ).catch(console.error);
         }
         
@@ -431,9 +435,28 @@ const executeBatchOptimizedScheduledPosts = withCleanup(async () => {
     
     // Batch update all schedules
     await Promise.all(
-      scheduleUpdates.map(update => 
-        updateNextRunAfterExecution(update.ref, update.success, update.error)
-      )
+      scheduleUpdates.map(async (update) => {
+        if (update.success) {
+          // Get schedule data and update next run time
+          const scheduleDoc = await update.ref.get();
+          if (scheduleDoc.exists) {
+            const scheduleData = scheduleDoc.data() as any;
+            const nextRunAt = updateNextRunAfterExecution(scheduleData);
+            if (nextRunAt) {
+              await update.ref.update({ nextRunAt, lastExecutedAt: new Date() });
+            } else {
+              await update.ref.update({ status: 'completed', lastExecutedAt: new Date() });
+            }
+          }
+        } else {
+          // Handle failure - increment retry count
+          await update.ref.update({ 
+            retryCount: admin.firestore.FieldValue.increment(1),
+            lastErrorAt: new Date(),
+            lastError: update.error 
+          });
+        }
+      })
     );
     
     console.log(`Batch execution completed: ${executionJobs.length} schedules processed`);
@@ -445,7 +468,7 @@ const executeBatchOptimizedScheduledPosts = withCleanup(async () => {
   } catch (error) {
     handleFunctionError(error, { function: "executeBatchOptimizedScheduledPosts" });
   }
-});
+};
 
 /**
  * Manual trigger with batch optimization
@@ -456,7 +479,7 @@ const triggerBatchOptimizedExecution = withCleanup(async (data: any, context: an
   }
   
   try {
-    await executeBatchOptimizedScheduledPosts();
+    await executeBatchOptimizedScheduledPosts(context);
     
     return {
       success: true,
@@ -465,7 +488,7 @@ const triggerBatchOptimizedExecution = withCleanup(async (data: any, context: an
       stats: scheduleExecutionBatch.getStats()
     };
   } catch (error) {
-    handleFunctionError(error, { function: "triggerBatchOptimizedExecution" });
+    return handleFunctionError(error, { function: "triggerBatchOptimizedExecution" });
   }
 });
 
@@ -488,7 +511,7 @@ const getBatchProcessingStats = withCleanup(async (data: any, context: any) => {
       timestamp: new Date().toISOString()
     };
   } catch (error) {
-    handleFunctionError(error, { function: "getBatchProcessingStats" });
+    return handleFunctionError(error, { function: "getBatchProcessingStats" });
   }
 });
 

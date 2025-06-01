@@ -1,15 +1,10 @@
 <template>
-  <v-dialog 
-    v-model="dialogModel"
-    max-width="600px"
-    persistent
-    scrollable
-  >
+  <v-dialog v-model="dialogModel" max-width="600px" persistent scrollable>
     <v-card class="group-form-card" rounded="xl">
       <!-- ヘッダー -->
       <v-card-title class="group-form-header">
         <div class="d-flex align-center">
-          <v-icon 
+          <v-icon
             :icon="isEditing ? 'mdi-pencil' : 'mdi-plus-circle'"
             class="mr-3"
             :color="isEditing ? 'warning' : 'primary'"
@@ -19,7 +14,11 @@
               {{ isEditing ? 'グループ編集' : '新しいグループ' }}
             </h3>
             <p class="text-subtitle-2 text-grey-darken-1 ma-0">
-              {{ isEditing ? 'グループ設定を変更します' : 'アカウントグループを追加します' }}
+              {{
+                isEditing
+                  ? 'グループ設定を変更します'
+                  : 'アカウントグループを追加します'
+              }}
             </p>
           </div>
         </div>
@@ -29,7 +28,11 @@
 
       <!-- フォーム -->
       <v-card-text class="pa-6">
-        <v-form ref="formRef" v-model="formValid" @submit.prevent="handleSubmit">
+        <v-form
+          ref="formRef"
+          v-model="formValid"
+          @submit.prevent="handleSubmit"
+        >
           <v-row>
             <!-- グループ名 -->
             <v-col cols="12">
@@ -68,8 +71,8 @@
                 <template #item="{ props, item }">
                   <v-list-item v-bind="props">
                     <template #prepend>
-                      <v-icon 
-                        :color="item.raw.value" 
+                      <v-icon
+                        :color="item.raw.value"
                         icon="mdi-circle"
                         class="mr-2"
                       />
@@ -79,8 +82,8 @@
                 </template>
                 <template #selection="{ item }">
                   <div class="d-flex align-center">
-                    <v-icon 
-                      :color="item.raw.value" 
+                    <v-icon
+                      :color="item.raw.value"
                       icon="mdi-circle"
                       class="mr-2"
                     />
@@ -128,14 +131,16 @@
                   <v-list-item v-bind="props">
                     <template #prepend>
                       <v-avatar size="32" class="mr-2">
-                        <v-img 
+                        <v-img
                           :src="getAccountAvatar(item.raw.value)"
                           :alt="item.raw.title"
                         />
                       </v-avatar>
                     </template>
                     <v-list-item-title>{{ item.raw.title }}</v-list-item-title>
-                    <v-list-item-subtitle>@{{ item.raw.subtitle }}</v-list-item-subtitle>
+                    <v-list-item-subtitle
+                      >@{{ item.raw.subtitle }}</v-list-item-subtitle
+                    >
                   </v-list-item>
                 </template>
               </v-select>
@@ -160,12 +165,8 @@
       <!-- アクション -->
       <v-card-actions class="pa-6">
         <v-spacer />
-        
-        <v-btn
-          variant="text"
-          @click="handleCancel"
-          :disabled="loading"
-        >
+
+        <v-btn variant="text" @click="handleCancel" :disabled="loading">
           キャンセル
         </v-btn>
 
@@ -184,229 +185,238 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, onMounted } from 'vue'
-import { useGroupsStore, type Group } from '@/stores/groups'
-import { useProxiesStore } from '@/stores/proxies'
-import { useIgAccountsStore } from '@/stores/igAccounts'
+  import { ref, computed, watch, nextTick, onMounted } from 'vue';
+  import {
+    useGroupsStore,
+    useProxiesStore,
+    useIgAccountsStore,
+    type Group,
+  } from '@/stores';
 
-// Props & Emits
-interface Props {
-  modelValue: boolean
-  group?: Group
-}
+  // Props & Emits
+  interface Props {
+    modelValue: boolean;
+    group?: Group;
+  }
 
-interface Emits {
-  (e: 'update:modelValue', value: boolean): void
-  (e: 'saved'): void
-}
+  interface Emits {
+    (e: 'update:modelValue', value: boolean): void;
+    (e: 'saved'): void;
+  }
 
-const props = withDefaults(defineProps<Props>(), {
-  group: undefined
-})
+  const props = withDefaults(defineProps<Props>(), {
+    group: undefined,
+  });
 
-const emit = defineEmits<Emits>()
+  const emit = defineEmits<Emits>();
 
-// Stores
-const groupsStore = useGroupsStore()
-const proxiesStore = useProxiesStore()
-const igAccountsStore = useIgAccountsStore()
+  // Stores
+  const groupsStore = useGroupsStore();
+  const proxiesStore = useProxiesStore();
+  const igAccountsStore = useIgAccountsStore();
 
-// State
-const formRef = ref()
-const formValid = ref(false)
-const loading = ref(false)
+  // State
+  const formRef = ref();
+  const formValid = ref(false);
+  const loading = ref(false);
 
-// フォームデータ
-const formData = ref({
-  name: '',
-  description: '',
-  igAccountIds: [] as string[],
-  proxyId: '',
-  color: 'blue',
-  isActive: true
-})
-
-// カラーオプション
-const colorOptions = [
-  { title: 'ブルー', value: 'blue' },
-  { title: 'グリーン', value: 'green' },
-  { title: 'レッド', value: 'red' },
-  { title: 'オレンジ', value: 'orange' },
-  { title: 'パープル', value: 'purple' },
-  { title: 'ピンク', value: 'pink' },
-  { title: 'イエロー', value: 'yellow' },
-  { title: 'グレー', value: 'grey' }
-]
-
-// バリデーションルール
-const nameRules = [
-  (v: string) => !!v || 'グループ名は必須です',
-  (v: string) => v.length >= 2 || 'グループ名は2文字以上で入力してください',
-  (v: string) => v.length <= 50 || 'グループ名は50文字以下で入力してください'
-]
-
-const accountRules = [
-  (v: string[]) => v.length > 0 || '少なくとも1つのInstagramアカウントを選択してください'
-]
-
-// Computed
-const dialogModel = computed({
-  get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value)
-})
-
-const isEditing = computed(() => !!props.group)
-
-// プロキシオプション
-const proxyOptions = computed(() => {
-  return proxiesStore.activeProxies.map(proxy => ({
-    title: proxy.name,
-    value: proxy.id,
-    subtitle: `${proxy.host}:${proxy.port}`
-  }))
-})
-
-// Instagramアカウントオプション
-const igAccountOptions = computed(() => {
-  return igAccountsStore.accounts.map(account => ({
-    title: account.name || account.username,
-    value: account.id,
-    subtitle: account.username
-  }))
-})
-
-// Methods
-const getAccountAvatar = (accountId: string) => {
-  const account = igAccountsStore.accounts.find(acc => acc.id === accountId)
-  return account?.profilePictureUrl || '/default-avatar.png'
-}
-
-const resetForm = () => {
-  formData.value = {
+  // フォームデータ
+  const formData = ref({
     name: '',
     description: '',
-    igAccountIds: [],
+    igAccountIds: [] as string[],
     proxyId: '',
     color: 'blue',
-    isActive: true
-  }
-  
-  nextTick(() => {
-    formRef.value?.resetValidation()
-  })
-}
+    isActive: true,
+  });
 
-const loadGroupData = () => {
-  if (props.group) {
+  // カラーオプション
+  const colorOptions = [
+    { title: 'ブルー', value: 'blue' },
+    { title: 'グリーン', value: 'green' },
+    { title: 'レッド', value: 'red' },
+    { title: 'オレンジ', value: 'orange' },
+    { title: 'パープル', value: 'purple' },
+    { title: 'ピンク', value: 'pink' },
+    { title: 'イエロー', value: 'yellow' },
+    { title: 'グレー', value: 'grey' },
+  ];
+
+  // バリデーションルール
+  const nameRules = [
+    (v: string) => !!v || 'グループ名は必須です',
+    (v: string) => v.length >= 2 || 'グループ名は2文字以上で入力してください',
+    (v: string) => v.length <= 50 || 'グループ名は50文字以下で入力してください',
+  ];
+
+  const accountRules = [
+    (v: string[]) =>
+      v.length > 0 || '少なくとも1つのInstagramアカウントを選択してください',
+  ];
+
+  // Computed
+  const dialogModel = computed({
+    get: () => props.modelValue,
+    set: value => emit('update:modelValue', value),
+  });
+
+  const isEditing = computed(() => !!props.group);
+
+  // プロキシオプション
+  const proxyOptions = computed(() => {
+    return proxiesStore.activeProxies.map(proxy => ({
+      title: proxy.name,
+      value: proxy.id,
+      subtitle: `${proxy.host}:${proxy.port}`,
+    }));
+  });
+
+  // Instagramアカウントオプション
+  const igAccountOptions = computed(() => {
+    return igAccountsStore.accounts.map(account => ({
+      title: account.name || account.username,
+      value: account.id,
+      subtitle: account.username,
+    }));
+  });
+
+  // Methods
+  const getAccountAvatar = (accountId: string) => {
+    const account = igAccountsStore.accounts.find(acc => acc.id === accountId);
+    return account?.profilePictureUrl || '/default-avatar.png';
+  };
+
+  const resetForm = () => {
     formData.value = {
-      name: props.group.name,
-      description: props.group.description || '',
-      igAccountIds: [...props.group.igAccountIds],
-      proxyId: props.group.proxyId || '',
-      color: props.group.color || 'blue',
-      isActive: props.group.isActive
-    }
-  }
-}
+      name: '',
+      description: '',
+      igAccountIds: [],
+      proxyId: '',
+      color: 'blue',
+      isActive: true,
+    };
 
-const handleSubmit = async () => {
-  if (!formValid.value) return
+    nextTick(() => {
+      formRef.value?.resetValidation();
+    });
+  };
 
-  try {
-    loading.value = true
-
-    const groupData = {
-      ...formData.value,
-      description: formData.value.description || undefined,
-      proxyId: formData.value.proxyId || undefined
-    }
-
-    if (isEditing.value && props.group) {
-      await groupsStore.updateGroup(props.group.id, groupData)
-    } else {
-      await groupsStore.createGroup(groupData)
-    }
-
-    emit('saved')
-    dialogModel.value = false
-    resetForm()
-
-  } catch (error) {
-    console.error('グループ保存エラー:', error)
-  } finally {
-    loading.value = false
-  }
-}
-
-const handleCancel = () => {
-  dialogModel.value = false
-  resetForm()
-}
-
-// Lifecycle
-onMounted(async () => {
-  // データを読み込み
-  await Promise.all([
-    proxiesStore.fetchProxies(),
-    igAccountsStore.fetchAccounts()
-  ])
-})
-
-// Watchers
-watch(() => props.modelValue, (newValue) => {
-  if (newValue) {
+  const loadGroupData = () => {
     if (props.group) {
-      loadGroupData()
-    } else {
-      resetForm()
+      formData.value = {
+        name: props.group.name,
+        description: props.group.description || '',
+        igAccountIds: [...props.group.igAccountIds],
+        proxyId: props.group.proxyId || '',
+        color: props.group.color || 'blue',
+        isActive: props.group.isActive,
+      };
     }
-  }
-})
+  };
 
-watch(() => props.group, () => {
-  if (props.modelValue && props.group) {
-    loadGroupData()
-  }
-})
+  const handleSubmit = async () => {
+    if (!formValid.value) return;
+
+    try {
+      loading.value = true;
+
+      const groupData = {
+        ...formData.value,
+        description: formData.value.description || undefined,
+        proxyId: formData.value.proxyId || undefined,
+      };
+
+      if (isEditing.value && props.group) {
+        await groupsStore.updateGroup(props.group.id, groupData);
+      } else {
+        await groupsStore.createGroup(groupData);
+      }
+
+      emit('saved');
+      dialogModel.value = false;
+      resetForm();
+    } catch (error) {
+      console.error('グループ保存エラー:', error);
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const handleCancel = () => {
+    dialogModel.value = false;
+    resetForm();
+  };
+
+  // Lifecycle
+  onMounted(async () => {
+    // データを読み込み
+    await Promise.all([
+      proxiesStore.fetchProxies(),
+      igAccountsStore.fetchAccounts(),
+    ]);
+  });
+
+  // Watchers
+  watch(
+    () => props.modelValue,
+    newValue => {
+      if (newValue) {
+        if (props.group) {
+          loadGroupData();
+        } else {
+          resetForm();
+        }
+      }
+    }
+  );
+
+  watch(
+    () => props.group,
+    () => {
+      if (props.modelValue && props.group) {
+        loadGroupData();
+      }
+    }
+  );
 </script>
 
 <style scoped>
-.group-form-card {
-  background: white;
-  border: 1px solid #e2e8f0;
-}
-
-.group-form-header {
-  background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
-  border-bottom: 1px solid #e2e8f0;
-  padding: 20px 24px;
-}
-
-.v-text-field :deep(.v-field__outline) {
-  border-radius: 12px;
-}
-
-.v-textarea :deep(.v-field__outline) {
-  border-radius: 12px;
-}
-
-.v-select :deep(.v-field__outline) {
-  border-radius: 12px;
-}
-
-/* アニメーション */
-.group-form-card {
-  animation: slideInUp 0.3s ease-out;
-}
-
-@keyframes slideInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
+  .group-form-card {
+    background: white;
+    border: 1px solid #e2e8f0;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+
+  .group-form-header {
+    background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+    border-bottom: 1px solid #e2e8f0;
+    padding: 20px 24px;
   }
-}
+
+  .v-text-field :deep(.v-field__outline) {
+    border-radius: 12px;
+  }
+
+  .v-textarea :deep(.v-field__outline) {
+    border-radius: 12px;
+  }
+
+  .v-select :deep(.v-field__outline) {
+    border-radius: 12px;
+  }
+
+  /* アニメーション */
+  .group-form-card {
+    animation: slideInUp 0.3s ease-out;
+  }
+
+  @keyframes slideInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 </style>

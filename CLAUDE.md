@@ -2,6 +2,8 @@ Claude Rules :look👀
 
 # CLAUDE.md
 
+必ず日本語で答えてください。
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## 🏗️ **Directory Structure Rules (ALWAYS FOLLOW)**
@@ -111,7 +113,7 @@ functions/src/
 export { useAuthStore } from './auth'
 export { usePostsStore } from './posts'
 
-// components/index.ts  
+// components/index.ts
 export { default as PostFormDialog } from './forms/PostFormDialog.vue'
 export { default as UsageDashboard } from './widgets/UsageDashboard.vue'
 
@@ -165,7 +167,7 @@ import { formatDate } from '@utils/date'
 
 ## Structure
 - common/: Base reusable components
-- forms/: Form-related components  
+- forms/: Form-related components
 - layouts/: Layout components
 - widgets/: Complex composite components
 
@@ -194,7 +196,7 @@ import { PostFormDialog } from '@components/forms'
 
 ```
 ✅ New form component: frontend/src/components/forms/ScheduleFormDialog.vue
-✅ New API endpoint: functions/src/api/v1/schedules.ts  
+✅ New API endpoint: functions/src/api/v1/schedules.ts
 ✅ New store: frontend/src/stores/schedules.ts (+ update index.ts)
 ✅ New utility: frontend/src/utils/date/formatInstagramDate.ts
 ✅ New composable: frontend/src/composables/business/useScheduler.ts
@@ -324,7 +326,7 @@ npm start                             # Start MCP server
 
 ### Plan Limits System
 - Free: 1 account, 10 posts/month
-- Basic: 3 accounts, 100 posts/month  
+- Basic: 3 accounts, 100 posts/month
 - Pro: 10 accounts, 1000 posts/month
 - Business: Unlimited accounts, 10000 posts/month
 
@@ -394,7 +396,7 @@ Types: feat, fix, docs, style, refactor, test, chore, perf, ci
 - `functions/src/utils/scheduleUtils.ts` - Schedule calculations
 - `functions/src/api/instagram.ts` - Graph API integration
 
-### Frontend Core  
+### Frontend Core
 - `frontend/src/views/SchedulesView.vue` - Schedule management UI
 - `frontend/src/views/ContentView.vue` - Content library
 - `frontend/src/views/AccountsView.vue` - Instagram account management
@@ -409,7 +411,7 @@ Types: feat, fix, docs, style, refactor, test, chore, perf, ci
 
 Sprint 1 completed (100% - 12/12 Must tasks). The app has full MVP functionality including:
 - Scheduled posting (one-time, recurring, random)
-- Multi-account Instagram management  
+- Multi-account Instagram management
 - Stripe payment integration
 - Plan limits and usage tracking
 - Content library management

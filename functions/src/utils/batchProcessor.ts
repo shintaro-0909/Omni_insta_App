@@ -55,7 +55,6 @@ export class BatchProcessor<T, R> {
 
   constructor(config: BatchProcessorConfig<T, R>) {
     this.config = {
-      retryDelay: 5000,
       rateLimitDelay: 1000,
       priorityWeights: { high: 3, medium: 2, low: 1 },
       ...config
@@ -345,6 +344,7 @@ export class InstagramBatchProcessor {
       maxWaitTime: 30000, // 30 seconds
       maxConcurrentBatches: 2,
       rateLimitDelay: 2000, // 2 seconds between batches
+      retryDelay: 5000,
       processor: this.processMediaUploads.bind(this)
     });
 
@@ -354,6 +354,7 @@ export class InstagramBatchProcessor {
       maxWaitTime: 60000, // 1 minute
       maxConcurrentBatches: 1, // Sequential publishing
       rateLimitDelay: 5000, // 5 seconds between batches
+      retryDelay: 8000,
       processor: this.processPostPublishes.bind(this)
     });
 
@@ -363,6 +364,7 @@ export class InstagramBatchProcessor {
       maxWaitTime: 15000, // 15 seconds
       maxConcurrentBatches: 3,
       rateLimitDelay: 1000, // 1 second between batches
+      retryDelay: 3000,
       processor: this.processAccountInfoRequests.bind(this)
     });
   }
@@ -491,6 +493,7 @@ export class FirestoreBatchProcessor {
       maxWaitTime: 10000, // 10 seconds
       maxConcurrentBatches: 3,
       rateLimitDelay: 100, // 100ms between batches
+      retryDelay: 2000,
       processor: this.processWrites.bind(this)
     });
 
@@ -499,6 +502,7 @@ export class FirestoreBatchProcessor {
       maxWaitTime: 5000, // 5 seconds
       maxConcurrentBatches: 5,
       rateLimitDelay: 50, // 50ms between batches
+      retryDelay: 1000,
       processor: this.processReads.bind(this)
     });
 
@@ -507,6 +511,7 @@ export class FirestoreBatchProcessor {
       maxWaitTime: 15000, // 15 seconds
       maxConcurrentBatches: 2,
       rateLimitDelay: 200, // 200ms between batches
+      retryDelay: 2500,
       processor: this.processDeletes.bind(this)
     });
   }

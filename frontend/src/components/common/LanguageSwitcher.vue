@@ -29,9 +29,9 @@
         <template #prepend>
           <span class="flag mr-3">{{ locale.flag }}</span>
         </template>
-        
+
         <v-list-item-title>{{ locale.name }}</v-list-item-title>
-        
+
         <template #append>
           <v-icon
             v-if="locale.code === currentLocale"
@@ -46,65 +46,73 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { supportedLocales, setLocale, getCurrentLocale, type MessageLanguages } from '@/plugins/i18n'
+  import { computed } from 'vue';
+  import {
+    supportedLocales,
+    setLocale,
+    getCurrentLocale,
+    type MessageLanguages,
+  } from '@/plugins/i18n';
 
-interface Props {
-  compact?: boolean
-}
+  interface Props {
+    compact?: boolean;
+  }
 
-const props = withDefaults(defineProps<Props>(), {
-  compact: false
-})
+  const props = withDefaults(defineProps<Props>(), {
+    compact: false,
+  });
 
-// Computed
-const currentLocale = computed(() => getCurrentLocale())
+  // Computed
+  const currentLocale = computed(() => getCurrentLocale());
 
-const currentLanguage = computed(() => {
-  return supportedLocales.find(lang => lang.code === currentLocale.value) || supportedLocales[0]
-})
+  const currentLanguage = computed(() => {
+    return (
+      supportedLocales.find(lang => lang.code === currentLocale.value) ||
+      supportedLocales[0] || { code: 'en', name: 'English', flag: '🇺🇸' }
+    );
+  });
 
-// Methods
-const changeLanguage = (newLocale: MessageLanguages) => {
-  setLocale(newLocale)
-  
-  // 成功通知（オプション）
-  // notifications.add({
-  //   type: 'success',
-  //   message: `Language changed to ${supportedLocales.find(l => l.code === newLocale)?.name}`
-  // })
-}
+  // Methods
+  const changeLanguage = (newLocale: MessageLanguages) => {
+    setLocale(newLocale);
+
+    // 成功通知（オプション）
+    // notifications.add({
+    //   type: 'success',
+    //   message: `Language changed to ${supportedLocales.find(l => l.code === newLocale)?.name}`
+    // })
+  };
 </script>
 
 <style scoped>
-.language-switcher {
-  text-transform: none !important;
-}
+  .language-switcher {
+    text-transform: none !important;
+  }
 
-.flag {
-  font-size: 1.2em;
-  line-height: 1;
-}
+  .flag {
+    font-size: 1.2em;
+    line-height: 1;
+  }
 
-.language-menu {
-  min-width: 160px;
-}
+  .language-menu {
+    min-width: 160px;
+  }
 
-.v-list-item--active {
-  background: rgba(var(--v-theme-primary), 0.08);
-}
+  .v-list-item--active {
+    background: rgba(var(--v-theme-primary), 0.08);
+  }
 
-.v-list-item--active .v-list-item-title {
-  font-weight: 600;
-  color: rgb(var(--v-theme-primary));
-}
+  .v-list-item--active .v-list-item-title {
+    font-weight: 600;
+    color: rgb(var(--v-theme-primary));
+  }
 
-/* アニメーション */
-.language-switcher {
-  transition: all 0.2s ease;
-}
+  /* アニメーション */
+  .language-switcher {
+    transition: all 0.2s ease;
+  }
 
-.language-switcher:hover {
-  transform: translateY(-1px);
-}
+  .language-switcher:hover {
+    transform: translateY(-1px);
+  }
 </style>

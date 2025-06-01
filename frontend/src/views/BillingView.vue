@@ -24,15 +24,24 @@
               {{ currentPlan?.description || 'フリープランをご利用中です' }}
             </div>
             <div v-if="!isFreePlan" class="text-body-2 mt-2">
-              <div>次回更新日: {{ formatDate(currentSubscription.currentPeriodEnd) }}</div>
-              <div v-if="currentSubscription.cancelAtPeriodEnd" class="text-warning">
+              <div>
+                次回更新日:
+                {{ formatDate(currentSubscription.currentPeriodEnd) }}
+              </div>
+              <div
+                v-if="currentSubscription.cancelAtPeriodEnd"
+                class="text-warning"
+              >
                 <v-icon size="small" class="me-1">mdi-alert</v-icon>
                 期間終了時にキャンセル予定
               </div>
             </div>
           </v-col>
           <v-col cols="12" md="6" class="text-md-end">
-            <div v-if="!isFreePlan" class="text-h4 font-weight-bold text-primary">
+            <div
+              v-if="!isFreePlan"
+              class="text-h4 font-weight-bold text-primary"
+            >
               {{ formatPrice(currentPlan?.price || 0) }}/月
             </div>
             <div class="mt-2">
@@ -64,17 +73,11 @@
 
     <!-- プラン一覧 -->
     <v-row>
-      <v-col
-        v-for="plan in plans"
-        :key="plan.id"
-        cols="12"
-        md="6"
-        lg="3"
-      >
+      <v-col v-for="plan in plans" :key="plan.id" cols="12" md="6" lg="3">
         <v-card
           :class="{
             'border-primary': currentSubscription?.planId === plan.planId,
-            'elevation-8': currentSubscription?.planId === plan.planId
+            'elevation-8': currentSubscription?.planId === plan.planId,
           }"
           class="h-100 d-flex flex-column"
           elevation="2"
@@ -85,7 +88,9 @@
               <div class="text-h4 font-weight-bold">{{ plan.name }}</div>
               <div class="text-h3 font-weight-bold text-primary mt-2">
                 {{ plan.planId === 'free' ? '無料' : formatPrice(plan.price) }}
-                <span v-if="plan.planId !== 'free'" class="text-body-1">/月</span>
+                <span v-if="plan.planId !== 'free'" class="text-body-1"
+                  >/月</span
+                >
               </div>
               <div class="text-body-2 text-medium-emphasis mt-2">
                 {{ plan.description }}
@@ -94,7 +99,10 @@
           </v-card-title>
 
           <!-- 現在のプランバッジ -->
-          <div v-if="currentSubscription?.planId === plan.planId" class="text-center">
+          <div
+            v-if="currentSubscription?.planId === plan.planId"
+            class="text-center"
+          >
             <v-chip color="primary" variant="flat" size="small">
               <v-icon start>mdi-check</v-icon>
               現在のプラン
@@ -186,25 +194,15 @@
     </v-card>
 
     <!-- エラー表示 -->
-    <v-snackbar
-      v-model="showError"
-      color="error"
-      timeout="5000"
-    >
+    <v-snackbar v-model="showError" color="error" timeout="5000">
       {{ error }}
       <template #actions>
-        <v-btn variant="text" @click="clearError">
-          閉じる
-        </v-btn>
+        <v-btn variant="text" @click="clearError"> 閉じる </v-btn>
       </template>
     </v-snackbar>
 
     <!-- 成功メッセージ -->
-    <v-snackbar
-      v-model="showSuccess"
-      color="success"
-      timeout="3000"
-    >
+    <v-snackbar v-model="showSuccess" color="success" timeout="3000">
       {{ successMessage }}
     </v-snackbar>
 
@@ -215,7 +213,9 @@
         <v-card-text>
           <p>本当にプランをキャンセルしますか？</p>
           <p class="text-body-2 text-medium-emphasis">
-            現在の請求期間の終了時（{{ formatDate(currentSubscription?.currentPeriodEnd) }}）まで
+            現在の請求期間の終了時（{{
+              formatDate(currentSubscription?.currentPeriodEnd)
+            }}）まで
             サービスをご利用いただけます。その後、Freeプランに自動的に変更されます。
           </p>
         </v-card-text>
@@ -239,130 +239,138 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
-import { useBillingStore } from '@/stores/billing'
+  import { ref, computed, watch, onMounted } from 'vue';
+  import { useBillingStore } from '@/stores';
 
-const billingStore = useBillingStore()
+  const billingStore = useBillingStore();
 
-// State
-const showError = ref(false)
-const showSuccess = ref(false)
-const successMessage = ref('')
-const showCancelDialog = ref(false)
+  // State
+  const showError = ref(false);
+  const showSuccess = ref(false);
+  const successMessage = ref('');
+  const showCancelDialog = ref(false);
 
-// Computed
-const {
-  plans,
-  currentSubscription,
-  currentPlan,
-  paymentHistory,
-  loading,
-  error,
-  isFreePlan,
-  canCancel,
-  canResume,
-  formatPrice,
-  formatDate,
-  getPlanFeatureText
-} = billingStore
+  // Computed
+  const {
+    plans,
+    currentSubscription,
+    currentPlan,
+    paymentHistory,
+    loading,
+    error,
+    isFreePlan,
+    canCancel,
+    canResume,
+    formatPrice,
+    formatDate,
+    getPlanFeatureText,
+  } = billingStore;
 
-// 決済履歴テーブルヘッダー
-const paymentHeaders = [
-  { title: '日付', key: 'createdAt', sortable: true },
-  { title: 'プラン', key: 'planId', sortable: false },
-  { title: '金額', key: 'amount', sortable: true },
-  { title: 'ステータス', key: 'status', sortable: false },
-  { title: '説明', key: 'description', sortable: false },
-]
+  // 決済履歴テーブルヘッダー
+  const paymentHeaders = [
+    { title: '日付', key: 'createdAt', sortable: true },
+    { title: 'プラン', key: 'planId', sortable: false },
+    { title: '金額', key: 'amount', sortable: true },
+    { title: 'ステータス', key: 'status', sortable: false },
+    { title: '説明', key: 'description', sortable: false },
+  ];
 
-// Watchers
-const errorWatcher = computed(() => error)
-watch(errorWatcher, (newError) => {
-  if (newError) {
-    showError.value = true
-  }
-})
+  // Watchers
+  const errorWatcher = computed(() => error);
+  watch(errorWatcher, newError => {
+    if (newError) {
+      showError.value = true;
+    }
+  });
 
-// Methods
-const handleUpgrade = async (planId: string) => {
-  try {
-    await billingStore.createCheckoutSession(planId)
-  } catch (err) {
-    console.error('Failed to start checkout:', err)
-  }
-}
+  // Methods
+  const handleUpgrade = async (planId: string) => {
+    try {
+      await billingStore.createCheckoutSession(planId);
+    } catch (err) {
+      console.error('Failed to start checkout:', err);
+    }
+  };
 
-const handleCancelSubscription = () => {
-  showCancelDialog.value = true
-}
+  const handleCancelSubscription = () => {
+    showCancelDialog.value = true;
+  };
 
-const confirmCancelSubscription = async () => {
-  try {
-    const message = await billingStore.cancelSubscription()
-    showCancelDialog.value = false
-    successMessage.value = message
-    showSuccess.value = true
-  } catch (err) {
-    console.error('Failed to cancel subscription:', err)
-  }
-}
+  const confirmCancelSubscription = async () => {
+    try {
+      const message = await billingStore.cancelSubscription();
+      showCancelDialog.value = false;
+      successMessage.value = message;
+      showSuccess.value = true;
+    } catch (err) {
+      console.error('Failed to cancel subscription:', err);
+    }
+  };
 
-const handleResumeSubscription = async () => {
-  try {
-    const message = await billingStore.resumeSubscription()
-    successMessage.value = message
-    showSuccess.value = true
-  } catch (err) {
-    console.error('Failed to resume subscription:', err)
-  }
-}
+  const handleResumeSubscription = async () => {
+    try {
+      const message = await billingStore.resumeSubscription();
+      successMessage.value = message;
+      showSuccess.value = true;
+    } catch (err) {
+      console.error('Failed to resume subscription:', err);
+    }
+  };
 
-const getPaymentStatusColor = (status: string) => {
-  switch (status) {
-    case 'succeeded': return 'success'
-    case 'failed': return 'error'
-    case 'pending': return 'warning'
-    default: return 'grey'
-  }
-}
+  const getPaymentStatusColor = (status: string) => {
+    switch (status) {
+      case 'succeeded':
+        return 'success';
+      case 'failed':
+        return 'error';
+      case 'pending':
+        return 'warning';
+      default:
+        return 'grey';
+    }
+  };
 
-const getPaymentStatusText = (status: string) => {
-  switch (status) {
-    case 'succeeded': return '成功'
-    case 'failed': return '失敗'
-    case 'pending': return '処理中'
-    default: return status
-  }
-}
+  const getPaymentStatusText = (status: string) => {
+    switch (status) {
+      case 'succeeded':
+        return '成功';
+      case 'failed':
+        return '失敗';
+      case 'pending':
+        return '処理中';
+      default:
+        return status;
+    }
+  };
 
-const clearError = () => {
-  billingStore.clearError()
-  showError.value = false
-}
+  const clearError = () => {
+    billingStore.clearError();
+    showError.value = false;
+  };
 
-// Lifecycle
-onMounted(async () => {
-  await Promise.all([
-    billingStore.fetchPlans(),
-    billingStore.fetchSubscription()
-  ])
-  
-  if (!isFreePlan) {
-    await billingStore.fetchPaymentHistory()
-  }
-})
+  // Lifecycle
+  onMounted(async () => {
+    await Promise.all([
+      billingStore.fetchPlans(),
+      billingStore.fetchSubscription(),
+    ]);
+
+    if (!isFreePlan) {
+      await billingStore.fetchPaymentHistory();
+    }
+  });
 </script>
 
 <style scoped>
-.v-card {
-  transition: all 0.3s ease;
-}
+  .v-card {
+    transition: all 0.3s ease;
+  }
 
-.v-card:hover {
-  transform: translateY(-2px);
-}
+  .v-card:hover {
+    transform: translateY(-2px);
+  }
 
-.border-primary {
-  border: 2px solid rgb(var(--v-theme-primary)) !important;
-}
-</style> 
+  .border-primary {
+    border: 2px solid rgb(var(--v-theme-primary)) !important;
+  }
+</style>

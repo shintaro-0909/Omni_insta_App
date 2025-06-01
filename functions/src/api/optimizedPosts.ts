@@ -95,7 +95,7 @@ const createOptimizedPost = withCleanup(async (data: any, context: any) => {
       message: "Post created successfully",
     };
   } catch (error) {
-    handleFunctionError(error, { function: "createOptimizedPost" });
+    return handleFunctionError(error, { function: "createOptimizedPost" });
   }
 });
 
@@ -165,7 +165,7 @@ const getOptimizedPosts = withCleanup(async (data: any, context: any) => {
         : null,
     };
   } catch (error) {
-    handleFunctionError(error, { function: "getOptimizedPosts" });
+    return handleFunctionError(error, { function: "getOptimizedPosts" });
   }
 });
 
@@ -220,7 +220,7 @@ const getOptimizedPost = withCleanup(async (data: any, context: any) => {
       post
     };
   } catch (error) {
-    handleFunctionError(error, { function: "getOptimizedPost" });
+    return handleFunctionError(error, { function: "getOptimizedPost" });
   }
 });
 
@@ -292,7 +292,7 @@ const updateOptimizedPost = withCleanup(async (data: any, context: any) => {
       message: "Post updated successfully",
     };
   } catch (error) {
-    handleFunctionError(error, { function: "updateOptimizedPost" });
+    return handleFunctionError(error, { function: "updateOptimizedPost" });
   }
 });
 
@@ -345,7 +345,7 @@ const deleteOptimizedPost = withCleanup(async (data: any, context: any) => {
       message: "Post deleted successfully",
     };
   } catch (error) {
-    handleFunctionError(error, { function: "deleteOptimizedPost" });
+    return handleFunctionError(error, { function: "deleteOptimizedPost" });
   }
 });
 
@@ -437,7 +437,7 @@ const batchOptimizedPostOperations = withCleanup(async (data: any, context: any)
       processed: limitedOps.length
     };
   } catch (error) {
-    handleFunctionError(error, { function: "batchOptimizedPostOperations" });
+    return handleFunctionError(error, { function: "batchOptimizedPostOperations" });
   }
 });
 
