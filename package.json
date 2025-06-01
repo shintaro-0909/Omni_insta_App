@@ -53,6 +53,13 @@
     "deploy:staging": "./tools/scripts/deploy-staging.sh",
     "deploy:production": "./tools/scripts/deploy-production.sh",
     
+    "// === MCP Server Commands ===": "",
+    "mcp:install": "npm install --workspaces",
+    "mcp:build": "npm run build --workspaces",
+    "mcp:start": "concurrently \"npm start -w mcp-servers/firebase-admin\" \"npm start -w mcp-servers/instagram-api\"",
+    "mcp:test": "npm test --workspaces",
+    "mcp:clean": "npm run clean --workspaces",
+    
     "// === Utility Commands ===": "",
     "clean": "npm run clean:frontend && npm run clean:functions",
     "clean:frontend": "cd frontend && rm -rf dist node_modules/.cache",

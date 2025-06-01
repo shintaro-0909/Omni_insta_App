@@ -240,7 +240,7 @@ export const testFirestore = functions.https.onCall(async (data, context) => {
 
   try {
     const userDoc = await db.collection("users").doc(context.auth.uid).get();
-    
+
     if (!userDoc.exists) {
       return {
         message: "User document not found",
@@ -275,7 +275,9 @@ export const createSchedule = functions.https.onCall(async (data, context) => {
 });
 
 // 自動投稿実行
-export const executeScheduledPosts = functions.pubsub.schedule("every 1 minutes").onRun(async (context) => {
+export const executeScheduledPosts = functions.pubsub
+    .schedule("every 1 minutes")
+    .onRun(async (context) => {
   // T07: 自動投稿Worker
 });
 
@@ -292,4 +294,4 @@ export const createCheckoutSession = functions.https.onCall(async (data, context
 export const stripeWebhook = functions.https.onRequest(async (req, res) => {
   // T11: Stripe Webhook処理
 });
-*/ 
+*/

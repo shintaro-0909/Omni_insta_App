@@ -160,11 +160,15 @@ async function sendPushNotification(
       ) : {},
     };
 
-    const response = await admin.messaging().sendToDevice(tokens, payload);
+    const response = await admin.messaging().sendEachForMulticast({
+      tokens,
+      notification: payload.notification,
+      data: payload.data
+    });
 
     // 無効なトークンを削除
     const invalidTokens: string[] = [];
-    response.results.forEach((result, index) => {
+    response.responses.forEach((result: any, index: number) => {
       if (result.error) {
         const errorCode = result.error.code;
         if (errorCode === "messaging/invalid-registration-token" ||

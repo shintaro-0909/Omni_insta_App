@@ -161,5 +161,25 @@ stripe-cli.log
 
 # Backup files
 *.bak
-*.backup 
+*.backup
+*.disabled
+src.backup/
+temp_disabled/
+
+# Claude settings
 **/.claude/settings.local.json
+
+# Temporary development files
+*.temp
+*.tmp
+consolidationReport.md
+
+# Database dumps and backups
+firebase-data/
+*.sql
+*.sqlite
+
+# Sensitive files
+.env.example.local
+*secret*
+*private*
