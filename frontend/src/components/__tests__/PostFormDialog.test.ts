@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import PostFormDialog from '../PostFormDialog.vue';
+import PostFormDialog from '../forms/PostFormDialog.vue';
 
 // Mock the stores
 vi.mock('@/stores/posts', () => ({
@@ -18,7 +18,7 @@ describe('PostFormDialog', () => {
   });
 
   it('component can be imported', async () => {
-    const module = await import('../PostFormDialog.vue');
+    const module = await import('../forms/PostFormDialog.vue');
     expect(module.default).toBeDefined();
     expect(typeof module.default).toBe('object');
   });

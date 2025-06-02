@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
-import LanguageSwitcher from '../LanguageSwitcher.vue';
+import LanguageSwitcher from '../common/LanguageSwitcher.vue';
 
 // Mock the i18n plugin
 vi.mock('@/plugins/i18n', () => ({
@@ -45,7 +45,7 @@ describe('LanguageSwitcher', () => {
   });
 
   it('component module can be imported', async () => {
-    const module = await import('../LanguageSwitcher.vue');
+    const module = await import('../common/LanguageSwitcher.vue');
     expect(module.default).toBeDefined();
     expect(typeof module.default).toBe('object');
   });

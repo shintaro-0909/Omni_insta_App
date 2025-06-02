@@ -15,14 +15,12 @@
     "dev:functions": "cd functions && npm run serve",
     "dev:emulators": "firebase emulators:start",
     "dev:full": "concurrently \"npm:dev:emulators\" \"npm:dev:frontend\"",
-    
     "// === Build Commands ===": "",
     "build": "npm run build:frontend && npm run build:functions",
     "build:frontend": "cd frontend && npm run build",
     "build:functions": "cd functions && npm run build",
     "build:check": "npm run build:frontend:check && npm run build:functions",
     "build:frontend:check": "cd frontend && npm run build-check",
-    
     "// === Testing Commands ===": "",
     "test": "npm run test:frontend && npm run test:functions",
     "test:frontend": "cd frontend && npm run test:unit",
@@ -31,7 +29,6 @@
     "test:coverage": "npm run test:frontend:coverage && npm run test:functions:coverage",
     "test:frontend:coverage": "cd frontend && npm run test:coverage",
     "test:functions:coverage": "cd functions && npm run test:coverage",
-    
     "// === Code Quality Commands ===": "",
     "lint": "npm run lint:frontend && npm run lint:functions && npm run lint:root",
     "lint:frontend": "cd frontend && npm run lint",
@@ -40,57 +37,46 @@
     "lint:fix": "npm run lint:frontend:fix && npm run lint:functions:fix",
     "lint:frontend:fix": "cd frontend && npm run lint -- --fix",
     "lint:functions:fix": "cd functions && npm run lint -- --fix",
-    
     "// === Type Checking Commands ===": "",
     "type-check": "npm run type-check:frontend && npm run type-check:functions",
     "type-check:frontend": "cd frontend && npm run type-check",
     "type-check:functions": "cd functions && npx tsc --noEmit",
-    
     "// === Deployment Commands ===": "",
     "deploy": "npm run build && firebase deploy",
     "deploy:hosting": "npm run build:frontend && firebase deploy --only hosting",
     "deploy:functions": "npm run build:functions && firebase deploy --only functions",
     "deploy:staging": "./tools/scripts/deploy-staging.sh",
     "deploy:production": "./tools/scripts/deploy-production.sh",
-    
     "// === MCP Server Commands ===": "",
     "mcp:install": "npm install --workspaces",
     "mcp:build": "npm run build --workspaces",
     "mcp:start": "concurrently \"npm start -w mcp-servers/firebase-admin\" \"npm start -w mcp-servers/instagram-api\"",
     "mcp:test": "npm test --workspaces",
     "mcp:clean": "npm run clean --workspaces",
-    
     "// === Utility Commands ===": "",
     "clean": "npm run clean:frontend && npm run clean:functions",
     "clean:frontend": "cd frontend && rm -rf dist node_modules/.cache",
     "clean:functions": "cd functions && rm -rf lib",
     "clean:all": "npm run clean && rm -rf node_modules frontend/node_modules functions/node_modules",
-    
     "// === Setup Commands ===": "",
     "setup": "./tools/scripts/dev-setup.sh",
     "install:all": "npm install && cd frontend && npm install && cd ../functions && npm install",
     "update:all": "npm update && cd frontend && npm update && cd ../functions && npm update",
-    
     "// === Security Commands ===": "",
     "audit": "npm audit && cd frontend && npm audit && cd ../functions && npm audit",
     "audit:fix": "npm audit fix && cd frontend && npm audit fix && cd ../functions && npm audit fix",
-    
     "// === Documentation Commands ===": "",
     "docs:serve": "docsify serve tools/docs",
     "docs:generate": "typedoc --out docs/api frontend/src functions/src",
-    
     "// === Performance Commands ===": "",
     "perf:lighthouse": "cd frontend && npm run build && lhci autorun",
     "perf:bundle": "cd frontend && npm run build && npx vite-bundle-analyzer dist",
-    
     "// === Database Commands ===": "",
     "db:seed": "cd functions && node scripts/initializePlans.js",
     "db:backup": "firebase firestore:delete --all-collections",
-    
     "// === Monitoring Commands ===": "",
     "monitor:errors": "firebase functions:log --filter=\"severity>=ERROR\"",
     "monitor:performance": "firebase performance:get",
-    
     "// === Quick Start Commands ===": "",
     "start": "npm run dev:full",
     "quick-start": "./tools/scripts/quick-claude-setup.sh"
@@ -103,9 +89,9 @@
   "devDependencies": {
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
-    "rimraf": "^5.0.5",
-    "nodemon": "^3.0.2",
     "docsify-cli": "^4.4.4",
+    "nodemon": "^3.0.2",
+    "rimraf": "^5.0.5",
     "typedoc": "^0.25.4"
   },
   "keywords": [

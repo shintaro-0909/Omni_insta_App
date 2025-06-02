@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import UsageDashboard from '../UsageDashboard.vue';
+import UsageDashboard from '../widgets/UsageDashboard.vue';
 
 // Mock the stores
 vi.mock('@/stores/planLimits', () => ({
@@ -28,7 +28,7 @@ describe('UsageDashboard', () => {
   });
 
   it('component can be imported', async () => {
-    const module = await import('../UsageDashboard.vue');
+    const module = await import('../widgets/UsageDashboard.vue');
     expect(module.default).toBeDefined();
     expect(typeof module.default).toBe('object');
   });

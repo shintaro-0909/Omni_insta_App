@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { errorMonitor } from '../errorHandler';
+import { ErrorHandler, useErrorHandler, AppError, ErrorType, ErrorSeverity } from '../validation/errorHandler';
 
 // Mock console methods
 global.console = {
@@ -10,22 +10,26 @@ global.console = {
 };
 
 describe('Error Handler', () => {
-  it('should be defined', () => {
-    expect(errorMonitor).toBeDefined();
+  it('should export ErrorHandler class', () => {
+    expect(ErrorHandler).toBeDefined();
+    expect(typeof ErrorHandler.fromError).toBe('function');
   });
 
-  it('should have error monitoring capabilities', () => {
-    // Basic test to ensure the module can be imported
-    expect(typeof errorMonitor).toBe('object');
+  it('should export useErrorHandler composable', () => {
+    const { handleError, handleAsyncError } = useErrorHandler();
+    expect(handleError).toBeDefined();
+    expect(handleAsyncError).toBeDefined();
+    expect(typeof handleError).toBe('function');
+    expect(typeof handleAsyncError).toBe('function');
   });
 
-  it('should handle error reporting', () => {
-    // Test that error monitoring doesn't throw
-    expect(() => {
-      // Basic error handling test
-      const testError = new Error('Test error');
-      // The error handler should not throw when processing errors
-      expect(testError).toBeInstanceOf(Error);
-    }).not.toThrow();
+  it('should handle error conversion', () => {
+    const testError = new Error('Test error');
+    const appError = ErrorHandler.fromError(testError, 'test-context');
+    
+    expect(appError).toBeInstanceOf(AppError);
+    expect(appError.type).toBe(ErrorType.UNKNOWN);
+    expect(appError.severity).toBe(ErrorSeverity.MEDIUM);
+    expect(appError.message).toContain('test-context: Test error');
   });
 });

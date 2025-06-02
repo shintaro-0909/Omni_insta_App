@@ -2,6 +2,10 @@ import { defineStore } from 'pinia';
 import { ref, computed, shallowRef } from 'vue';
 import {
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   GoogleAuthProvider,
   signOut,
   onAuthStateChanged,
@@ -37,7 +41,25 @@ export const useAuthStore = defineStore('auth', () => {
 
   // Actions
   const initializeAuth = async () => {
-    return new Promise<void>(resolve => {
+    return new Promise<void>(async resolve => {
+      // エミュレーター環境ではリダイレクト結果をチェック
+      const isEmulatorMode = import.meta.env.VITE_ENABLE_FIREBASE_EMULATOR === 'true';
+      
+      if (isEmulatorMode) {
+        try {
+          const result = await getRedirectResult(auth);
+          if (result) {
+            user.value = result.user;
+            updateCachedSessionInfo();
+            loading.value = false;
+            console.log('✅ Google認証成功（リダイレクト）:', result.user.displayName);
+          }
+        } catch (err: any) {
+          console.error('❌ リダイレクト認証エラー:', err);
+          loading.value = false;
+        }
+      }
+
       const unsubscribe = onAuthStateChanged(auth, firebaseUser => {
         user.value = firebaseUser;
         isInitialized.value = true;
@@ -61,20 +83,76 @@ export const useAuthStore = defineStore('auth', () => {
         loading.value = true;
         error.value = null;
 
-        const provider = new GoogleAuthProvider();
-        provider.addScope('email');
-        provider.addScope('profile');
-
-        const result = await signInWithPopup(auth, provider);
-        user.value = result.user;
-
-        // Cache session info immediately
-        updateCachedSessionInfo();
-
-        console.log('✅ Google認証成功:', result.user.displayName);
+        const isEmulatorMode = import.meta.env.VITE_ENABLE_FIREBASE_EMULATOR === 'true';
+        
+        console.log('🔐 認証開始:', {
+          isEmulatorMode,
+          authEmulatorConfig: auth.config,
+          currentUser: auth.currentUser
+        });
+        
+        if (isEmulatorMode) {
+          // エミュレーター環境ではGoogleポップアップ認証を試行
+          console.log('🔧 エミュレーター環境でGoogle認証を試行中...');
+          
+          const provider = new GoogleAuthProvider();
+          provider.addScope('email');
+          provider.addScope('profile');
+          
+          try {
+            const result = await signInWithPopup(auth, provider);
+            user.value = result.user;
+            console.log('✅ エミュレーターGoogle認証成功:', result.user.displayName);
+          } catch (popupError: any) {
+            console.log('❌ Googleポップアップ認証失敗:', popupError.code);
+            
+            // ポップアップが失敗した場合は簡易認証にフォールバック
+            console.log('🔄 簡易認証にフォールバック中...');
+            const email = 'demo@example.com';
+            const password = 'password123';
+            
+            try {
+              const result = await signInWithEmailAndPassword(auth, email, password);
+              user.value = result.user;
+              console.log('✅ 簡易認証成功');
+            } catch (emailError: any) {
+              if (emailError.code === 'auth/user-not-found') {
+                const result = await createUserWithEmailAndPassword(auth, email, password);
+                user.value = result.user;
+                console.log('✅ 新規ユーザー作成成功');
+              } else {
+                throw emailError;
+              }
+            }
+          }
+          
+          // Cache session info immediately
+          updateCachedSessionInfo();
+          
+          console.log('✅ エミュレーター認証完了:', user.value?.email);
+        } else {
+          // 本番環境では Google サインインを使用
+          console.log('🌐 Google認証を試行中...');
+          const provider = new GoogleAuthProvider();
+          provider.addScope('email');
+          provider.addScope('profile');
+          
+          const result = await signInWithPopup(auth, provider);
+          user.value = result.user;
+          
+          // Cache session info immediately
+          updateCachedSessionInfo();
+          
+          console.log('✅ Google認証成功:', result.user.displayName);
+        }
       } catch (err: any) {
         error.value = err.message || 'ログインに失敗しました';
-        console.error('❌ Google認証エラー:', err);
+        console.error('❌ 認証エラー詳細:', {
+          code: err.code,
+          message: err.message,
+          stack: err.stack,
+          customData: err.customData
+        });
         throw err;
       } finally {
         loading.value = false;

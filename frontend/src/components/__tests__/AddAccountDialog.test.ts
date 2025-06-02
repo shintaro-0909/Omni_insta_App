@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import AddAccountDialog from '../AddAccountDialog.vue';
+import AddAccountDialog from '../forms/AddAccountDialog.vue';
 
 // Mock the stores
 vi.mock('@/stores/igAccounts', () => ({
@@ -21,7 +21,7 @@ describe('AddAccountDialog', () => {
   });
 
   it('component can be imported', async () => {
-    const module = await import('../AddAccountDialog.vue');
+    const module = await import('../forms/AddAccountDialog.vue');
     expect(module.default).toBeDefined();
     expect(typeof module.default).toBe('object');
   });

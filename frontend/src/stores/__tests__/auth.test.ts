@@ -87,6 +87,11 @@ describe('Auth Store', () => {
         email: 'test@example.com',
         displayName: 'Test User',
         photoURL: 'https://example.com/photo.jpg',
+        emailVerified: true,
+        metadata: {
+          creationTime: '2023-01-01T00:00:00.000Z',
+          lastSignInTime: '2023-01-01T00:00:00.000Z',
+        },
       };
 
       vi.mocked(signInWithPopup).mockResolvedValue({
@@ -102,6 +107,11 @@ describe('Auth Store', () => {
         email: 'test@example.com',
         displayName: 'Test User',
         photoURL: 'https://example.com/photo.jpg',
+        emailVerified: true,
+        metadata: {
+          creationTime: '2023-01-01T00:00:00.000Z',
+          lastSignInTime: '2023-01-01T00:00:00.000Z',
+        },
       });
       expect(authStore.isAuthenticated).toBe(true);
       expect(authStore.loading).toBe(false);
@@ -141,7 +151,15 @@ describe('Auth Store', () => {
       expect(authStore.loading).toBe(true);
 
       resolveLogin!({
-        user: { uid: 'test-uid', email: 'test@example.com' } as User,
+        user: {
+          uid: 'test-uid',
+          email: 'test@example.com',
+          emailVerified: true,
+          metadata: {
+            creationTime: '2023-01-01T00:00:00.000Z',
+            lastSignInTime: '2023-01-01T00:00:00.000Z',
+          },
+        } as User,
         providerId: 'google.com',
         operationType: 'signIn',
       });
@@ -214,6 +232,11 @@ describe('Auth Store', () => {
         email: 'test@example.com',
         displayName: 'Test User',
         photoURL: 'https://example.com/photo.jpg',
+        emailVerified: true,
+        metadata: {
+          creationTime: '2023-01-01T00:00:00.000Z',
+          lastSignInTime: '2023-01-01T00:00:00.000Z',
+        },
       };
 
       mockAuthStateCallback(mockUser);
@@ -223,6 +246,11 @@ describe('Auth Store', () => {
         email: 'test@example.com',
         displayName: 'Test User',
         photoURL: 'https://example.com/photo.jpg',
+        emailVerified: true,
+        metadata: {
+          creationTime: '2023-01-01T00:00:00.000Z',
+          lastSignInTime: '2023-01-01T00:00:00.000Z',
+        },
       });
       expect(authStore.isAuthenticated).toBe(true);
     });

@@ -81,6 +81,82 @@ const appRoutes: RouteRecordRaw[] = [
   },
 ];
 
+// Demo routes (Revolutionary UI Demos)
+/* Temporarily disabled for build stability
+const demoRoutes: RouteRecordRaw[] = [
+  {
+    path: '/demo',
+    name: 'demo',
+    component: () => import('@/views/demos/DemoNavigation.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'Revolutionary UI Demos - Omniy',
+      description: 'Experience cutting-edge UI designs',
+    },
+  },
+  {
+    path: '/demo/modern',
+    name: 'demo-modern',
+    component: () => import('@/views/demos/styles/modern/LandingPage.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'Modern Revolutionary - Quantum UI System',
+      description: 'Experience quantum-level modern UI design',
+    },
+  },
+  {
+    path: '/demo/cyberpunk',
+    name: 'demo-cyberpunk',
+    component: () => import('@/views/demos/styles/cyberpunk/LandingPage.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'Cyberpunk Revolutionary - Neural Hacking UI',
+      description: 'Experience neural hacking cyberpunk interfaces',
+    },
+  },
+  {
+    path: '/demo/stylish',
+    name: 'demo-stylish',
+    component: () => import('@/views/demos/styles/stylish/LandingPage-Revolutionary.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'Stylish Revolutionary - Futuristic Minimalism',
+      description: 'Experience futuristic minimalist elegance',
+    },
+  },
+  {
+    path: '/demo/neumorphism',
+    name: 'demo-neumorphism',
+    component: () => import('@/views/demos/styles/neumorphism/LandingPage-Revolutionary.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'Neumorphism Revolutionary - Dimensional Fusion UI',
+      description: 'Experience dimensional fusion soft UI',
+    },
+  },
+  {
+    path: '/demo/holographic',
+    name: 'demo-holographic',
+    component: () => import('@/views/demos/styles/holographic/LandingPage.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'Holographic - Light Field Technology UI',
+      description: 'Experience advanced holographic interfaces',
+    },
+  },
+  {
+    path: '/demo/biomorphic',
+    name: 'demo-biomorphic',
+    component: () => import('@/views/demos/styles/biomorphic/LandingPage.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'Biomorphic - Biological Evolution UI',
+      description: 'Experience cellular intelligence interfaces',
+    },
+  },
+];
+*/
+
 // Secondary features (lazy loaded)
 const secondaryRoutes: RouteRecordRaw[] = [
   {
@@ -91,6 +167,16 @@ const secondaryRoutes: RouteRecordRaw[] = [
       requiresAuth: true,
       title: 'Settings - Omniy',
       description: 'Application settings',
+    },
+  },
+  {
+    path: '/navigation-test',
+    name: 'navigation-test',
+    component: () => import('@/views/NavigationTestView.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'Navigation Test - Omniy',
+      description: 'Test navigation and LP unified design integration',
     },
   },
   {
@@ -172,6 +258,7 @@ const errorRoutes: RouteRecordRaw[] = [
 // Combine all routes
 const routes = [
   ...coreRoutes,
+  // ...demoRoutes, // Temporarily disabled for build stability
   ...appRoutes,
   ...secondaryRoutes,
   ...errorRoutes,

@@ -31,3 +31,6 @@ export * from './contextAnalyzer';
 // Configuration utils
 export * from './featureFlags';
 export * from './fileImportanceSystem';
+
+// Navigation and testing utils
+export * from './navigationTest';

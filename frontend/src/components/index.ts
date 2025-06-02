@@ -3,6 +3,9 @@
  * Centralized export point for all Vue components
  */
 
+// Layout components
+export { default as UnifiedNavigation } from './layouts/UnifiedNavigation.vue';
+
 // Form components
 export { default as AddAccountDialog } from './forms/AddAccountDialog.vue';
 export { default as GroupFormDialog } from './forms/GroupFormDialog.vue';
