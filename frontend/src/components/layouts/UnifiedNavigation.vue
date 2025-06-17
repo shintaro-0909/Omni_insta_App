@@ -59,17 +59,28 @@
                 <div class="user-email">{{ authStore.userEmail }}</div>
               </div>
             </div>
-            <button 
-              v-if="authStore.isAuthenticated" 
-              class="logout-button"
-              @click="handleLogout"
-            >
-              🚪 ログアウト
-            </button>
+            <div class="footer-actions">
+              <button 
+                class="feedback-button"
+                @click="openFeedbackDialog"
+              >
+                💭 フィードバック
+              </button>
+              <button 
+                v-if="authStore.isAuthenticated" 
+                class="logout-button"
+                @click="handleLogout"
+              >
+                🚪 ログアウト
+              </button>
+            </div>
           </div>
         </div>
       </div>
     </transition>
+
+    <!-- フィードバックダイアログ -->
+    <FeedbackDialog v-model="showFeedbackDialog" />
   </nav>
 </template>
 
@@ -77,6 +88,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores';
+import FeedbackDialog from '@/components/forms/FeedbackDialog.vue';
 
 interface NavLink {
   path: string;
@@ -92,12 +104,14 @@ const authStore = useAuthStore();
 // State
 const showMobileMenu = ref(false);
 const hasScrolled = ref(false);
+const showFeedbackDialog = ref(false);
 
 // Navigation links configuration
 const navLinksConfig: NavLink[] = [
   { path: '/', label: 'ホーム', icon: '🏠', requiresAuth: false },
   { path: '/dashboard', label: 'ダッシュボード', icon: '📊', requiresAuth: true },
   { path: '/schedules', label: '予約管理', icon: '📅', requiresAuth: true },
+  { path: '/schedules/grid', label: 'グリッド管理', icon: '📊', requiresAuth: true },
   { path: '/accounts', label: 'アカウント', icon: '📱', requiresAuth: true },
   { path: '/content', label: 'コンテンツ', icon: '🎨', requiresAuth: true },
   { path: '/settings', label: '設定', icon: '⚙️', requiresAuth: true },
@@ -112,7 +126,7 @@ const mainNavLinks = computed(() => {
     if (link.path === '/' && !authStore.isAuthenticated) return true;
     
     // Show dashboard, schedules, accounts, content, settings for authenticated users
-    if (authStore.isAuthenticated && ['/', '/dashboard', '/schedules', '/accounts', '/content', '/settings'].includes(link.path)) {
+    if (authStore.isAuthenticated && ['/', '/dashboard', '/schedules', '/schedules/grid', '/accounts', '/content', '/settings'].includes(link.path)) {
       return link.path !== '/'; // Hide home for authenticated users in main nav
     }
     
@@ -169,6 +183,11 @@ const handleLogout = async () => {
   } catch (error) {
     console.error('ログアウトエラー:', error);
   }
+};
+
+const openFeedbackDialog = () => {
+  showFeedbackDialog.value = true;
+  closeMobileMenu();
 };
 
 // Lifecycle
@@ -449,6 +468,31 @@ onUnmounted(() => {
 .user-email {
   font-size: 0.9rem;
   color: var(--text-secondary);
+}
+
+.footer-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.feedback-button {
+  width: 100%;
+  background: var(--accent-gradient);
+  color: white;
+  border: none;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.95rem;
+}
+
+.feedback-button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 .logout-button {

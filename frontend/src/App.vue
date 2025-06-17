@@ -1,5 +1,8 @@
 <template>
-  <v-app>
+  <!-- エミュレーターバナー -->
+  <EmulatorBanner />
+  
+  <v-app v-if="!isLandingPage">
     <!-- 💫 モダンナビゲーションドロワー -->
     <v-navigation-drawer
       v-if="authStore.isAuthenticated"
@@ -213,13 +216,67 @@
       </div>
     </v-footer>
 
-    <!-- 🚨 エレガントエラースナックバー -->
+    <!-- 🔔 統合通知システム -->
     <v-snackbar
+      v-for="notification in notificationsStore.activeNotifications"
+      :key="notification.id"
+      :model-value="true"
+      :color="getNotificationColor(notification.type)"
+      :timeout="notification.timeout"
+      location="top"
+      class="elegant-notification"
+      :class="`notification-${notification.type}`"
+      rounded="xl"
+      multi-line
+    >
+      <div class="d-flex align-center">
+        <v-icon :icon="getNotificationIcon(notification.type)" class="mr-3" />
+        <div class="notification-content">
+          <div class="font-weight-bold">{{ notification.title }}</div>
+          <div v-if="notification.message" class="text-caption">
+            {{ notification.message }}
+          </div>
+        </div>
+      </div>
+      
+      <!-- カスタムアクション -->
+      <template v-if="notification.actions && notification.actions.length > 0" #actions>
+        <v-btn
+          v-for="action in notification.actions"
+          :key="action.label"
+          variant="text"
+          :color="action.color || 'white'"
+          @click="action.action"
+          rounded="xl"
+          size="small"
+          class="mr-2"
+        >
+          {{ action.label }}
+        </v-btn>
+      </template>
+      
+      <!-- デフォルトクローズボタン -->
+      <template v-else #actions>
+        <v-btn
+          variant="text"
+          color="white"
+          @click="notificationsStore.removeNotification(notification.id)"
+          rounded="xl"
+          size="small"
+        >
+          閉じる
+        </v-btn>
+      </template>
+    </v-snackbar>
+
+    <!-- 🚨 レガシーエラー通知（後方互換性） -->
+    <v-snackbar
+      v-if="showError && !notificationsStore.hasNotifications"
       v-model="showError"
       color="error"
       timeout="6000"
       location="top"
-      class="elegant-snackbar"
+      class="elegant-snackbar legacy-error"
       rounded="xl"
     >
       <div class="d-flex align-center">
@@ -241,6 +298,66 @@
       </template>
     </v-snackbar>
 
+    <!-- ❓ 確認ダイアログシステム -->
+    <v-dialog
+      v-model="dialogsStore.isConfirmDialogOpen"
+      max-width="480"
+      :persistent="dialogsStore.confirmDialog?.persistent"
+      class="confirm-dialog"
+    >
+      <v-card
+        v-if="dialogsStore.confirmDialog"
+        rounded="xl"
+        class="elegant-confirm-dialog"
+        :class="{ 'danger-dialog': dialogsStore.confirmDialog.danger }"
+      >
+        <!-- ヘッダー -->
+        <v-card-title class="dialog-header">
+          <div class="d-flex align-center">
+            <v-icon
+              v-if="dialogsStore.confirmDialog.icon"
+              :icon="dialogsStore.confirmDialog.icon"
+              :color="dialogsStore.confirmDialog.danger ? 'error' : 'primary'"
+              size="24"
+              class="mr-3"
+            />
+            <span class="dialog-title-text">
+              {{ dialogsStore.confirmDialog.title }}
+            </span>
+          </div>
+        </v-card-title>
+
+        <!-- メッセージ -->
+        <v-card-text class="dialog-content">
+          <div class="dialog-message" style="white-space: pre-line;">
+            {{ dialogsStore.confirmDialog.message }}
+          </div>
+        </v-card-text>
+
+        <!-- アクション -->
+        <v-card-actions class="dialog-actions">
+          <v-spacer />
+          <v-btn
+            variant="outlined"
+            :color="dialogsStore.confirmDialog.cancelColor"
+            @click="dialogsStore.cancelAction"
+            rounded="xl"
+          >
+            {{ dialogsStore.confirmDialog.cancelText }}
+          </v-btn>
+          <v-btn
+            :color="dialogsStore.confirmDialog.confirmColor"
+            :variant="dialogsStore.confirmDialog.danger ? 'elevated' : 'flat'"
+            @click="dialogsStore.confirmAction"
+            rounded="xl"
+            class="ml-2"
+          >
+            {{ dialogsStore.confirmDialog.confirmText }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <!-- 🔔 通知パネル（1人運営では非表示） -->
     <v-overlay
       v-if="isFeatureEnabled('ADVANCED_NOTIFICATIONS')"
@@ -261,17 +378,28 @@
       </v-card>
     </v-overlay>
   </v-app>
+
+  <!-- 🎨 LP専用レイアウト（ULTRATHINK統合） -->
+  <div v-else class="lp-layout">
+    <router-view />
+  </div>
 </template>
 
 <script setup lang="ts">
   import { ref, computed, onMounted } from 'vue';
   import { useRouter } from 'vue-router';
-  import { useAuthStore } from '@/stores';
+  import { useAuthStore, useNotificationsStore, useDialogsStore } from '@/stores';
   import { isFeatureEnabled } from '@/config/featureFlags';
   import { LanguageSwitcher } from '@/components';
+  import EmulatorBanner from '@/components/common/EmulatorBanner.vue';
+  
+  // AG Grid テーマをグローバルに読み込み
+  import '@/styles/ag-grid-theme.css';
 
   const router = useRouter();
   const authStore = useAuthStore();
+  const notificationsStore = useNotificationsStore();
+  const dialogsStore = useDialogsStore();
 
   // State
   const drawer = ref(false);
@@ -282,6 +410,12 @@
   const showError = computed({
     get: () => !!authStore.error,
     set: () => authStore.clearError(),
+  });
+
+  // ULTRATHINK: 全ページでLP専用レイアウト使用 (黒サイドバー完全解除)
+  const isLandingPage = computed(() => {
+    // すべてのページでLP専用レイアウトを使用（黒サイドバーを完全に解除）
+    return true;
   });
 
   // 🎨 Instagram風グラデーションスタイル
@@ -389,6 +523,37 @@
       router.push('/');
     } catch (error) {
       console.error('ログアウトエラー:', error);
+    }
+  };
+
+  // Notification system methods
+  const getNotificationColor = (type: string): string => {
+    switch (type) {
+      case 'success':
+        return 'success';
+      case 'error':
+        return 'error';
+      case 'warning':
+        return 'warning';
+      case 'info':
+        return 'info';
+      default:
+        return 'info';
+    }
+  };
+
+  const getNotificationIcon = (type: string): string => {
+    switch (type) {
+      case 'success':
+        return 'mdi-check-circle';
+      case 'error':
+        return 'mdi-alert-circle';
+      case 'warning':
+        return 'mdi-alert';
+      case 'info':
+        return 'mdi-information';
+      default:
+        return 'mdi-information';
     }
   };
 
@@ -612,9 +777,104 @@
     color: #f44336;
   }
 
-  /* エラースナックバー */
-  .elegant-snackbar {
+  /* 統合通知システム */
+  .elegant-notification {
     backdrop-filter: blur(20px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .notification-success {
+    background: linear-gradient(135deg, 
+      rgba(76, 175, 80, 0.95) 0%, 
+      rgba(67, 160, 71, 0.95) 100%) !important;
+  }
+
+  .notification-error {
+    background: linear-gradient(135deg, 
+      rgba(244, 67, 54, 0.95) 0%, 
+      rgba(229, 57, 53, 0.95) 100%) !important;
+  }
+
+  .notification-warning {
+    background: linear-gradient(135deg, 
+      rgba(255, 152, 0, 0.95) 0%, 
+      rgba(251, 140, 0, 0.95) 100%) !important;
+  }
+
+  .notification-info {
+    background: linear-gradient(135deg, 
+      rgba(33, 150, 243, 0.95) 0%, 
+      rgba(30, 136, 229, 0.95) 100%) !important;
+  }
+
+  .notification-content {
+    flex: 1;
+  }
+
+  /* レガシーエラースナックバー */
+  .elegant-snackbar.legacy-error {
+    backdrop-filter: blur(20px);
+  }
+
+  /* 確認ダイアログ */
+  .elegant-confirm-dialog {
+    border-radius: 16px !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3) !important;
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+  }
+
+  .elegant-confirm-dialog.danger-dialog {
+    border: 1px solid rgba(244, 67, 54, 0.3);
+  }
+
+  .dialog-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    padding: 1.5rem;
+  }
+
+  .danger-dialog .dialog-header {
+    background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
+    border-bottom: 1px solid rgba(244, 67, 54, 0.1);
+  }
+
+  .dialog-title-text {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #2d3748;
+  }
+
+  .danger-dialog .dialog-title-text {
+    color: #c53030;
+  }
+
+  .dialog-content {
+    padding: 1.5rem;
+    background: white;
+  }
+
+  .dialog-message {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #4a5568;
+  }
+
+  .danger-dialog .dialog-message {
+    color: #742a2a;
+  }
+
+  .dialog-actions {
+    padding: 1rem 1.5rem 1.5rem;
+    background: #f8f9fa;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  .danger-dialog .dialog-actions {
+    background: #fff5f5;
+    border-top: 1px solid rgba(244, 67, 54, 0.1);
   }
 
   /* 通知パネル */
@@ -663,4 +923,209 @@
       background: linear-gradient(180deg, #1a1a1a 0%, #000000 100%);
     }
   }
+
+  /* 🎨 ULTRATHINK: LP専用レイアウト */
+  .lp-layout {
+    position: relative;
+    width: 100%;
+    min-height: 100vh;
+    background: white;
+    overflow-x: hidden;
+  }
+
+  /* 全画面レイアウト用ユーティリティクラス */
+  .fullscreen-layout {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: white !important;
+    z-index: 9999 !important;
+    overflow-y: auto !important;
+  }
+
+  /* Vuetifyリセット無効化（LP専用） */
+  .lp-layout * {
+    box-sizing: border-box;
+  }
+</style>
+
+<!-- 🎨 ULTRATHINK: LP-demo.htmlグローバルスタイル -->
+<style>
+/* LP-demo.htmlスタイルをグローバルに適用（Vuetify競合解決） */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans JP', sans-serif !important;
+  color: #2d3748 !important;
+  line-height: 1.6 !important;
+  overflow-x: hidden !important;
+  background: white !important;
+}
+
+/* CSS変数 */
+:root {
+  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  --accent-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  --text-primary: #2d3748;
+  --text-secondary: #718096;
+  --bg-light: #f7fafc;
+  --white: #ffffff;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Vuetifyオーバーライド */
+.v-application {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans JP', sans-serif !important;
+}
+
+.v-application .omniy-nav {
+  position: fixed !important;
+  top: 0 !important;
+  width: 100% !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(10px) !important;
+  z-index: 1000 !important;
+  padding: 1rem 0 !important;
+  box-shadow: var(--shadow-sm) !important;
+  transition: all 0.3s ease !important;
+}
+
+.v-application .nav-container {
+  max-width: 1200px !important;
+  margin: 0 auto !important;
+  padding: 0 2rem !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+}
+
+.v-application .logo {
+  font-size: 1.8rem !important;
+  font-weight: 800 !important;
+  background: var(--primary-gradient) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+.v-application .nav-links {
+  display: flex !important;
+  gap: 2rem !important;
+  align-items: center !important;
+}
+
+.v-application .nav-link {
+  text-decoration: none !important;
+  color: var(--text-secondary) !important;
+  font-weight: 500 !important;
+  transition: color 0.3s ease !important;
+}
+
+.v-application .nav-link:hover {
+  color: var(--text-primary) !important;
+}
+
+.v-application .cta-button {
+  background: var(--primary-gradient) !important;
+  color: white !important;
+  padding: 0.75rem 2rem !important;
+  border-radius: 30px !important;
+  text-decoration: none !important;
+  font-weight: 600 !important;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
+  display: inline-block !important;
+}
+
+.v-application .cta-button:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4) !important;
+}
+
+.v-application .hero {
+  margin-top: 80px !important;
+  padding: 4rem 2rem 6rem !important;
+  background: linear-gradient(180deg, #fafbff 0%, #f3f4f6 100%) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.v-application .hero-container {
+  max-width: 1200px !important;
+  margin: 0 auto !important;
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 4rem !important;
+  align-items: center !important;
+}
+
+.v-application .hero-content h1 {
+  font-size: 3.5rem !important;
+  font-weight: 800 !important;
+  line-height: 1.2 !important;
+  margin-bottom: 1.5rem !important;
+  color: var(--text-primary) !important;
+}
+
+.v-application .gradient-text {
+  background: var(--primary-gradient) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+.v-application .hero-description {
+  font-size: 1.25rem !important;
+  color: var(--text-secondary) !important;
+  margin-bottom: 2rem !important;
+  line-height: 1.8 !important;
+}
+
+.v-application .hero-actions {
+  display: flex !important;
+  gap: 1rem !important;
+  align-items: center !important;
+  margin-bottom: 3rem !important;
+}
+
+.v-application .secondary-button {
+  background: white !important;
+  color: var(--text-primary) !important;
+  padding: 0.75rem 2rem !important;
+  border-radius: 30px !important;
+  text-decoration: none !important;
+  font-weight: 600 !important;
+  border: 2px solid #e2e8f0 !important;
+  transition: all 0.3s ease !important;
+  display: inline-block !important;
+}
+
+.v-application .secondary-button:hover {
+  border-color: #cbd5e0 !important;
+  transform: translateY(-2px) !important;
+}
+
+/* レスポンシブ */
+@media (max-width: 768px) {
+  .v-application .hero-container {
+    grid-template-columns: 1fr !important;
+    text-align: center !important;
+  }
+
+  .v-application .hero-content h1 {
+    font-size: 2.5rem !important;
+  }
+
+  .v-application .nav-links {
+    display: none !important;
+  }
+}
 </style>
