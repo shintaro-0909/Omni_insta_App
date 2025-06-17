@@ -5,14 +5,17 @@
 
 // Layout components
 export { default as UnifiedNavigation } from './layouts/UnifiedNavigation.vue';
+export { default as SidebarNavigation } from './layouts/SidebarNavigation.vue';
 
 // Form components
 export { default as AddAccountDialog } from './forms/AddAccountDialog.vue';
+export { default as FeedbackDialog } from './forms/FeedbackDialog.vue';
 export { default as GroupFormDialog } from './forms/GroupFormDialog.vue';
 export { default as PostFormDialog } from './forms/PostFormDialog.vue';
 export { default as ProxyFormDialog } from './forms/ProxyFormDialog.vue';
 export { default as ScheduleFormDialog } from './forms/ScheduleFormDialog.vue';
 export { default as SimpleScheduleFormDialog } from './forms/SimpleScheduleFormDialog.vue';
+export { default as SidebarPostEditor } from './SidebarPostEditor.vue';
 
 // Widget components (core functionality only)
 // export { default as AIAdaptationDashboard } from './widgets/AIAdaptationDashboard.vue' // temporarily disabled
@@ -24,11 +27,14 @@ export { default as PerformanceDashboard } from './widgets/PerformanceDashboard.
 export { default as UsageDashboard } from './widgets/UsageDashboard.vue';
 
 // Common components
+export { default as EmulatorBanner } from './common/EmulatorBanner.vue';
 export { default as InstagramPreview } from './common/InstagramPreview.vue';
 export { default as LanguageSwitcher } from './common/LanguageSwitcher.vue';
 export { default as PerformanceMetric } from './common/PerformanceMetric.vue';
 export { default as PostViewDialog } from './common/PostViewDialog.vue';
+export { default as ScheduleGridCell } from './ScheduleGridCell.vue';
 export { default as ScheduleViewDialog } from './common/ScheduleViewDialog.vue';
+export { default as TokenStatusChip } from './common/TokenStatusChip.vue';
 
 // Demo components
 export { default as DemoHero } from './demos/shared/DemoHero.vue';
