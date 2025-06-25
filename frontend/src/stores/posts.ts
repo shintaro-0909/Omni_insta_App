@@ -93,6 +93,30 @@ export const usePostsStore = defineStore('posts', () => {
       loading.value = true;
       error.value = null;
 
+      // 開発環境用: デモモードで動作する場合のモック処理
+      if (import.meta.env.DEV && (!functions || !navigator.onLine)) {
+        // モックデータとして新しい投稿を作成
+        const mockPost: Post = {
+          id: `mock-post-${Date.now()}`,
+          ownerUid: 'demo-user',
+          mediaUrls: postData.mediaUrls.length > 0 ? postData.mediaUrls : ['https://picsum.photos/400/400?random=' + Date.now()],
+          caption: postData.caption || 'デモ投稿です',
+          tags: postData.tags.length > 0 ? postData.tags : ['demo', 'test'],
+          timesPosted: 0,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        
+        // 投稿を一覧の先頭に追加
+        posts.value.unshift(mockPost);
+        
+        // キャッシュをクリア
+        postsByTagCache.clear();
+        lastTagsUpdate.value = 0;
+        
+        return mockPost.id;
+      }
+
       const createPostFn = httpsCallable(functions, 'createPost');
       const result = await createPostFn(postData);
       const data = result.data as any;
@@ -153,6 +177,69 @@ export const usePostsStore = defineStore('posts', () => {
       }
 
       if (!hasMore.value && !refresh) {
+        return;
+      }
+
+      // 開発環境用: デモモードで動作する場合のモック処理
+      if (import.meta.env.DEV && (!functions || !navigator.onLine)) {
+        // モックデータを生成
+        const mockPosts: Post[] = [
+          {
+            id: 'mock-1',
+            ownerUid: 'demo-user',
+            mediaUrls: ['https://picsum.photos/400/600?random=1'],
+            caption: '素敵な朝の風景✨ 今日も一日頑張りましょう！ #朝 #風景 #日常',
+            tags: ['朝', '風景', '日常', 'モチベーション'],
+            timesPosted: 2,
+            createdAt: new Date('2025-06-08T08:00:00Z'),
+            updatedAt: new Date('2025-06-08T08:00:00Z'),
+          },
+          {
+            id: 'mock-2',
+            ownerUid: 'demo-user',
+            mediaUrls: [
+              'https://picsum.photos/400/400?random=2',
+              'https://picsum.photos/400/600?random=3'
+            ],
+            caption: 'おいしいカフェでひと休み☕️ 新しいメニューを試してみました！',
+            tags: ['カフェ', 'コーヒー', 'グルメ', 'リラックス'],
+            timesPosted: 1,
+            createdAt: new Date('2025-06-07T14:30:00Z'),
+            updatedAt: new Date('2025-06-07T14:30:00Z'),
+          },
+          {
+            id: 'mock-3',
+            ownerUid: 'demo-user',
+            mediaUrls: ['https://picsum.photos/600/400?random=4'],
+            caption: '夕日が綺麗でした🌅 自然の美しさに感動！',
+            tags: ['夕日', '自然', '美しい', '癒し'],
+            timesPosted: 0,
+            createdAt: new Date('2025-06-06T18:45:00Z'),
+            updatedAt: new Date('2025-06-06T18:45:00Z'),
+          }
+        ];
+
+        // タグフィルタリング
+        let filteredPosts = mockPosts;
+        if (tags && tags.length > 0) {
+          filteredPosts = mockPosts.filter(post => 
+            tags.some(tag => post.tags.includes(tag))
+          );
+        }
+
+        if (refresh) {
+          posts.value = filteredPosts;
+        } else {
+          posts.value.push(...filteredPosts);
+        }
+
+        hasMore.value = false; // モックデータなので追加読み込みなし
+        lastPostId.value = null;
+        
+        // キャッシュをクリア
+        postsByTagCache.clear();
+        lastTagsUpdate.value = 0;
+        
         return;
       }
 
@@ -240,6 +327,18 @@ export const usePostsStore = defineStore('posts', () => {
     try {
       loading.value = true;
       error.value = null;
+
+      // 開発環境用: デモモードで動作する場合のモック処理
+      if (import.meta.env.DEV && (!functions || !navigator.onLine)) {
+        // ローカルの投稿リストから削除
+        posts.value = posts.value.filter(post => post.id !== postId);
+        
+        // キャッシュをクリア
+        postsByTagCache.clear();
+        lastTagsUpdate.value = 0;
+        
+        return;
+      }
 
       const deletePostFn = httpsCallable(functions, 'deletePost');
       const result = await deletePostFn({ postId });

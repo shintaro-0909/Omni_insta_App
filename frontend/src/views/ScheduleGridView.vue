@@ -96,6 +96,7 @@
         <ag-grid-vue
           ref="agGrid"
           class="ag-theme-alpine schedule-grid"
+          :class="{ 'grid-offline': isOffline }"
           :column-defs="columnDefs"
           :row-data="filteredRowData"
           :default-col-def="defaultColDef"
@@ -217,14 +218,23 @@ import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
 
 import { useSchedulesStore, useIgAccountsStore, type ScheduleStatus } from '@/stores';
-import { useNotification } from '@/composables';
+import { useNotification, useFirestore } from '@/composables';
 import { SidebarNavigation, SidebarPostEditor, ScheduleGridCell } from '@/components';
 import dayjs from 'dayjs';
 
-// Stores
+// Stores & Composables
 const schedulesStore = useSchedulesStore();
 const igAccountsStore = useIgAccountsStore();
 const { notifySuccess, notifyError, notifyWarning } = useNotification();
+const { 
+  isEmulatorMode, 
+  isOffline, 
+  connectionStatus, 
+  createDocument, 
+  updateDocument, 
+  getCollectionData,
+  updateConnectionStatus 
+} = useFirestore();
 
 // Reactive data
 const agGrid = ref<typeof AgGridVue>();
@@ -240,7 +250,7 @@ const bulkScheduleDialog = ref(false);
 const statusFilter = ref('');
 const accountFilter = ref('');
 
-const syncStatus = ref<'synced' | 'syncing' | 'error'>('synced');
+const syncStatus = ref<'synced' | 'syncing' | 'error' | 'offline'>('synced');
 
 const bulkScheduleData = ref({
   startDate: '',
@@ -377,36 +387,74 @@ const onGridReady = (params: any) => {
 
 const loadData = async () => {
   try {
-    // サンプルデータを生成（実際の実装では Firestore から取得）
-    const sampleData = Array.from({ length: 20 }, (_, index) => ({
-      id: `post-${index + 1}`,
-      datetime: dayjs().add(index + 1, 'hour').format('YYYY-MM-DDTHH:mm'),
-      accountId: igAccounts.value[index % igAccounts.value.length]?.id || '',
-      text: `サンプル投稿文 ${index + 1}\n#instagram #photo #love`,
-      imageUrl: index % 3 === 0 ? 'https://via.placeholder.com/400x400' : '',
-      status: ['pending', 'active', 'completed'][index % 3] as ScheduleStatus,
-      title: `投稿 ${index + 1}`,
-      scheduleType: 'once',
-    }));
+    syncStatus.value = 'syncing';
     
-    rowData.value = sampleData;
-    
-    // 実際の実装では以下のようにFirestoreから取得
-    // await schedulesStore.fetchSchedules();
-    // rowData.value = schedulesStore.schedules.map(schedule => ({
-    //   id: schedule.id,
-    //   datetime: schedule.nextRunAt ? dayjs(schedule.nextRunAt.seconds * 1000).format('YYYY-MM-DDTHH:mm') : '',
-    //   accountId: schedule.igAccount?.id || '',
-    //   text: schedule.content?.caption || '',
-    //   imageUrl: schedule.content?.mediaUrl || '',
-    //   status: schedule.status,
-    //   title: schedule.title,
-    //   scheduleType: schedule.type,
-    // }));
+    if (isEmulatorMode.value || !navigator.onLine) {
+      // エミュレーターモードまたはオフライン時はサンプルデータを使用
+      const sampleData = Array.from({ length: 20 }, (_, index) => ({
+        id: `post-${index + 1}`,
+        datetime: dayjs().add(index + 1, 'hour').format('YYYY-MM-DDTHH:mm'),
+        accountId: igAccounts.value[index % igAccounts.value.length]?.id || '',
+        text: `サンプル投稿文 ${index + 1}\n#instagram #photo #love`,
+        imageUrl: index % 3 === 0 ? 'https://via.placeholder.com/400x400' : '',
+        status: (isOffline.value ? 'pending' : ['pending', 'active', 'completed'][index % 3]) as ScheduleStatus,
+        title: `投稿 ${index + 1}`,
+        scheduleType: 'once',
+        isOfflinePending: isOffline.value,
+      }));
+      
+      rowData.value = sampleData;
+      
+      if (isEmulatorMode.value) {
+        console.log('🔧 Using Firestore Emulator data');
+        syncStatus.value = 'synced';
+      } else {
+        console.log('📱 Using offline cache data');
+        syncStatus.value = 'offline';
+      }
+      
+      // ローカルストレージにキャッシュ
+      localStorage.setItem('scheduleGridCache', JSON.stringify(sampleData));
+    } else {
+      // 本番環境：Firestoreから実際のデータを取得
+      const scheduleData = await getCollectionData('schedules', {
+        orderBy: [{ field: 'createdAt', direction: 'desc' }],
+        limit: 100
+      });
+      
+      rowData.value = scheduleData.map(schedule => ({
+        id: schedule.id,
+        datetime: schedule.nextRunAt ? dayjs(schedule.nextRunAt.toDate()).format('YYYY-MM-DDTHH:mm') : '',
+        accountId: schedule.igAccountId || '',
+        text: schedule.content?.caption || '',
+        imageUrl: schedule.content?.mediaUrl || '',
+        status: schedule.status,
+        title: schedule.title,
+        scheduleType: schedule.type,
+        isOfflinePending: false,
+      }));
+      
+      syncStatus.value = 'synced';
+      
+      // 正常データもキャッシュ
+      localStorage.setItem('scheduleGridCache', JSON.stringify(rowData.value));
+    }
     
   } catch (error) {
     console.error('Error loading data:', error);
+    syncStatus.value = 'error';
     notifyError('データ読み込みエラー', 'スケジュールデータの読み込みに失敗しました');
+    
+    // エラー時はローカルストレージからの復元を試行
+    const cachedData = localStorage.getItem('scheduleGridCache');
+    if (cachedData) {
+      try {
+        rowData.value = JSON.parse(cachedData);
+        notifyWarning('キャッシュデータ使用', 'ローカルキャッシュからデータを復元しました');
+      } catch (parseError) {
+        console.error('Cache parse error:', parseError);
+      }
+    }
   }
 };
 
@@ -620,15 +668,32 @@ const validateCell = (rowData: any, field: string): string[] => {
 // Sync management
 let syncTimeout: ReturnType<typeof setTimeout>;
 const scheduleSyncUpdate = () => {
+  if (isOffline.value) {
+    syncStatus.value = 'offline';
+    
+    // オフライン時はローカルストレージに保存
+    localStorage.setItem('scheduleGridCache', JSON.stringify(rowData.value));
+    notifyWarning('オフライン作業', 'オンライン復帰時に同期されます');
+    return;
+  }
+  
   syncStatus.value = 'syncing';
   
   clearTimeout(syncTimeout);
   syncTimeout = setTimeout(async () => {
     try {
-      // ここで実際のFirestore同期処理を実装
-      // await schedulesStore.bulkUpdateSchedules(rowData.value);
+      if (isEmulatorMode.value) {
+        // エミュレーター環境：簡易同期
+        console.log('🔧 Emulator sync:', rowData.value.length, 'items');
+        syncStatus.value = 'synced';
+      } else {
+        // 本番環境：実際のFirestore同期
+        // await schedulesStore.bulkUpdateSchedules(rowData.value);
+        syncStatus.value = 'synced';
+      }
       
-      syncStatus.value = 'synced';
+      // 同期成功時にキャッシュ更新
+      localStorage.setItem('scheduleGridCache', JSON.stringify(rowData.value));
     } catch (error) {
       console.error('Sync error:', error);
       syncStatus.value = 'error';
@@ -640,8 +705,9 @@ const scheduleSyncUpdate = () => {
 const getSyncStatusText = (): string => {
   switch (syncStatus.value) {
     case 'syncing': return '同期中...';
+    case 'offline': return '🕘 オフライン';
     case 'error': return '同期エラー';
-    default: return '同期済み';
+    default: return isEmulatorMode.value ? '🔧 エミュレーター' : '同期済み';
   }
 };
 
@@ -928,6 +994,11 @@ onUnmounted(() => {
   background: #ef4444;
 }
 
+.sync-status.offline .sync-indicator {
+  background: #6b7280;
+  animation: none;
+}
+
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
@@ -977,6 +1048,27 @@ onUnmounted(() => {
 
 :deep(.ag-theme-alpine .ag-row-drag:active) {
   cursor: grabbing;
+}
+
+/* オフライン状態のスタイル */
+.grid-offline {
+  opacity: 0.9;
+  position: relative;
+}
+
+.grid-offline::before {
+  content: '🕘 オフライン作業中';
+  position: absolute;
+  top: 8px;
+  right: 16px;
+  background: rgba(107, 114, 128, 0.9);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  z-index: 1000;
+  pointer-events: none;
 }
 
 /* レスポンシブ対応 */

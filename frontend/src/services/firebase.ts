@@ -26,10 +26,10 @@ if (!isEmulatorMode && (!firebaseConfig.apiKey || !firebaseConfig.projectId)) {
 
 // エミュレーター環境では固定のダミー設定を使用
 if (isEmulatorMode) {
-  firebaseConfig.projectId = 'demo-project';
+  firebaseConfig.projectId = 'omniy-instagram-scheduler';
   firebaseConfig.apiKey = 'demo-api-key';
-  firebaseConfig.authDomain = 'demo-project.firebaseapp.com';
-  firebaseConfig.storageBucket = 'demo-project.appspot.com';
+  firebaseConfig.authDomain = 'omniy-instagram-scheduler.firebaseapp.com';
+  firebaseConfig.storageBucket = 'omniy-instagram-scheduler.appspot.com';
   firebaseConfig.messagingSenderId = '123456789';
   firebaseConfig.appId = '1:123456789:web:demo';
 }
@@ -58,11 +58,11 @@ console.log('🔧 Firebase設定確認:', {
 if (import.meta.env.DEV && ENABLE_EMULATOR) {
   try {
     // Auth エミュレータ（127.0.0.1を使用）
-    connectAuthEmulator(auth, 'http://127.0.0.1:9099', {
+    connectAuthEmulator(auth, 'http://127.0.0.1:9199', {
       disableWarnings: true,
     });
 
-    console.log('🔧 Firebase Auth エミュレータに接続しました: http://127.0.0.1:9099');
+    console.log('🔧 Firebase Auth エミュレータに接続しました: http://127.0.0.1:9199');
 
     // Functions エミュレータ
     try {
@@ -74,16 +74,16 @@ if (import.meta.env.DEV && ENABLE_EMULATOR) {
 
     // Firestore エミュレータ（利用可能な場合のみ）
     try {
-      connectFirestoreEmulator(db, '127.0.0.1', 8080);
-      console.log('🔧 Firebase Firestore エミュレータに接続しました: 127.0.0.1:8080');
+      connectFirestoreEmulator(db, '127.0.0.1', 8180);
+      console.log('🔧 Firebase Firestore エミュレータに接続しました: 127.0.0.1:8180');
     } catch (firestoreError) {
       console.warn('⚠️ Firestore エミュレータ接続をスキップ:', firestoreError);
     }
 
     // Storage エミュレータ（利用可能な場合のみ）
     try {
-      connectStorageEmulator(storage, '127.0.0.1', 9199);
-      console.log('🔧 Firebase Storage エミュレータに接続しました: 127.0.0.1:9199');
+      connectStorageEmulator(storage, '127.0.0.1', 9200);
+      console.log('🔧 Firebase Storage エミュレータに接続しました: 127.0.0.1:9200');
     } catch (storageError) {
       console.warn('⚠️ Storage エミュレータ接続をスキップ:', storageError);
     }

@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/services/firebase';
+import { isRunningInEmulator, showEmulatorNotification } from '@/services/mockAuth';
 // import { usePersistedCache, createCachedStoreAction } from '@/composables/api/usePersistedCache'
 // TODO: Re-enable when these composables are implemented
 
@@ -25,6 +26,11 @@ export interface AddAccountData {
   accessToken: string;
   instagramUserId: string;
   username: string;
+  profilePictureUrl?: string;
+  followersCount?: number;
+  mediaCount?: number;
+  pageId?: string;
+  pageName?: string;
 }
 
 export const useIgAccountsStore = defineStore('igAccounts', () => {
@@ -72,6 +78,38 @@ export const useIgAccountsStore = defineStore('igAccounts', () => {
       loading.value = true;
       error.value = null;
 
+      // エミュレーター環境ではモック処理
+      if (isRunningInEmulator()) {
+        console.log('🔔 Mock: Adding Instagram account...', accountData);
+        showEmulatorNotification('アカウントを追加中...', 'info');
+        
+        // モックアカウントをローカルに追加
+        const mockAccount: IGAccount = {
+          id: 'mock_account_' + Date.now(),
+          instagramUserId: accountData.instagramUserId,
+          username: accountData.username,
+          name: accountData.username,
+          profilePictureUrl: accountData.profilePictureUrl,
+          tokenExpiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // 60日後
+          proxyId: undefined,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+        
+        // ローカルストレージに保存 (エミュレーター用)
+        const existingAccounts = JSON.parse(localStorage.getItem('mock_ig_accounts') || '[]');
+        existingAccounts.push(mockAccount);
+        localStorage.setItem('mock_ig_accounts', JSON.stringify(existingAccounts));
+        
+        // ストアを更新
+        accounts.value.push(mockAccount);
+        
+        await new Promise(resolve => setTimeout(resolve, 1000)); // シミュレート避延
+        showEmulatorNotification('アカウントを追加しました！', 'success');
+        
+        return mockAccount.id;
+      }
+
       const addAccountFn = httpsCallable(functions, 'addInstagramAccount');
       const result = await addAccountFn(accountData);
       const data = result.data as any;
@@ -115,6 +153,19 @@ export const useIgAccountsStore = defineStore('igAccounts', () => {
       loading.value = true;
       error.value = null;
 
+      // エミュレーター環境ではローカルストレージから読み込み
+      if (isRunningInEmulator()) {
+        console.log('🔔 Mock: Loading accounts from localStorage...');
+        const mockAccounts = JSON.parse(localStorage.getItem('mock_ig_accounts') || '[]');
+        accounts.value = mockAccounts.map((account: any) => ({
+          ...account,
+          tokenExpiresAt: new Date(account.tokenExpiresAt),
+          createdAt: new Date(account.createdAt),
+          updatedAt: new Date(account.updatedAt)
+        }));
+        return;
+      }
+
       // Use cached fetcher for better performance
       accounts.value = await cachedAccountsFetcher();
     } catch (err: any) {
@@ -131,6 +182,24 @@ export const useIgAccountsStore = defineStore('igAccounts', () => {
     try {
       loading.value = true;
       error.value = null;
+
+      // エミュレーター環境ではモック処理
+      if (isRunningInEmulator()) {
+        console.log('🔔 Mock: Deleting account...', accountId);
+        showEmulatorNotification('アカウントを削除中...', 'info');
+        
+        // ローカルストレージから削除
+        const existingAccounts = JSON.parse(localStorage.getItem('mock_ig_accounts') || '[]');
+        const filteredAccounts = existingAccounts.filter((account: any) => account.id !== accountId);
+        localStorage.setItem('mock_ig_accounts', JSON.stringify(filteredAccounts));
+        
+        // ストアから削除
+        accounts.value = accounts.value.filter(account => account.id !== accountId);
+        
+        await new Promise(resolve => setTimeout(resolve, 500));
+        showEmulatorNotification('アカウントを削除しました', 'success');
+        return;
+      }
 
       const deleteAccountFn = httpsCallable(
         functions,
@@ -160,6 +229,35 @@ export const useIgAccountsStore = defineStore('igAccounts', () => {
     try {
       loading.value = true;
       error.value = null;
+
+      // エミュレーター環境ではモック処理
+      if (isRunningInEmulator()) {
+        console.log('🔔 Mock: Refreshing token...', accountId);
+        showEmulatorNotification('トークンを更新中...', 'info');
+        
+        // ローカルストレージのアカウントを更新
+        const existingAccounts = JSON.parse(localStorage.getItem('mock_ig_accounts') || '[]');
+        const updatedAccounts = existingAccounts.map((account: any) => {
+          if (account.id === accountId) {
+            return {
+              ...account,
+              tokenExpiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // 60日後
+              updatedAt: new Date()
+            };
+          }
+          return account;
+        });
+        localStorage.setItem('mock_ig_accounts', JSON.stringify(updatedAccounts));
+        
+        // ストアを更新
+        await loadAccounts();
+        
+        await new Promise(resolve => setTimeout(resolve, 800));
+        showEmulatorNotification('トークンを更新しました', 'success');
+        
+        const newExpiresAt = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000);
+        return newExpiresAt.toISOString();
+      }
 
       const refreshTokenFn = httpsCallable(functions, 'refreshInstagramToken');
       const result = await refreshTokenFn({ accountId });

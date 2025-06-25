@@ -2,7 +2,6 @@ import { defineStore } from 'pinia';
 import { ref, computed, shallowRef } from 'vue';
 import {
   signInWithPopup,
-  signInWithRedirect,
   getRedirectResult,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,

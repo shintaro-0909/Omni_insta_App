@@ -1,6 +1,8 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import Stripe from "stripe";
+import { GlobalStats } from "../types/pricing";
+import { rotatePrice } from "../cron/rotatePrice";
 
 const db = admin.firestore();
 
@@ -31,6 +33,10 @@ export const stripeWebhook = functions.https.onRequest(async (req, res) => {
   try {
     // イベントタイプに応じて処理
     switch (event.type) {
+      case "checkout.session.completed":
+        await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
+        break;
+
       case "customer.subscription.created":
         await handleSubscriptionCreated(event.data.object as Stripe.Subscription);
         break;
@@ -82,23 +88,77 @@ export const stripeWebhook = functions.https.onRequest(async (req, res) => {
 });
 
 /**
- * サブスクリプション作成処理
+ * Checkout完了処理（新システム）
+ * 課金者数をカウントし、価格ローテーションをトリガー
+ */
+async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+  const userId = session.metadata?.userId;
+  const priceLookupKey = session.metadata?.priceLookupKey;
+  
+  if (!userId) {
+    throw new Error("Missing userId in checkout session metadata");
+  }
+
+  console.log(`🎉 Checkout completed for user ${userId}`);
+
+  // stats/global の currentSubscribers をインクリメント
+  await db.runTransaction(async (transaction) => {
+    const statsRef = db.collection("stats").doc("global");
+    const statsDoc = await transaction.get(statsRef);
+    
+    if (!statsDoc.exists) {
+      throw new Error("stats/global document not found");
+    }
+    
+    const stats = statsDoc.data() as GlobalStats;
+    const newCurrentSubscribers = stats.currentSubscribers + 1;
+    
+    transaction.update(statsRef, {
+      currentSubscribers: newCurrentSubscribers,
+      lastUpdated: admin.firestore.Timestamp.now(),
+    });
+    
+    console.log(`📊 Current subscribers: ${stats.currentSubscribers} → ${newCurrentSubscribers}`);
+  });
+
+  // 価格ローテーションをトリガー
+  try {
+    await rotatePrice();
+    console.log(`🔄 Price rotation triggered after checkout completion`);
+  } catch (error) {
+    console.error("Price rotation failed after checkout:", error);
+    // 価格ローテーションエラーでもCheckout処理は継続
+  }
+}
+
+/**
+ * サブスクリプション作成処理（更新版）
  */
 async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
   const userId = subscription.metadata.userId;
-  const planId = subscription.metadata.planId;
+  const priceLookupKey = subscription.metadata.priceLookupKey;
+  const originalPrice = subscription.metadata.originalPrice;
 
-  if (!userId || !planId) {
-    throw new Error("Missing userId or planId in subscription metadata");
+  if (!userId) {
+    throw new Error("Missing userId in subscription metadata");
   }
 
-  // サブスクリプション情報をFirestoreに保存
+  // 現在の価格情報を取得
+  const priceId = subscription.items.data[0].price.id;
+  const amount = subscription.items.data[0].price.unit_amount || 0;
+
+  // サブスクリプション情報をFirestoreに保存（新フィールド追加）
   await db.collection("subscriptions").add({
     userId: userId,
-    planId: planId,
+    planId: "subscription", // 新システムでは固定値
+    priceTier: priceLookupKey || "unknown",
     stripeCustomerId: subscription.customer as string,
     stripeSubscriptionId: subscription.id,
+    stripePriceId: priceId,
     status: subscription.status,
+    originalPrice: parseInt(originalPrice || "0", 10),
+    currentPrice: amount,
+    isGrandfathered: true, // 新規契約時は全てGrandfathered価格
     currentPeriodStart: admin.firestore.Timestamp.fromDate(
       new Date(subscription.current_period_start * 1000)
     ),
@@ -110,20 +170,24 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
     updatedAt: admin.firestore.Timestamp.now(),
   });
 
-  // ユーザーの現在のプランを更新
+  // ユーザーの現在のプラン情報を更新
   await db.collection("users").doc(userId).update({
-    "currentPlan.planId": planId,
+    "currentPlan.planId": "subscription",
+    "currentPlan.priceTier": priceLookupKey || "unknown",
     "currentPlan.status": "active",
     "currentPlan.subscriptionId": subscription.id,
+    "currentPlan.originalPrice": parseInt(originalPrice || "0", 10),
+    "currentPlan.isGrandfathered": true,
     updatedAt: admin.firestore.Timestamp.now(),
   });
 
   // カスタムクレームを更新
   await admin.auth().setCustomUserClaims(userId, {
-    planId: planId,
+    planId: "subscription",
+    priceTier: priceLookupKey || "unknown",
   });
 
-  console.log(`Subscription created for user ${userId}, plan ${planId}`);
+  console.log(`Subscription created for user ${userId}, tier ${priceLookupKey}, price ${amount}`);
 }
 
 /**
@@ -169,7 +233,8 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
 }
 
 /**
- * サブスクリプション削除処理
+ * サブスクリプション削除処理（更新版）
+ * 課金者数をデクリメント（注意: peakSubscribersは減算しない）
  */
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   const userId = subscription.metadata.userId;
@@ -194,24 +259,47 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     });
   }
 
+  // stats/global の currentSubscribers をデクリメント
+  // 重要: peakSubscribers は絶対に減算しない（値下げ防止）
+  await db.runTransaction(async (transaction) => {
+    const statsRef = db.collection("stats").doc("global");
+    const statsDoc = await transaction.get(statsRef);
+    
+    if (statsDoc.exists) {
+      const stats = statsDoc.data() as GlobalStats;
+      const newCurrentSubscribers = Math.max(0, stats.currentSubscribers - 1);
+      
+      transaction.update(statsRef, {
+        currentSubscribers: newCurrentSubscribers,
+        lastUpdated: admin.firestore.Timestamp.now(),
+      });
+      
+      console.log(`📊 Current subscribers: ${stats.currentSubscribers} → ${newCurrentSubscribers} (peak: ${stats.peakSubscribers} unchanged)`);
+    }
+  });
+
   // ユーザーをFreeプランに戻す
   await db.collection("users").doc(userId).update({
     "currentPlan.planId": "free",
+    "currentPlan.priceTier": "tier_000",
     "currentPlan.status": "active",
     "currentPlan.subscriptionId": null,
+    "currentPlan.originalPrice": 0,
+    "currentPlan.isGrandfathered": false,
     updatedAt: admin.firestore.Timestamp.now(),
   });
 
   // カスタムクレームを更新
   await admin.auth().setCustomUserClaims(userId, {
     planId: "free",
+    priceTier: "tier_000",
   });
 
   console.log(`Subscription canceled for user ${userId}, reverted to free plan`);
 }
 
 /**
- * 支払い成功処理
+ * 支払い成功処理（更新版）
  */
 async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
   const subscription = invoice.subscription as string;
@@ -219,21 +307,23 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
   // サブスクリプション情報を取得
   const subscriptionData = await stripe.subscriptions.retrieve(subscription);
   const userId = subscriptionData.metadata.userId;
-  const planId = subscriptionData.metadata.planId;
+  const priceLookupKey = subscriptionData.metadata.priceLookupKey;
 
-  if (!userId || !planId) {
-    throw new Error("Missing userId or planId in subscription metadata");
+  if (!userId) {
+    throw new Error("Missing userId in subscription metadata");
   }
 
-  // 決済履歴を記録
+  // 決済履歴を記録（新フィールド追加）
   await db.collection("paymentHistory").add({
     userId: userId,
     stripePaymentIntentId: invoice.payment_intent as string,
+    stripeSubscriptionId: subscription,
     amount: invoice.amount_paid,
     currency: invoice.currency,
     status: "succeeded",
-    planId: planId,
-    description: `${planId} plan subscription payment`,
+    priceTier: priceLookupKey || "unknown",
+    description: `Subscription payment for ${priceLookupKey || 'unknown tier'}`,
+    isGrandfatheredPayment: true, // 全てGrandfathered価格での支払い
     createdAt: admin.firestore.Timestamp.now(),
   });
 
@@ -244,7 +334,7 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
     updatedAt: admin.firestore.Timestamp.now(),
   });
 
-  console.log(`Payment succeeded for user ${userId}, amount: ${invoice.amount_paid}`);
+  console.log(`Payment succeeded for user ${userId}, amount: ${invoice.amount_paid}, tier: ${priceLookupKey}`);
 }
 
 /**

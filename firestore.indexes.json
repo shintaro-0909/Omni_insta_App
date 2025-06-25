@@ -19,7 +19,7 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "type",
+          "fieldPath": "platform",
           "order": "ASCENDING"
         },
         {
@@ -33,15 +33,15 @@
       ]
     },
     {
-      "collectionGroup": "logs",
+      "collectionGroup": "schedules",
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "runAt",
-          "order": "DESCENDING"
+          "fieldPath": "igAccountId",
+          "order": "ASCENDING"
         },
         {
-          "fieldPath": "status",
+          "fieldPath": "nextRunAt",
           "order": "ASCENDING"
         }
       ]
@@ -51,26 +51,8 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "ownerUid",
+          "fieldPath": "userId",
           "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "createdAt",
-          "order": "DESCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "posts",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "ownerUid",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "tags",
-          "arrayConfig": "CONTAINS"
         },
         {
           "fieldPath": "createdAt",
@@ -87,8 +69,8 @@
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "createdAt",
-          "order": "DESCENDING"
+          "fieldPath": "isActive",
+          "order": "ASCENDING"
         }
       ]
     },
@@ -105,45 +87,18 @@
           "order": "DESCENDING"
         }
       ]
-    },
-    {
-      "collectionGroup": "executionLogs",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "status",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "executedAt",
-          "order": "DESCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "notifications",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        {
-          "fieldPath": "createdAt",
-          "order": "DESCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "schedules",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "status",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "lastRunAt",
-          "order": "ASCENDING"
-        }
-      ]
     }
   ],
-  "fieldOverrides": []
+  "fieldOverrides": [
+    {
+      "collectionGroup": "schedules",
+      "fieldPath": "tags",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "posts", 
+      "fieldPath": "searchKeywords",
+      "indexes": []
+    }
+  ]
 } 

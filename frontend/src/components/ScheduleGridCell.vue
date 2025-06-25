@@ -202,7 +202,6 @@ const startEdit = async () => {
   if (inputRef.value) {
     inputRef.value.focus();
     if (props.cellType === 'text' && inputRef.value instanceof HTMLTextAreaElement) {
-      // テキストエリアの場合、カーソルを最後に移動
       inputRef.value.setSelectionRange(editValue.value?.length || 0, editValue.value?.length || 0);
     }
   }

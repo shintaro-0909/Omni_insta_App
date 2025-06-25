@@ -1,9 +1,10 @@
 import * as admin from "firebase-admin";
+import { PriceHistoryRecord } from "../types/pricing";
 
 const db = admin.firestore();
 
-// プラン制限の型定義
-export interface PlanLimits {
+// 新システム用制限定義（Grandfather Pricing対応）
+export interface TierLimits {
   instagramAccountLimit: number; // -1 = 無制限
   monthlyPostLimit: number; // -1 = 無制限
   dailyPostLimitPerAccount: number; // -1 = 無制限、1アカウントあたりの日次投稿上限
@@ -15,6 +16,9 @@ export interface PlanLimits {
   apiAccess: boolean;
 }
 
+// 後方互換性のための型エイリアス
+export interface PlanLimits extends TierLimits {}
+
 // 使用量の型定義
 export interface Usage {
   instagramAccountCount: number;
@@ -25,7 +29,8 @@ export interface Usage {
 }
 
 /**
- * ユーザーの現在のプラン制限を取得
+ * ユーザーの現在のプラン制限を取得（新システム対応）
+ * Price-Ladder + Grandfather Pricing システム用
  */
 export async function getUserPlanLimits(userId: string): Promise<PlanLimits> {
   try {
@@ -37,24 +42,31 @@ export async function getUserPlanLimits(userId: string): Promise<PlanLimits> {
     }
 
     const userData = userDoc.data()!;
-    const planId = userData.currentPlan?.planId || "free";
+    const currentPlan = userData.currentPlan || {};
+    
+    // 新システム：priceTierベースの制限取得
+    if (currentPlan.priceTier) {
+      return await getTierLimits(currentPlan.priceTier);
+    }
+    
+    // 旧システム：planIdベースの制限取得（後方互換性）
+    const planId = currentPlan.planId || "free";
+    
+    if (planId === "free") {
+      return getFreePlanLimits();
+    }
+    
+    if (planId === "subscription") {
+      // 新システムのサブスクリプションの場合
+      const priceTier = currentPlan.priceTier || "tier_000";
+      return await getTierLimits(priceTier);
+    }
 
-    // プラン情報を取得
+    // 旧プランシステムからの取得（レガシー）
     const planDoc = await db.collection("plans").doc(planId).get();
     
     if (!planDoc.exists) {
-      // デフォルトでFreeプランの制限を返す
-      return {
-        instagramAccountLimit: 1,
-        monthlyPostLimit: 10,
-        dailyPostLimitPerAccount: 10, // Freeプランは月10回なので日次制限なし（月次で制御）
-        scheduledPosts: true,
-        recurringPosts: false,
-        randomPosts: false,
-        proxySupport: false,
-        prioritySupport: false,
-        apiAccess: false,
-      };
+      return getFreePlanLimits();
     }
 
     const planData = planDoc.data()!;
@@ -67,7 +79,50 @@ export async function getUserPlanLimits(userId: string): Promise<PlanLimits> {
 }
 
 /**
+ * 価格ティアから制限情報を取得
+ */
+export async function getTierLimits(priceTier: string): Promise<TierLimits> {
+  // ティア別の制限設定（すべてのティアで同じ機能を提供）
+  const tierLimits: TierLimits = {
+    instagramAccountLimit: -1,        // 無制限
+    monthlyPostLimit: -1,             // 無制限
+    dailyPostLimitPerAccount: 50,     // 1アカウント1日50投稿まで（Instagram API制限考慮）
+    scheduledPosts: true,
+    recurringPosts: true,
+    randomPosts: true,
+    proxySupport: true,
+    prioritySupport: true,
+    apiAccess: true,
+  };
+
+  // 将来的にティア別制限が必要な場合はここで分岐
+  // if (priceTier.startsWith("tier_0")) {
+  //   // 初期ティアの制限
+  // }
+
+  return tierLimits;
+}
+
+/**
+ * Freeプランの制限取得
+ */
+function getFreePlanLimits(): PlanLimits {
+  return {
+    instagramAccountLimit: 1,
+    monthlyPostLimit: 10,
+    dailyPostLimitPerAccount: 10,
+    scheduledPosts: true,
+    recurringPosts: false,
+    randomPosts: false,
+    proxySupport: false,
+    prioritySupport: false,
+    apiAccess: false,
+  };
+}
+
+/**
  * ユーザーの現在の使用量を取得（日次データ含む）
+ * 新システムでも引き続き利用可能
  */
 export async function getUserUsageWithDaily(userId: string): Promise<Usage> {
   try {
@@ -146,6 +201,7 @@ export async function getUserUsageWithDaily(userId: string): Promise<Usage> {
 
 /**
  * ユーザーの現在の使用量を取得（従来版・後方互換性）
+ * 新システムでも引き続き利用可能
  */
 export async function getUserUsage(userId: string): Promise<Usage> {
   try {
@@ -341,7 +397,7 @@ export async function canExecutePostForAccount(
 }
 
 /**
- * スケジュール作成可能かチェック
+ * スケジュール作成可能かチェック（機能フラグ対応）
  */
 export async function canCreateSchedule(
   userId: string, 
@@ -361,19 +417,19 @@ export async function canCreateSchedule(
       };
     }
 
-    // 繰り返し投稿チェック
+    // 繰り返し投稿チェック（機能フラグで無効化されている可能性）
     if (scheduleType === "recurring" && !limits.recurringPosts) {
       return {
         allowed: false,
-        reason: "Recurring posts not available in current plan",
+        reason: "Recurring posts are temporarily disabled",
       };
     }
 
-    // ランダム投稿チェック
+    // ランダム投稿チェック（機能フラグで無効化されている可能性）
     if (scheduleType === "random" && !limits.randomPosts) {
       return {
         allowed: false,
-        reason: "Random posts not available in current plan",
+        reason: "Random posts are temporarily disabled",
       };
     }
 
@@ -490,5 +546,42 @@ export async function checkFeatureAccess(
   } catch (error) {
     console.error("Failed to check feature access:", error);
     return false;
+  }
+}
+
+/**
+ * 現在の価格ティア情報を取得（デバッグ用）
+ */
+export async function getUserPricingInfo(userId: string): Promise<{
+  priceTier: string;
+  originalPrice: number;
+  isGrandfathered: boolean;
+  planId: string;
+}> {
+  try {
+    const userDoc = await db.collection("users").doc(userId).get();
+    
+    if (!userDoc.exists) {
+      throw new Error("User not found");
+    }
+
+    const userData = userDoc.data()!;
+    const currentPlan = userData.currentPlan || {};
+    
+    return {
+      priceTier: currentPlan.priceTier || "tier_000",
+      originalPrice: currentPlan.originalPrice || 0,
+      isGrandfathered: currentPlan.isGrandfathered || false,
+      planId: currentPlan.planId || "free",
+    };
+
+  } catch (error) {
+    console.error("Failed to get user pricing info:", error);
+    return {
+      priceTier: "tier_000",
+      originalPrice: 0,
+      isGrandfathered: false,
+      planId: "free",
+    };
   }
 } 

@@ -1,5 +1,6 @@
 <template>
-  <div class="groups-view">
+  <div class="groups-layout">
+    <div class="groups-view">
     <v-container>
       <!-- 🌐 ページヘッダー -->
       <v-row class="mb-6">
@@ -374,6 +375,7 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+    </div>
   </div>
 </template>
 
@@ -546,6 +548,17 @@
 
 <style scoped>
   /* 🎨 グループ管理ページのスタイル */
+
+  .groups-layout {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: auto;
+    background: linear-gradient(180deg, #f8f9ff 0%, #ffffff 100%);
+    z-index: 1;
+  }
 
   .groups-view {
     min-height: 100vh;

@@ -1,19 +1,8 @@
 <template>
-  <div class="settings-view">
+  <div class="settings-layout">
+    <div class="settings-view">
     <!-- 統一ナビゲーション -->
-    <nav class="omniy-nav">
-      <div class="nav-container">
-        <div class="logo">Omniy</div>
-        <div class="nav-links">
-          <router-link to="/dashboard" class="nav-link">ダッシュボード</router-link>
-          <router-link to="/schedules" class="nav-link">予約管理</router-link>
-          <router-link to="/accounts" class="nav-link">アカウント</router-link>
-          <router-link to="/content" class="nav-link">コンテンツ</router-link>
-          <router-link to="/settings" class="nav-link">設定</router-link>
-          <router-link to="/billing" class="cta-button">プラン管理</router-link>
-        </div>
-      </div>
-    </nav>
+    <UnifiedNavigation />
 
     <!-- ヒーローセクション -->
     <section class="hero">
@@ -306,12 +295,14 @@
       </div>
     </div>
   </div>
+  </div>
 </template>
 
 <script setup lang="ts">
   import { ref, reactive, onMounted } from 'vue';
   import { useRouter } from 'vue-router';
   import { useAuthStore } from '@/stores';
+  import { UnifiedNavigation } from '@/components';
 
   const router = useRouter();
   const authStore = useAuthStore();
@@ -459,6 +450,17 @@
 </script>
 
 <style scoped>
+/* フルスクリーンレイアウト対応 - 黒いサイドバー除去 */
+.settings-layout {
+  width: 100vw;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  overflow-x: hidden;
+  background: linear-gradient(180deg, #fafbff 0%, #f3f4f6 100%);
+}
+
 /* LP-demo.htmlと統一されたスタイルシステム */
 :root {
   --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -482,13 +484,16 @@
   line-height: 1.6;
   overflow-x: hidden;
   min-height: 100vh;
-  background: linear-gradient(180deg, #fafbff 0%, #f3f4f6 100%);
+  width: 100%;
+  position: relative;
 }
 
-/* 統一ナビゲーション */
+/* 統一ナビゲーション - フルスクリーン対応 */
 .omniy-nav {
   position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   width: 100%;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
@@ -1271,29 +1276,10 @@ input:checked + .slider:before {
   transform: none !important;
 }
 
-/* レスポンシブ */
+/* レスポンシブ対応 */
 @media (max-width: 768px) {
-  .hero-container {
-    grid-template-columns: 1fr;
-    text-align: center;
-  }
-
   .hero-content h1 {
     font-size: 2.5rem;
-  }
-
-  .hero-visual {
-    order: -1;
-    margin-bottom: 2rem;
-  }
-
-  .settings-phone-mockup {
-    width: 280px;
-    height: 560px;
-  }
-
-  .nav-links {
-    display: none;
   }
 
   .settings-grid {

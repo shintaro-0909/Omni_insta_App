@@ -60,6 +60,17 @@ const appRoutes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/schedules/grid',
+    name: 'schedules-grid',
+    component: () => import('@/views/ScheduleGridView.vue'),
+    meta: {
+      requiresAuth: true,
+      keepAlive: true,
+      title: 'Schedule Grid - Omniy',
+      description: 'Manage Instagram schedules in spreadsheet-style grid',
+    },
+  },
+  {
     path: '/accounts',
     name: 'accounts',
     component: () => import('@/views/AccountsView.vue'),
@@ -227,6 +238,26 @@ const secondaryRoutes: RouteRecordRaw[] = [
       requiresAuth: true,
       title: 'Activity Logs - Omniy',
       description: 'View activity logs',
+    },
+  },
+  {
+    path: '/terms',
+    name: 'terms',
+    component: () => import('@/views/TermsView.vue'),
+    meta: {
+      requiresAuth: false,
+      title: '利用規約 - Omniy',
+      description: 'Omniyの利用規約',
+    },
+  },
+  {
+    path: '/privacy',
+    name: 'privacy',
+    component: () => import('@/views/PrivacyView.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'プライバシーポリシー - Omniy',
+      description: 'Omniyのプライバシーポリシー',
     },
   },
   // Calendar view temporarily disabled due to missing calendar store

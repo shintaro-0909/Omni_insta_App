@@ -81,6 +81,17 @@ service cloud.firestore {
       allow read, write: if false; // システム内部のみ
     }
     
+    // === フィードバック (認証ユーザーのみ) ===
+    match /feedback/{feedbackId} {
+      allow read: if isAuthenticated() && 
+        request.auth.uid == resource.data.ownerUid;
+      allow create: if isAuthenticated() && 
+        request.auth.uid == request.resource.data.ownerUid;
+      allow update: if isAuthenticated() && 
+        request.auth.uid == resource.data.ownerUid;
+      allow delete: if false; // 削除は禁止 (データ保護)
+    }
+    
     // === デフォルト拒否 (セキュリティ確保) ===
     match /{document=**} {
       allow read, write: if false;

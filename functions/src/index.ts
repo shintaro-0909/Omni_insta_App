@@ -41,6 +41,9 @@ export {
   deleteInstagramPost,
 } from "./api/instagram";
 
+// Feedback API
+export {submitFeedback, getFeedback, markFeedbackResolved} from "./api/feedback";
+
 // Schedulers
 export {
   executeScheduledPosts,
@@ -83,6 +86,19 @@ export {
   stripeWebhook,
 } from "./api/stripeWebhook";
 
+// Grandfather Pricing + Price-Ladder System
+export {
+  getCurrentPricing,
+  getPriceHistory,
+  getPricingStats,
+} from "./api/pricingSystem";
+
+// Price Rotation
+export {
+  rotatePriceHandler,
+  manualRotatePrice,
+} from "./cron/rotatePrice";
+
 // Plan Limits
 export {
   getUserLimitsAndUsage,
@@ -122,6 +138,19 @@ export {
   getLogStats,
   getDailyLogStats,
 } from "./api/logs";
+
+// Facebook Authentication API
+export {
+  exchangeForLongLivedToken,
+  refreshInstagramLongLivedToken,
+  validateInstagramToken,
+} from "./api/facebookAuth";
+
+// Token Refresh Scheduler
+export {
+  scheduleTokenRefresh,
+  runTokenRefreshCheck,
+} from "./schedulers/tokenRefreshScheduler";
 
 // 基本的なヘルスチェック関数
 export const healthCheck = functions.https.onRequest((req, res) => {
@@ -165,9 +194,11 @@ export const onUserCreate = functions.auth.user().onCreate(async (user) => {
       },
       currentPlan: {
         planId: "free",
+        priceTier: "tier_000",
         status: "active",
-        instagramAccountLimit: 1,
-        monthlyPostLimit: 10,
+        subscriptionId: null,
+        originalPrice: 0,
+        isGrandfathered: false,
       },
       settings: {
         timeZone: "Asia/Tokyo",

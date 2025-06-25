@@ -3,6 +3,15 @@
  * Centralized export point for all Vue composables
  */
 
+// Core UI composables
+export { useNotification } from './useNotification';
+export { useConfirm } from './useConfirm';
+
+// Business logic composables (active)
+export { useImageUpload } from './business/useImageUpload';
+export { useFirestore } from './useFirestore';
+export { useStorage } from './useStorage';
+
 // API-related composables (temporarily disabled for release)
 // export { useBatchOperations } from './api/useBatchOperations'
 // export { useOptimizedFetch } from './api/useOptimizedFetch'
@@ -22,5 +31,4 @@
 // export { useAdvancedMonitoring } from './business/useAdvancedMonitoring'
 // export { useCrossDeviceState } from './business/useCrossDeviceState'
 // export { useImageOptimization } from './business/useImageOptimization'
-// export { useImageUpload } from './business/useImageUpload'
 // export { useServiceWorker } from './business/useServiceWorker'

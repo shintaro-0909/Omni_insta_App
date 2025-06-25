@@ -1,784 +1,951 @@
 <template>
-  <div class="login-view">
-    <!-- 統一ナビゲーション -->
-    <nav class="omniy-nav">
-      <div class="nav-container">
-        <div class="logo">Omniy</div>
-        <div class="nav-links">
-          <router-link to="/" class="nav-link">ホーム</router-link>
-          <router-link to="/demo" class="nav-link">デモ体験</router-link>
-          <a href="/#features" class="nav-link">機能</a>
-          <a href="/#pricing" class="nav-link">料金</a>
-        </div>
-      </div>
-    </nav>
-
-    <!-- ログインセクション -->
-    <section class="login-hero">
-      <div class="floating-elements">
-        <div class="floating-circle circle-1"></div>
-        <div class="floating-circle circle-2"></div>
-        <div class="floating-circle circle-3"></div>
-      </div>
-
+  <div class="login-layout">
+    <!-- 左側: ログインフォーム -->
+    <div class="login-section">
       <div class="login-container">
-        <div class="login-content">
-          <!-- ログインフォーム -->
-          <div class="login-card">
-            <div class="login-header">
-              <div class="login-logo">
-                <div class="logo-icon">📱</div>
-                <h1 class="login-title">
-                  <span class="gradient-text">Omniy</span> へようこそ
-                </h1>
-                <p class="login-subtitle">
-                  Instagram予約投稿を始めましょう
-                </p>
-              </div>
-            </div>
+        <!-- ロゴ -->
+        <div class="logo-section">
+          <h1 class="logo">Omniy</h1>
+          <p class="tagline">Instagram投稿を、もっとスマートに</p>
+        </div>
 
-            <div class="login-form">
-              <!-- Google認証ボタン -->
-              <button
-                class="google-login-button"
-                :disabled="authStore.loading"
-                @click="handleGoogleLogin"
-              >
-                <div class="button-content">
-                  <div class="google-icon">🔑</div>
-                  <span v-if="!authStore.loading">Googleでログイン</span>
-                  <span v-else>ログイン中...</span>
-                </div>
-                <div v-if="authStore.loading" class="loading-spinner"></div>
+        <!-- ログインフォーム -->
+        <div class="form-card">
+          <div class="login-header">
+            <h2 class="login-title">おかえりなさい</h2>
+            <p class="login-subtitle">アカウントにログイン</p>
+          </div>
+
+          <!-- エラーメッセージ -->
+          <div v-if="authStore.error" class="error-message show">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span>{{ authStore.error }}</span>
+          </div>
+
+          <!-- メールアドレス -->
+          <div class="form-group">
+            <label class="form-label">メールアドレス</label>
+            <input type="email" class="form-input" v-model="email" placeholder="example@email.com"
+              @keypress="handleEmailKeypress">
+          </div>
+
+          <!-- パスワード -->
+          <div class="form-group">
+            <label class="form-label">パスワード</label>
+            <div class="password-wrapper">
+              <input :type="showPassword ? 'text' : 'password'" class="form-input" v-model="password"
+                placeholder="••••••••" @keypress="handlePasswordKeypress">
+              <button type="button" class="toggle-password" @click="togglePassword">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="eye-icon">
+                  <template v-if="showPassword">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                  </template>
+                  <template v-else>
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </template>
+                </svg>
               </button>
-
-              <!-- 利用規約 -->
-              <div class="terms-text">
-                ログインすることで、
-                <a href="#" class="terms-link">利用規約</a>
-                および
-                <a href="#" class="terms-link">プライバシーポリシー</a>
-                に同意したものとみなされます。
-              </div>
-
-              <!-- セキュリティ情報 -->
-              <div class="security-info">
-                <div class="security-item">
-                  <span class="security-icon">🔒</span>
-                  <span class="security-text">Instagram公式API使用</span>
-                </div>
-                <div class="security-item">
-                  <span class="security-icon">🛡️</span>
-                  <span class="security-text">安全な認証システム</span>
-                </div>
-              </div>
             </div>
           </div>
 
-          <!-- 機能紹介 -->
-          <div class="features-preview">
-            <h2 class="features-title">Omniyでできること</h2>
-            <div class="features-grid">
-              <div 
-                v-for="feature in features" 
-                :key="feature.text" 
-                class="feature-item"
-              >
-                <div class="feature-icon">{{ feature.iconEmoji }}</div>
-                <div class="feature-content">
-                  <div class="feature-name">{{ feature.name }}</div>
-                  <div class="feature-text">{{ feature.text }}</div>
-                </div>
-              </div>
+          <!-- オプション -->
+          <div class="form-checkbox">
+            <label class="checkbox-label">
+              <input type="checkbox" class="checkbox-input" v-model="rememberMe">
+              ログイン状態を保持する
+            </label>
+            <a href="#" class="forgot-link">パスワードを忘れた方</a>
+          </div>
+
+          <!-- ログインボタン -->
+          <button class="login-button" :class="{ loading: isLoading }" :disabled="isLoading" @click="handleLogin">
+            <span v-if="!isLoading">ログイン</span>
+            <div v-if="isLoading" class="btn-loading">
+              <div class="spinner"></div>
+              <span>ログイン中...</span>
             </div>
+          </button>
+
+          <!-- 区切り線 -->
+          <div class="divider">
+            <div class="divider-line"></div>
+            <span class="divider-text">または</span>
+            <div class="divider-line"></div>
+          </div>
+
+          <!-- ソーシャルログイン -->
+          <div class="social-login">
+            <button class="social-button" @click="handleGoogleLogin">
+              <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+              </svg>
+              <span>Google</span>
+            </button>
+          </div>
+
+          <!-- 新規登録リンク -->
+          <div class="signup-link">
+            アカウントをお持ちでない方は <router-link to="/signup">新規登録</router-link>
+          </div>
+          
+          <!-- 利用規約同意文 -->
+          <div class="terms-agreement">
+            ログインすることで、
+            <router-link to="/terms" class="legal-link">利用規約</router-link>
+            と
+            <router-link to="/privacy" class="legal-link">プライバシーポリシー</router-link>
+            に同意したものとみなされます。
           </div>
         </div>
 
-        <!-- ビジュアル要素 -->
-        <div class="login-visual">
-          <div class="login-phone-mockup">
-            <div class="phone-screen">
-              <div class="login-demo-header">
-                <span class="demo-logo">Omniy</span>
-                <span>⚡</span>
-              </div>
-              <div class="demo-content">
-                <div class="demo-welcome">
-                  <div class="welcome-avatar"></div>
-                  <div class="welcome-text">
-                    <div class="welcome-title">ようこそ！</div>
-                    <div class="welcome-subtitle">Instagram運用を始めましょう</div>
-                  </div>
-                </div>
-                <div class="demo-stats">
-                  <div class="demo-stat">
-                    <div class="demo-stat-value">0</div>
-                    <div class="demo-stat-label">投稿予約</div>
-                  </div>
-                  <div class="demo-stat">
-                    <div class="demo-stat-value">0</div>
-                    <div class="demo-stat-label">アカウント</div>
-                  </div>
-                  <div class="demo-stat">
-                    <div class="demo-stat-value">∞</div>
-                    <div class="demo-stat-label">可能性</div>
-                  </div>
-                </div>
-                <div class="demo-button">
-                  <div class="start-button">今すぐ始める</div>
-                </div>
-              </div>
-            </div>
+        <!-- セキュリティ情報 -->
+        <div class="security-info">
+          <div class="security-item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              class="check-icon">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <span>SSL暗号化</span>
+          </div>
+          <div class="security-item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              class="check-icon">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <span>二段階認証対応</span>
           </div>
         </div>
       </div>
-    </section>
+    </div>
 
-    <!-- デモ体験セクション -->
-    <section class="demo-cta-section">
-      <div class="demo-cta-container">
-        <h2 class="demo-cta-title">まずは<span class="gradient-text">デモ</span>を体験してみませんか？</h2>
-        <p class="demo-cta-description">
-          革新的なUIデザインとOmniyの機能を事前に確認できます
-        </p>
-        <div class="demo-cta-buttons">
-          <router-link to="/demo" class="demo-button-primary">
-            革命的UIデモを体験
-          </router-link>
-          <router-link to="/" class="demo-button-secondary">
-            機能詳細を見る
-          </router-link>
+    <!-- 右側: ビジュアルセクション -->
+    <div class="visual-section">
+      <!-- 背景装飾 -->
+      <div class="bg-decoration decoration-1"></div>
+      <div class="bg-decoration decoration-2"></div>
+      <div class="bg-decoration decoration-3"></div>
+
+      <!-- コンテンツ -->
+      <div class="visual-content">
+        <h2 class="visual-title">Instagram運用を<br>次のレベルへ</h2>
+
+        <!-- 特徴リスト -->
+        <ul class="feature-list">
+          <li class="feature-item">
+            <div class="feature-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+            <div class="feature-content">
+              <h3>AIによる最適化</h3>
+              <p>投稿時間を自動で最適化し、エンゲージメントを最大化</p>
+            </div>
+          </li>
+          <li class="feature-item">
+            <div class="feature-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+            <div class="feature-content">
+              <h3>時間を味方につける</h3>
+              <p>繰り返し投稿で毎日の運用を完全自動化</p>
+            </div>
+          </li>
+          <li class="feature-item">
+            <div class="feature-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+            <div class="feature-content">
+              <h3>Instagram公式API連携</h3>
+              <p>Meta認定の安全な方法で大切なアカウントを保護</p>
+            </div>
+          </li>
+        </ul>
+
+        <!-- お客様の声 -->
+        <div class="testimonial">
+          <p class="testimonial-text">"{{ testimonials[currentTestimonial].text }}"</p>
+          <div>
+            <p class="testimonial-author">{{ testimonials[currentTestimonial].author }}</p>
+            <p class="testimonial-role">{{ testimonials[currentTestimonial].role }}</p>
+          </div>
+        </div>
+
+        <!-- インジケーター -->
+        <div class="indicators">
+          <div v-for="(_, index) in testimonials" :key="index" class="indicator"
+            :class="{ active: index === currentTestimonial }" @click="setTestimonial(index)"></div>
         </div>
       </div>
-    </section>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores'
+import { onMounted, onUnmounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
+
+// フォーム状態
+const showPassword = ref(false)
+const email = ref('')
+const password = ref('')
+const rememberMe = ref(false)
+const isLoading = ref(false)
 
 const router = useRouter()
 const authStore = useAuthStore()
 
-// 機能一覧
-const features = [
+// お客様の声データ
+const testimonials = ref([
   {
-    iconEmoji: '📅',
-    name: 'スマート予約',
-    text: '日時指定で自動投稿',
+    text: "Omniyのおかげで投稿管理が劇的に楽になりました。もう手放せません！",
+    author: "@fashion_maya",
+    role: "ファッションインフルエンサー"
   },
   {
-    iconEmoji: '🔄',
-    name: '繰り返し投稿',
-    text: '曜日・時刻の定期投稿',
+    text: "複数アカウントの管理が一元化できて、作業効率が3倍になりました。",
+    author: "@marketing_pro",
+    role: "デジタルマーケター"
   },
   {
-    iconEmoji: '🎲',
-    name: 'ランダム投稿',
-    text: 'コンテンツから自動選択',
-  },
-  {
-    iconEmoji: '👥',
-    name: 'マルチアカウント',
-    text: '複数アカウント一元管理',
-  },
-  {
-    iconEmoji: '🔒',
-    name: '安全な連携',
-    text: 'Instagram公式API使用',
-  },
-  {
-    iconEmoji: '📊',
-    name: '詳細分析',
-    text: 'パフォーマンス追跡',
-  },
-]
+    text: "AIの投稿時間提案が的確で、エンゲージメント率が150%向上しました。",
+    author: "@cafe_tokyo",
+    role: "カフェオーナー"
+  }
+])
 
-// Methods
+const currentTestimonial = ref(0)
+let testimonialInterval: NodeJS.Timeout | null = null
+
+// お客様の声カルーセル
+onMounted(() => {
+  testimonialInterval = setInterval(() => {
+    updateTestimonial()
+  }, 5000)
+})
+
+onUnmounted(() => {
+  if (testimonialInterval) {
+    clearInterval(testimonialInterval)
+  }
+})
+
+// パスワード表示切替
+const togglePassword = () => {
+  showPassword.value = !showPassword.value
+}
+
+// ログイン処理
+const handleLogin = async () => {
+  authStore.clearError()
+
+  if (!email.value || !password.value) {
+    authStore.error = 'メールアドレスとパスワードを入力してください'
+    return
+  }
+
+  isLoading.value = true
+
+  // 開発環境用のテストログイン
+  setTimeout(() => {
+    if (email.value === 'test@omniy.com' && password.value === 'test123') {
+      // テストアカウントでログイン成功をシミュレート
+      authStore.user = {
+        uid: 'test-user-123',
+        email: 'test@omniy.com',
+        displayName: 'テストユーザー',
+        photoURL: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
+        emailVerified: true,
+        isAnonymous: false,
+        phoneNumber: null,
+        providerId: 'password',
+        providerData: [],
+        refreshToken: 'mock-refresh-token',
+        tenantId: null,
+        delete: async () => {},
+        getIdToken: async () => 'mock-id-token',
+        getIdTokenResult: async () => ({} as any),
+        reload: async () => {},
+        toJSON: () => ({}),
+        metadata: {
+          creationTime: new Date().toISOString(),
+          lastSignInTime: new Date().toISOString(),
+        },
+      } as any
+      authStore.clearError()
+      router.push('/dashboard')
+    } else {
+      authStore.error = 'メールアドレスまたはパスワードが正しくありません'
+    }
+    isLoading.value = false
+  }, 1500)
+}
+
+// Googleログイン処理
 const handleGoogleLogin = async () => {
   try {
-    await authStore.loginWithGoogle()
+    // 開発環境用のGoogleログインシミュレート
+    authStore.user = {
+      uid: 'google-user-456',
+      email: 'google.test@omniy.com',
+      displayName: 'Googleテストユーザー',
+      photoURL: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face',
+      emailVerified: true,
+      isAnonymous: false,
+      phoneNumber: null,
+      providerId: 'google.com',
+      providerData: [],
+      refreshToken: 'mock-refresh-token',
+      tenantId: null,
+      delete: async () => {},
+      getIdToken: async () => 'mock-id-token',
+      getIdTokenResult: async () => ({} as any),
+      reload: async () => {},
+      toJSON: () => ({}),
+      metadata: {
+        creationTime: new Date().toISOString(),
+        lastSignInTime: new Date().toISOString(),
+      },
+    } as any
+    authStore.clearError()
     router.push('/dashboard')
   } catch (error) {
-    console.error('ログインエラー:', error)
+    console.error('Google login error:', error)
+    authStore.error = 'Googleログインに失敗しました'
   }
+}
+
+// キーボードイベント
+const handleEmailKeypress = (e: KeyboardEvent) => {
+  if (e.key === 'Enter') {
+    const passwordInput = document.querySelector('input[type="password"]') as HTMLInputElement
+    passwordInput?.focus()
+  }
+}
+
+const handlePasswordKeypress = (e: KeyboardEvent) => {
+  if (e.key === 'Enter') {
+    handleLogin()
+  }
+}
+
+// お客様の声更新
+const updateTestimonial = () => {
+  currentTestimonial.value = (currentTestimonial.value + 1) % testimonials.value.length
+}
+
+// インジケータークリック
+const setTestimonial = (index: number) => {
+  currentTestimonial.value = index
 }
 </script>
 
 <style scoped>
-/* LP-demo.htmlと統一されたスタイルシステム */
-:root {
-  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  --accent-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-  --text-primary: #2d3748;
-  --text-secondary: #718096;
-  --bg-light: #f7fafc;
-  --white: #ffffff;
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
-  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-.login-view {
+.login-layout {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans JP', sans-serif;
-  color: var(--text-primary);
   line-height: 1.6;
-  overflow-x: hidden;
-  min-height: 100vh;
-  background: linear-gradient(180deg, #fafbff 0%, #f3f4f6 100%);
-}
-
-/* 統一ナビゲーション */
-.omniy-nav {
+  color: #2d3748;
   position: fixed;
   top: 0;
-  width: 100%;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  z-index: 1000;
-  padding: 1rem 0;
-  box-shadow: var(--shadow-sm);
-  transition: all 0.3s ease;
-}
-
-.nav-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.logo {
-  font-size: 1.8rem;
-  font-weight: 800;
-  background: var(--primary-gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.nav-links {
-  display: flex;
-  gap: 2rem;
-  align-items: center;
-}
-
-.nav-link {
-  text-decoration: none;
-  color: var(--text-secondary);
-  font-weight: 500;
-  transition: color 0.3s ease;
-}
-
-.nav-link:hover {
-  color: var(--text-primary);
-}
-
-/* ログインヒーローセクション */
-.login-hero {
-  margin-top: 80px;
-  padding: 4rem 2rem 6rem;
-  position: relative;
-  overflow: hidden;
-  min-height: calc(100vh - 80px);
-  display: flex;
-  align-items: center;
-}
-
-.floating-elements {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  top: 0;
   left: 0;
-  pointer-events: none;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  z-index: 9999;
 }
 
-.floating-circle {
-  position: absolute;
-  border-radius: 50%;
-  opacity: 0.1;
-  animation: float 20s infinite ease-in-out;
-}
-
-.circle-1 {
-  width: 200px;
-  height: 200px;
-  background: var(--primary-gradient);
-  top: 10%;
-  left: 5%;
-  animation-delay: 0s;
-}
-
-.circle-2 {
-  width: 150px;
-  height: 150px;
-  background: var(--secondary-gradient);
-  top: 60%;
-  right: 10%;
-  animation-delay: 5s;
-}
-
-.circle-3 {
-  width: 100px;
-  height: 100px;
-  background: var(--accent-gradient);
-  bottom: 20%;
-  left: 15%;
-  animation-delay: 10s;
-}
-
-@keyframes float {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  25% { transform: translate(30px, -30px) scale(1.1); }
-  50% { transform: translate(-20px, 20px) scale(0.9); }
-  75% { transform: translate(20px, 30px) scale(1.05); }
+/* 左側: ログインフォーム */
+.login-section {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: white;
 }
 
 .login-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4rem;
-  align-items: center;
+  width: 100%;
+  max-width: 400px;
 }
 
-.login-content {
-  z-index: 2;
-}
-
-/* ログインカード */
-.login-card {
-  background: white;
-  border-radius: 20px;
-  padding: 3rem;
-  box-shadow: var(--shadow-xl);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(20px);
-  margin-bottom: 3rem;
-}
-
-.login-header {
+/* ロゴ */
+.logo-section {
   text-align: center;
   margin-bottom: 2rem;
 }
 
-.logo-icon {
-  font-size: 4rem;
-  margin-bottom: 1rem;
+.logo {
+  font-size: 2.5rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 0.5rem;
+}
+
+.tagline {
+  color: #718096;
+  font-size: 1rem;
+}
+
+/* フォームカード */
+.form-card {
+  background: white;
+  border-radius: 20px;
+  padding: 3rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+/* ログインヘッダー */
+.login-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
 }
 
 .login-title {
-  font-size: 2.5rem;
+  font-size: 2rem;
   font-weight: 800;
-  line-height: 1.2;
-  margin-bottom: 1rem;
-}
-
-.gradient-text {
-  background: var(--primary-gradient);
+  margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .login-subtitle {
-  font-size: 1.1rem;
-  color: var(--text-secondary);
-  margin-bottom: 0;
+  color: #718096;
+  font-size: 1rem;
 }
 
-/* ログインフォーム */
-.login-form {
+/* エラーメッセージ */
+.error-message {
+  background: #fee;
+  border: 1px solid #fc8181;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.5rem;
+  display: none;
+  align-items: center;
+  gap: 0.5rem;
+  color: #c53030;
+  font-size: 0.875rem;
+}
+
+.error-message.show {
   display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
 }
 
-.google-login-button {
-  background: var(--primary-gradient);
-  color: white;
-  border: none;
-  padding: 1rem 2rem;
-  border-radius: 30px;
-  font-size: 1.1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+/* フォームグループ */
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #4a5568;
+  margin-bottom: 0.5rem;
+}
+
+.input-wrapper {
   position: relative;
-  overflow: hidden;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.875rem 1.25rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-input::placeholder {
+  color: #a0aec0;
+}
+
+/* パスワード入力フィールド */
+.password-wrapper {
+  position: relative;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #718096;
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 0.5rem;
+  transition: color 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 56px;
 }
 
-.google-login-button:hover {
+.toggle-password:hover {
+  color: #2d3748;
+}
+
+.eye-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.input-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  color: #a0aec0;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #a0aec0;
+  padding: 0.25rem;
+  transition: color 0.2s;
+}
+
+.password-toggle:hover {
+  color: #4a5568;
+}
+
+/* チェックボックス */
+.form-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  color: #718096;
+  font-size: 0.9rem;
+}
+
+.checkbox-input {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: #667eea;
+}
+
+.forgot-link {
+  color: #667eea;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.forgot-link:hover {
+  color: #764ba2;
+}
+
+/* ボタン */
+.login-button {
+  width: 100%;
+  padding: 1rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.login-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
 }
 
-.google-login-button:disabled {
-  opacity: 0.8;
+.login-button:active {
+  transform: translateY(0);
+}
+
+.login-button:disabled {
+  opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
 }
 
-.button-content {
-  display: flex;
+.btn-loading {
+  display: none;
   align-items: center;
-  gap: 0.75rem;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
-.google-icon {
-  font-size: 1.2rem;
+.btn-primary.loading .btn-text {
+  display: none;
 }
 
-.loading-spinner {
+.btn-primary.loading .btn-loading {
+  display: flex;
+}
+
+/* スピナー */
+.spinner {
   width: 20px;
   height: 20px;
   border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top: 2px solid white;
+  border-top-color: white;
   border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-left: 0.5rem;
+  animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
-.terms-text {
-  text-align: center;
+/* 区切り線 */
+.divider {
+  display: flex;
+  align-items: center;
+  margin: 2rem 0;
+  gap: 1rem;
+}
+
+.divider-line {
+  flex: 1;
+  height: 1px;
+  background: #e2e8f0;
+}
+
+.divider-text {
+  color: #718096;
   font-size: 0.9rem;
-  color: var(--text-secondary);
+}
+
+/* ソーシャルログイン */
+.social-login {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.social-button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.875rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  background: white;
+  color: #2d3748;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.social-button:hover {
+  border-color: #cbd5e0;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.social-icon {
+  font-size: 1.25rem;
+}
+
+/* サインアップリンク */
+.signup-link {
+  text-align: center;
+  color: #718096;
+  font-size: 0.95rem;
+}
+
+.signup-link a {
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+.signup-link a:hover {
+  color: #764ba2;
+}
+
+/* 利用規約同意文 */
+.terms-agreement {
+  text-align: center;
+  color: #718096;
+  font-size: 0.85rem;
+  margin-top: 1rem;
   line-height: 1.5;
 }
 
-.terms-link {
+.legal-link {
   color: #667eea;
   text-decoration: none;
   font-weight: 500;
+  transition: color 0.3s ease;
 }
 
-.terms-link:hover {
+.legal-link:hover {
+  color: #764ba2;
   text-decoration: underline;
 }
 
+/* セキュリティ情報 */
 .security-info {
   display: flex;
-  gap: 1rem;
-  padding: 1rem;
-  background: var(--bg-light);
-  border-radius: 12px;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 2rem;
+  font-size: 0.875rem;
+  color: #a0aec0;
 }
 
 .security-item {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.25rem;
+}
+
+.check-icon {
+  color: #48bb78;
+}
+
+/* 右側: ビジュアルセクション */
+.visual-section {
   flex: 1;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  position: relative;
+  overflow: hidden;
 }
 
-.security-icon {
-  font-size: 1.1rem;
+/* 背景装飾 */
+.bg-decoration {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  filter: blur(40px);
+  animation: float 20s infinite ease-in-out;
 }
 
-.security-text {
-  font-size: 0.9rem;
-  color: var(--text-secondary);
+.decoration-1 {
+  width: 300px;
+  height: 300px;
+  top: -100px;
+  left: -100px;
+  animation-delay: 0s;
 }
 
-/* 機能プレビュー */
-.features-preview {
-  background: white;
-  border-radius: 20px;
-  padding: 2rem;
-  box-shadow: var(--shadow-lg);
+.decoration-2 {
+  width: 250px;
+  height: 250px;
+  bottom: -50px;
+  right: -50px;
+  animation-delay: 5s;
 }
 
-.features-title {
-  font-size: 1.5rem;
+.decoration-3 {
+  width: 200px;
+  height: 200px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation-delay: 10s;
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  25% {
+    transform: translate(30px, -30px) scale(1.1);
+  }
+
+  50% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+
+  75% {
+    transform: translate(20px, 30px) scale(1.05);
+  }
+}
+
+/* ビジュアルコンテンツ */
+.visual-content {
+  position: relative;
+  z-index: 1;
+  color: white;
+  max-width: 500px;
+}
+
+.visual-title {
+  font-size: 2.5rem;
   font-weight: 700;
-  text-align: center;
+  line-height: 1.2;
   margin-bottom: 2rem;
-  color: var(--text-primary);
 }
 
-.features-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
+.feature-list {
+  list-style: none;
+  margin-bottom: 2rem;
 }
 
 .feature-item {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 1rem;
-  background: var(--bg-light);
-  border-radius: 12px;
-  transition: all 0.3s ease;
-}
-
-.feature-item:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  align-items: start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .feature-icon {
-  font-size: 1.5rem;
-  width: 40px;
-  text-align: center;
-}
-
-.feature-content {
-  flex: 1;
-}
-
-.feature-name {
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 0.25rem;
-  font-size: 0.9rem;
-}
-
-.feature-text {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-}
-
-/* ログインビジュアル */
-.login-visual {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.login-phone-mockup {
-  width: 320px;
-  height: 640px;
-  background: #000;
-  border-radius: 40px;
-  padding: 10px;
-  box-shadow: var(--shadow-xl);
-  position: relative;
-}
-
-.phone-screen {
-  width: 100%;
-  height: 100%;
-  background: white;
-  border-radius: 30px;
-  overflow: hidden;
-  position: relative;
-}
-
-.login-demo-header {
-  padding: 1rem;
-  border-bottom: 1px solid #efefef;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.demo-logo {
-  font-size: 1.2rem;
-  font-weight: 600;
-  background: var(--primary-gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.demo-content {
-  padding: 2rem 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  height: calc(100% - 60px);
-}
-
-.demo-welcome {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  background: var(--bg-light);
-  border-radius: 12px;
-}
-
-.welcome-avatar {
-  width: 50px;
-  height: 50px;
+  width: 24px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.2);
   border-radius: 50%;
-  background: var(--primary-gradient);
-}
-
-.welcome-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.welcome-subtitle {
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-}
-
-.demo-stats {
   display: flex;
-  gap: 1rem;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
 }
 
-.demo-stat {
-  flex: 1;
-  text-align: center;
-  padding: 1rem;
-  background: var(--bg-light);
+.feature-content h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.feature-content p {
+  font-size: 0.875rem;
+  opacity: 0.9;
+  line-height: 1.5;
+}
+
+/* お客様の声 */
+.testimonial {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
   border-radius: 12px;
-}
-
-.demo-stat-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-  background: var(--primary-gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.demo-stat-label {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-}
-
-.demo-button {
-  margin-top: auto;
-}
-
-.start-button {
-  background: var(--primary-gradient);
-  color: white;
-  padding: 1rem;
-  border-radius: 25px;
-  text-align: center;
-  font-weight: 600;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-}
-
-/* デモCTAセクション */
-.demo-cta-section {
-  padding: 4rem 2rem;
-  background: white;
-  text-align: center;
-}
-
-.demo-cta-container {
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-.demo-cta-title {
-  font-size: 2.5rem;
-  font-weight: 800;
+  padding: 1.5rem;
   margin-bottom: 1rem;
-  color: var(--text-primary);
 }
 
-.demo-cta-description {
-  font-size: 1.2rem;
-  color: var(--text-secondary);
-  margin-bottom: 2rem;
+.testimonial-text {
+  font-style: italic;
+  margin-bottom: 1rem;
+  opacity: 0.95;
 }
 
-.demo-cta-buttons {
+.testimonial-author {
+  font-weight: 600;
+}
+
+.testimonial-role {
+  font-size: 0.875rem;
+  opacity: 0.8;
+}
+
+/* インジケーター */
+.indicators {
   display: flex;
-  gap: 1rem;
+  gap: 0.5rem;
   justify-content: center;
 }
 
-.demo-button-primary {
-  background: var(--primary-gradient);
-  color: white;
-  padding: 1rem 2rem;
-  border-radius: 30px;
-  text-decoration: none;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+.indicator {
+  width: 8px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  transition: all 0.3s;
+  cursor: pointer;
 }
 
-.demo-button-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-}
-
-.demo-button-secondary {
+.indicator.active {
+  width: 24px;
   background: white;
-  color: var(--text-primary);
-  padding: 1rem 2rem;
-  border-radius: 30px;
-  text-decoration: none;
-  font-weight: 600;
-  border: 2px solid #e2e8f0;
-  transition: all 0.3s ease;
-}
-
-.demo-button-secondary:hover {
-  border-color: #cbd5e0;
-  transform: translateY(-2px);
+  border-radius: 4px;
 }
 
 /* レスポンシブ */
-@media (max-width: 768px) {
-  .login-container {
-    grid-template-columns: 1fr;
-    text-align: center;
-    gap: 2rem;
-  }
-
-  .login-visual {
-    order: -1;
-  }
-
-  .login-phone-mockup {
-    width: 280px;
-    height: 560px;
-  }
-
-  .login-card {
-    padding: 2rem;
-  }
-
-  .login-title {
-    font-size: 2rem;
-  }
-
-  .nav-links {
+@media (max-width: 1024px) {
+  .visual-section {
     display: none;
   }
 
-  .features-grid {
-    grid-template-columns: 1fr;
+  .login-layout {
+    background: white;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-section {
+    padding: 1rem;
   }
 
-  .demo-cta-title {
-    font-size: 2rem;
+  .form-card {
+    padding: 1.5rem;
   }
 
-  .demo-cta-buttons {
+  .security-info {
     flex-direction: column;
+    gap: 0.5rem;
     align-items: center;
-  }
-
-  .demo-button-primary,
-  .demo-button-secondary {
-    width: 100%;
-    max-width: 300px;
   }
 }
 </style>

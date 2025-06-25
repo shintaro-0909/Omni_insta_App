@@ -1,19 +1,9 @@
 <template>
-  <div class="content-view">
-    <!-- 統一ナビゲーション -->
-    <nav class="omniy-nav">
-      <div class="nav-container">
-        <div class="logo">Omniy</div>
-        <div class="nav-links">
-          <router-link to="/dashboard" class="nav-link">ダッシュボード</router-link>
-          <router-link to="/schedules" class="nav-link">予約管理</router-link>
-          <router-link to="/accounts" class="nav-link">アカウント</router-link>
-          <router-link to="/content" class="nav-link">コンテンツ</router-link>
-          <router-link to="/settings" class="nav-link">設定</router-link>
-          <router-link to="/billing" class="cta-button">プラン管理</router-link>
-        </div>
-      </div>
-    </nav>
+  <div class="content-layout">
+    <!-- サイドバーナビゲーション -->
+    <SidebarNavigation />
+    
+    <div class="content-view">
 
     <!-- ヒーローセクション -->
     <section class="hero">
@@ -23,8 +13,8 @@
         <div class="floating-circle circle-3"></div>
       </div>
 
-      <div class="hero-container">
-        <div class="hero-content">
+      <div class="hero-container-simplified">
+        <div class="hero-content-centered">
           <h1>コンテンツ <span class="gradient-text">ライブラリ</span></h1>
           <p class="hero-description">
             Instagram投稿用のコンテンツを一元管理。
@@ -37,39 +27,6 @@
           </div>
         </div>
 
-        <div class="hero-visual">
-          <div class="content-phone-mockup">
-            <div class="phone-screen">
-              <div class="content-header">
-                <span class="content-logo">🎨 コンテンツ</span>
-                <span>🖼️</span>
-              </div>
-              <div class="content-demo-content">
-                <div class="demo-content-grid">
-                  <div class="demo-content-item">
-                    <div class="content-thumbnail">🌅</div>
-                    <div class="content-overlay">2枚</div>
-                  </div>
-                  <div class="demo-content-item">
-                    <div class="content-thumbnail">🎆</div>
-                  </div>
-                  <div class="demo-content-item">
-                    <div class="content-thumbnail">🏖️</div>
-                    <div class="content-overlay">5枚</div>
-                  </div>
-                  <div class="demo-content-item">
-                    <div class="content-thumbnail">🌹</div>
-                  </div>
-                </div>
-                <div class="content-tags">
-                  <span class="demo-tag">#fashion</span>
-                  <span class="demo-tag">#ootd</span>
-                  <span class="demo-tag">#style</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </section>
 
@@ -273,7 +230,7 @@
             :disabled="postsStore.loading"
           >
             <span v-if="postsStore.loading">読み込み中...</span>
-            <span v-else">さらに読み込む</span>
+            <span v-else>さらに読み込む</span>
           </button>
         </div>
       </section>
@@ -283,7 +240,8 @@
     <PostFormDialog
       v-model="showCreateDialog"
       :post="editingPost"
-      @saved="handlePostSaved"
+      @created="handlePostSaved"
+      @updated="handlePostSaved"
     />
 
     <!-- 詳細表示ダイアログ -->
@@ -294,63 +252,31 @@
       @delete="confirmDelete"
     />
 
-    <!-- 削除確認ダイアログ -->
-    <div v-if="showDeleteDialog" class="modal-overlay" @click="showDeleteDialog = false">
-      <div class="delete-dialog" @click.stop>
-        <div class="dialog-header">
-          <h3 class="dialog-title">コンテンツ削除</h3>
-        </div>
-        <div class="dialog-content">
-          <p class="dialog-message">
-            このコンテンツを削除しますか？<br>
-            この操作は取り消せません。
-          </p>
-        </div>
-        <div class="dialog-actions">
-          <button 
-            class="dialog-button secondary" 
-            @click="showDeleteDialog = false"
-          >
-            キャンセル
-          </button>
-          <button 
-            class="dialog-button danger" 
-            @click="handleDelete"
-            :disabled="postsStore.loading"
-          >
-            <span v-if="postsStore.loading">削除中...</span>
-            <span v-else>削除</span>
-          </button>
-        </div>
-      </div>
-    </div>
+  </div>
   </div>
 </template>
 
 <script setup lang="ts">
-  import { ref, computed, onMounted } from 'vue';
+  import { ref, onMounted } from 'vue';
+  import { useRoute } from 'vue-router';
   import { usePostsStore, type Post } from '@/stores';
   import { format } from 'date-fns';
   import { ja } from 'date-fns/locale';
-  import { PostFormDialog, PostViewDialog } from '@/components';
+  import { PostFormDialog, PostViewDialog, SidebarNavigation } from '@/components';
+  import { useNotification, useConfirm } from '@/composables';
 
+  const route = useRoute();
   const postsStore = usePostsStore();
+  const { notifySuccess, notifyError, notifyInfo } = useNotification();
+  const { confirmPostDelete } = useConfirm();
 
   // State
   const showCreateDialog = ref(false);
   const showViewDialog = ref(false);
-  const showDeleteDialog = ref(false);
   const editingPost = ref<Post | null>(null);
   const viewingPost = ref<Post | null>(null);
-  const deletingPost = ref<Post | null>(null);
   const selectedTags = ref<string[]>([]);
   const tempTag = ref('');
-
-  // Computed
-  const showError = computed({
-    get: () => !!postsStore.error,
-    set: () => postsStore.clearError(),
-  });
 
   // Methods
   const refreshPosts = async () => {
@@ -376,20 +302,16 @@
     showViewDialog.value = true;
   };
 
-  const confirmDelete = (post: Post) => {
-    deletingPost.value = post;
-    showDeleteDialog.value = true;
-    showViewDialog.value = false;
-  };
-
-  const handleDelete = async () => {
-    if (deletingPost.value) {
+  const confirmDelete = async (post: Post) => {
+    const confirmed = await confirmPostDelete(post.caption);
+    if (confirmed) {
       try {
-        await postsStore.deletePost(deletingPost.value.id);
-        showDeleteDialog.value = false;
-        deletingPost.value = null;
+        await postsStore.deletePost(post.id);
+        notifySuccess('コンテンツ削除完了', 'コンテンツをライブラリから削除しました。');
+        showViewDialog.value = false;
       } catch (error) {
         console.error('削除エラー:', error);
+        notifyError('削除エラー', 'コンテンツの削除中にエラーが発生しました。もう一度お試しください。');
       }
     }
   };
@@ -397,6 +319,7 @@
   const handlePostSaved = () => {
     showCreateDialog.value = false;
     editingPost.value = null;
+    notifyInfo('コンテンツ更新', 'ライブラリが最新の状態に更新されました。');
   };
 
   const formatDate = (date: Date) => {
@@ -423,7 +346,17 @@
 
   // Lifecycle
   onMounted(async () => {
-    await postsStore.loadPosts(true);
+    try {
+      await postsStore.loadPosts(true);
+      
+      // Check for query parameters to trigger actions
+      if (route.query.action === 'add') {
+        showCreateDialog.value = true;
+      }
+    } catch (error) {
+      console.error('Error loading posts:', error);
+      notifyError('データ読み込みエラー', 'コンテンツの読み込み中にエラーが発生しました。ページを再読み込みしてください。');
+    }
   });
 </script>
 
@@ -444,6 +377,16 @@
   --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
 }
 
+/* フルスクリーンレイアウトサポート */
+.content-layout {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  background: white;
+  overflow-x: hidden;
+  display: flex;
+}
+
 .content-view {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans JP', sans-serif;
   color: var(--text-primary);
@@ -451,6 +394,23 @@
   overflow-x: hidden;
   min-height: 100vh;
   background: linear-gradient(180deg, #fafbff 0%, #f3f4f6 100%);
+  flex: 1;
+  margin-left: 72px;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* サイドバーが開いている場合のマージン調整 */
+@media (min-width: 768px) {
+  .content-view {
+    margin-left: 280px;
+  }
+}
+
+/* スマホ用調整 */
+@media (max-width: 767px) {
+  .content-view {
+    margin-left: 0;
+  }
 }
 
 /* 統一ナビゲーション */
@@ -529,16 +489,19 @@
   overflow: hidden;
 }
 
-.hero-container {
+.hero-container-simplified {
   max-width: 1200px;
   margin: 0 auto;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4rem;
-  align-items: center;
+  text-align: center;
+  padding: 2rem 0;
 }
 
-.hero-content h1 {
+.hero-content-centered {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.hero-content-centered h1 {
   font-size: 3.5rem;
   font-weight: 800;
   line-height: 1.2;
@@ -616,94 +579,6 @@
   75% { transform: translate(20px, 30px) scale(1.05); }
 }
 
-/* コンテンツモックアップ */
-.hero-visual {
-  position: relative;
-}
-
-.content-phone-mockup {
-  width: 320px;
-  height: 640px;
-  background: #000;
-  border-radius: 40px;
-  padding: 10px;
-  box-shadow: var(--shadow-xl);
-  margin: 0 auto;
-  position: relative;
-}
-
-.phone-screen {
-  width: 100%;
-  height: 100%;
-  background: white;
-  border-radius: 30px;
-  overflow: hidden;
-  position: relative;
-}
-
-.content-header {
-  padding: 1rem;
-  border-bottom: 1px solid #efefef;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.content-logo {
-  font-size: 1.2rem;
-  font-weight: 600;
-}
-
-.content-demo-content {
-  padding: 1rem;
-}
-
-.demo-content-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.demo-content-item {
-  aspect-ratio: 1;
-  background: var(--bg-light);
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  font-size: 1.5rem;
-}
-
-.content-thumbnail {
-  font-size: 2rem;
-}
-
-.content-overlay {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  background: rgba(0, 0, 0, 0.7);
-  color: white;
-  padding: 2px 6px;
-  border-radius: 8px;
-  font-size: 0.7rem;
-}
-
-.content-tags {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.demo-tag {
-  background: #e0e7ff;
-  color: #3730a3;
-  padding: 0.25rem 0.5rem;
-  border-radius: 8px;
-  font-size: 0.7rem;
-}
 
 /* メインコンテンツ */
 .content-content {
@@ -1263,23 +1138,12 @@
 
 /* レスポンシブ */
 @media (max-width: 768px) {
-  .hero-container {
-    grid-template-columns: 1fr;
-    text-align: center;
-  }
-
-  .hero-content h1 {
+  .hero-content-centered h1 {
     font-size: 2.5rem;
   }
 
-  .hero-visual {
-    order: -1;
-    margin-bottom: 2rem;
-  }
-
-  .content-phone-mockup {
-    width: 280px;
-    height: 560px;
+  .hero-container-simplified {
+    padding: 1rem 0;
   }
 
   .nav-links {

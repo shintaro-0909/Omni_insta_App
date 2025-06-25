@@ -258,6 +258,7 @@
     type UpdateScheduleData,
     type Schedule,
   } from '@/stores';
+  import { useNotification } from '@/composables';
 
   // Props
   interface Props {
@@ -280,6 +281,7 @@
   const schedulesStore = useSchedulesStore();
   const igAccountsStore = useIgAccountsStore();
   const postsStore = usePostsStore();
+  const { notifySuccess, notifyError, notifyWarning } = useNotification();
 
   // Reactive data
   const dialog = computed({
@@ -474,7 +476,10 @@
   };
 
   const saveSchedule = async () => {
-    if (!form.value?.validate()) return;
+    if (!form.value?.validate()) {
+      notifyWarning('入力確認', 'すべての必須項目を正しく入力してください。');
+      return;
+    }
 
     try {
       loading.value = true;
@@ -485,16 +490,20 @@
       if (isEdit.value) {
         await schedulesStore.updateSchedule(scheduleData as UpdateScheduleData);
         scheduleId = props.schedule!.id;
+        notifySuccess('スケジュール更新完了', `「${formData.value.title}」を更新しました。設定内容が反映されます。`);
       } else {
         scheduleId = await schedulesStore.createSchedule(
           scheduleData as CreateScheduleData
         );
+        notifySuccess('スケジュール作成完了', `「${formData.value.title}」を作成しました。予約投稿が開始されます。`);
       }
 
       emit('saved', scheduleId);
       closeDialog();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving schedule:', error);
+      const action = isEdit.value ? '更新' : '作成';
+      notifyError(`スケジュール${action}エラー`, `スケジュールの${action}中にエラーが発生しました。入力内容を確認してもう一度お試しください。`);
     } finally {
       loading.value = false;
     }
@@ -520,12 +529,17 @@
 
   // Lifecycle
   onMounted(async () => {
-    // データを取得
-    if (igAccountsStore.accounts.length === 0) {
-      await igAccountsStore.loadAccounts();
-    }
-    if (postsStore.posts.length === 0) {
-      await postsStore.loadPosts(true);
+    try {
+      // データを取得
+      if (igAccountsStore.accounts.length === 0) {
+        await igAccountsStore.loadAccounts();
+      }
+      if (postsStore.posts.length === 0) {
+        await postsStore.loadPosts(true);
+      }
+    } catch (error) {
+      console.error('Error loading data:', error);
+      notifyError('データ読み込みエラー', 'アカウントやコンテンツの読み込み中にエラーが発生しました。ページを再読み込みしてください。');
     }
   });
 </script>

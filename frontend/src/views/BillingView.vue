@@ -1,19 +1,7 @@
 <template>
-  <div class="billing-view">
-    <!-- 統一ナビゲーション -->
-    <nav class="omniy-nav">
-      <div class="nav-container">
-        <div class="logo">Omniy</div>
-        <div class="nav-links">
-          <router-link to="/dashboard" class="nav-link">ダッシュボード</router-link>
-          <router-link to="/schedules" class="nav-link">予約管理</router-link>
-          <router-link to="/accounts" class="nav-link">アカウント</router-link>
-          <router-link to="/content" class="nav-link">コンテンツ</router-link>
-          <router-link to="/settings" class="nav-link">設定</router-link>
-          <router-link to="/billing" class="cta-button">プラン管理</router-link>
-        </div>
-      </div>
-    </nav>
+  <div class="billing-layout">
+    <SidebarNavigation />
+    <div class="billing-view">
 
     <!-- ヒーローセクション -->
     <section class="hero">
@@ -30,32 +18,6 @@
             あなたのInstagram運用に最適なプランを選択してください。
             柔軟なアップグレード、ダウングレードで必要な時に必要な機能を。
           </p>
-        </div>
-
-        <div class="hero-visual">
-          <div class="billing-phone-mockup">
-            <div class="phone-screen">
-              <div class="billing-header">
-                <span class="billing-logo">💳 プラン</span>
-                <span>👑</span>
-              </div>
-              <div class="billing-demo-content">
-                <div class="demo-plan current">
-                  <div class="plan-name">Proプラン</div>
-                  <div class="plan-price">¥2,980/月</div>
-                  <div class="plan-status current">現在のプラン</div>
-                </div>
-                <div class="demo-features">
-                  <div class="feature-item">✅ 10アカウント</div>
-                  <div class="feature-item">✅ 無制限投稿</div>
-                  <div class="feature-item">✅ AI最適化</div>
-                </div>
-                <div class="demo-button">
-                  <div class="upgrade-button">アップグレード</div>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </section>
@@ -118,56 +80,127 @@
         </div>
       </section>
 
+      <!-- 価格システム情報セクション -->
+      <section v-if="pricingSystemStore.currentPricingData" class="pricing-system-section">
+        <div class="section-header">
+          <h2 class="section-title">💰 現在の料金システム</h2>
+          <p class="section-description">利用者数に応じて価格が変動するシステムを採用しています</p>
+        </div>
+
+        <div class="pricing-system-card">
+          <div class="pricing-info">
+            <div class="current-price-display">
+              <div class="price-label">現在価格</div>
+              <div class="price-value">{{ pricingSystemStore.formatPrice(pricingSystemStore.currentPrice) }}<span class="price-period">/月</span></div>
+              
+              <!-- 値上げ警告 -->
+              <div v-if="pricingSystemStore.remainingUsersForNextTier > 0 && pricingSystemStore.remainingUsersForNextTier <= 10" class="price-warning">
+                <span class="warning-icon">⚠️</span>
+                <span class="warning-text">あと{{ pricingSystemStore.remainingUsersForNextTier }}人で{{ pricingSystemStore.nextTierPrice }}に値上げされます</span>
+              </div>
+            </div>
+
+            <!-- Grandfather保護通知 -->
+            <div v-if="!isFreePlan" class="grandfather-protection">
+              <div class="protection-badge">🛡️ 価格保護中</div>
+              <div class="protection-message">
+                あなたは契約時の価格で継続利用できます（Grandfather価格）。<br>
+                <strong>注意：</strong> 解約後に再契約する場合は、その時点の最新価格が適用されます。
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- プラン一覧セクション -->
       <section class="plans-section">
         <div class="section-header">
-          <h2 class="section-title">📅 料金プラン</h2>
-          <p class="section-description">あなたのニーズに最適なプランを選択してください</p>
+          <h2 class="section-title">📅 プラン選択</h2>
+          <p class="section-description">シンプルな1プラン制。機能制限なしでご利用いただけます</p>
         </div>
 
-        <div class="plans-grid">
-          <div
-            v-for="plan in plans"
-            :key="plan.id"
-            class="plan-card"
-            :class="{ 'current-plan': currentSubscription?.planId === plan.planId }"
-          >
-            <!-- 現在のプランバッジ -->
-            <div 
-              v-if="currentSubscription?.planId === plan.planId" 
-              class="current-badge"
-            >
-              ✅ 現在のプラン
-            </div>
-
-            <!-- プランヘッダー -->
+        <div class="unified-plan-card">
+          <!-- 無料プラン -->
+          <div class="plan-section free-plan" :class="{ 'current-plan': isFreePlan }">
+            <div v-if="isFreePlan" class="current-badge">✅ 現在のプラン</div>
             <div class="plan-header">
-              <h3 class="plan-title">{{ plan.name }}</h3>
+              <h3 class="plan-title">無料プラン</h3>
+              <div class="plan-price-display">
+                <span class="price-amount">無料</span>
+              </div>
+              <p class="plan-desc">基本機能を無料でお試しいただけます</p>
+            </div>
+            <div class="plan-features">
+              <div class="feature-item">
+                <span class="feature-check">✅</span>
+                <span class="feature-text">月間投稿数: 10回</span>
+              </div>
+              <div class="feature-item">
+                <span class="feature-check">✅</span>
+                <span class="feature-text">Instagramアカウント: 1個</span>
+              </div>
+            </div>
+            <div class="plan-action">
+              <button v-if="isFreePlan" class="plan-button current" disabled>
+                現在のプラン
+              </button>
+            </div>
+          </div>
+
+          <!-- 有料プラン -->
+          <div class="plan-section paid-plan" :class="{ 'current-plan': !isFreePlan }">
+            <div v-if="!isFreePlan" class="current-badge">✅ 現在のプラン</div>
+            <div class="plan-header">
+              <h3 class="plan-title">プレミアムプラン</h3>
               <div class="plan-price-display">
                 <span class="price-amount">
-                  {{ plan.planId === 'free' ? '無料' : formatPrice(plan.price) }}
+                  {{ pricingSystemStore.formatPrice(pricingSystemStore.currentPrice) }}
                 </span>
-                <span v-if="plan.planId !== 'free'" class="price-period">/月</span>
+                <span class="price-period">/月</span>
               </div>
-              <p class="plan-desc">{{ plan.description }}</p>
+              <p class="plan-desc">すべての機能を無制限でご利用いただけます</p>
+              
+              <!-- 値上げ警告表示 -->
+              <div v-if="pricingSystemStore.remainingUsersForNextTier > 0 && pricingSystemStore.remainingUsersForNextTier <= 20" class="price-warning-inline">
+                あと{{ pricingSystemStore.remainingUsersForNextTier }}人で{{ pricingSystemStore.nextTierPrice }}に値上げ
+              </div>
             </div>
 
-            <!-- 機能一覧 -->
             <div class="plan-features">
-              <div 
-                v-for="feature in getPlanFeatureText(plan)" 
-                :key="feature" 
-                class="feature-item"
-              >
+              <div class="feature-item">
                 <span class="feature-check">✅</span>
-                <span class="feature-text">{{ feature }}</span>
+                <span class="feature-text">月間投稿数: 無制限</span>
+              </div>
+              <div class="feature-item">
+                <span class="feature-check">✅</span>
+                <span class="feature-text">Instagramアカウント: 無制限</span>
+              </div>
+              <div class="feature-item">
+                <span class="feature-check">✅</span>
+                <span class="feature-text">予約投稿</span>
+              </div>
+              <div class="feature-item">
+                <span class="feature-check">✅</span>
+                <span class="feature-text">繰り返し投稿</span>
+              </div>
+              <div class="feature-item">
+                <span class="feature-check">✅</span>
+                <span class="feature-text">ランダム投稿</span>
+              </div>
+              <div class="feature-item">
+                <span class="feature-check">✅</span>
+                <span class="feature-text">プロキシ設定</span>
+              </div>
+              <div class="feature-item">
+                <span class="feature-check">✅</span>
+                <span class="feature-text">優先サポート</span>
               </div>
             </div>
 
             <!-- アクションボタン -->
             <div class="plan-action">
               <button
-                v-if="currentSubscription?.planId === plan.planId"
+                v-if="!isFreePlan"
                 class="plan-button current"
                 disabled
               >
@@ -176,11 +209,11 @@
               <button
                 v-else
                 class="plan-button select"
-                @click="handleUpgrade(plan.planId)"
+                @click="handlePremiumUpgrade"
                 :disabled="loading"
               >
                 <span v-if="loading">処理中...</span>
-                <span v-else>このプランを選択</span>
+                <span v-else>プレミアムプランを選択</span>
               </button>
             </div>
           </div>
@@ -302,13 +335,17 @@
       </div>
     </div>
   </div>
+  </div>
 </template>
 
 <script setup lang="ts">
   import { ref, computed, watch, onMounted } from 'vue';
   import { useBillingStore } from '@/stores';
+  import { usePricingSystemStore } from '@/stores/pricingSystem';
+  import { SidebarNavigation } from '@/components';
 
   const billingStore = useBillingStore();
+  const pricingSystemStore = usePricingSystemStore();
 
   // State
   const showError = ref(false);
@@ -332,14 +369,7 @@
     getPlanFeatureText,
   } = billingStore;
 
-  // 決済履歴テーブルヘッダー
-  const paymentHeaders = [
-    { title: '日付', key: 'createdAt', sortable: true },
-    { title: 'プラン', key: 'planId', sortable: false },
-    { title: '金額', key: 'amount', sortable: true },
-    { title: 'ステータス', key: 'status', sortable: false },
-    { title: '説明', key: 'description', sortable: false },
-  ];
+  // Removed unused payment headers
 
   // Watchers
   const errorWatcher = computed(() => error);
@@ -355,6 +385,15 @@
       await billingStore.createCheckoutSession(planId);
     } catch (err) {
       console.error('Failed to start checkout:', err);
+    }
+  };
+
+  const handlePremiumUpgrade = async () => {
+    try {
+      // 新しい価格システムでのCheckout作成
+      await billingStore.createCheckoutSession('premium');
+    } catch (err) {
+      console.error('Failed to start premium checkout:', err);
     }
   };
 
@@ -380,19 +419,6 @@
       showSuccess.value = true;
     } catch (err) {
       console.error('Failed to resume subscription:', err);
-    }
-  };
-
-  const getPaymentStatusColor = (status: string) => {
-    switch (status) {
-      case 'succeeded':
-        return 'success';
-      case 'failed':
-        return 'error';
-      case 'pending':
-        return 'warning';
-      default:
-        return 'grey';
     }
   };
 
@@ -432,6 +458,7 @@
     await Promise.all([
       billingStore.fetchPlans(),
       billingStore.fetchSubscription(),
+      pricingSystemStore.fetchCurrentPricing(),
     ]);
 
     if (!isFreePlan) {
@@ -459,84 +486,31 @@
 }
 
 .billing-view {
+  flex: 1;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans JP', sans-serif;
   color: var(--text-primary);
   line-height: 1.6;
   overflow-x: hidden;
   min-height: 100vh;
   background: linear-gradient(180deg, #fafbff 0%, #f3f4f6 100%);
+  margin-left: 280px;
 }
 
-/* 統一ナビゲーション */
-.omniy-nav {
-  position: fixed;
-  top: 0;
-  width: 100%;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  z-index: 1000;
-  padding: 1rem 0;
-  box-shadow: var(--shadow-sm);
-  transition: all 0.3s ease;
+@media (max-width: 1200px) {
+  .billing-view {
+    margin-left: 72px;
+  }
 }
 
-.nav-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+@media (max-width: 768px) {
+  .billing-view {
+    margin-left: 0;
+  }
 }
 
-.logo {
-  font-size: 1.8rem;
-  font-weight: 800;
-  background: var(--primary-gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.nav-links {
-  display: flex;
-  gap: 2rem;
-  align-items: center;
-}
-
-.nav-link {
-  text-decoration: none;
-  color: var(--text-secondary);
-  font-weight: 500;
-  transition: color 0.3s ease;
-}
-
-.nav-link:hover,
-.nav-link.router-link-active {
-  color: var(--text-primary);
-}
-
-.cta-button {
-  background: var(--primary-gradient);
-  color: white;
-  padding: 0.75rem 2rem;
-  border-radius: 30px;
-  text-decoration: none;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-  border: none;
-  cursor: pointer;
-  display: inline-block;
-}
-
-.cta-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-}
 
 /* ヒーローセクション */
 .hero {
-  margin-top: 80px;
   padding: 4rem 2rem 6rem;
   background: linear-gradient(180deg, #fafbff 0%, #f3f4f6 100%);
   position: relative;
@@ -546,10 +520,7 @@
 .hero-container {
   max-width: 1200px;
   margin: 0 auto;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4rem;
-  align-items: center;
+  text-align: center;
 }
 
 .hero-content h1 {
@@ -623,103 +594,6 @@
   75% { transform: translate(20px, 30px) scale(1.05); }
 }
 
-/* 料金モックアップ */
-.hero-visual {
-  position: relative;
-}
-
-.billing-phone-mockup {
-  width: 320px;
-  height: 640px;
-  background: #000;
-  border-radius: 40px;
-  padding: 10px;
-  box-shadow: var(--shadow-xl);
-  margin: 0 auto;
-  position: relative;
-}
-
-.phone-screen {
-  width: 100%;
-  height: 100%;
-  background: white;
-  border-radius: 30px;
-  overflow: hidden;
-  position: relative;
-}
-
-.billing-header {
-  padding: 1rem;
-  border-bottom: 1px solid #efefef;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.billing-logo {
-  font-size: 1.2rem;
-  font-weight: 600;
-}
-
-.billing-demo-content {
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.demo-plan {
-  padding: 1rem;
-  background: var(--bg-light);
-  border-radius: 12px;
-  text-align: center;
-}
-
-.demo-plan.current {
-  background: var(--primary-gradient);
-  color: white;
-}
-
-.plan-name {
-  font-weight: 700;
-  font-size: 1.1rem;
-  margin-bottom: 0.5rem;
-}
-
-.plan-price {
-  font-size: 1.3rem;
-  font-weight: 800;
-  margin-bottom: 0.5rem;
-}
-
-.plan-status {
-  font-size: 0.8rem;
-  opacity: 0.9;
-}
-
-.demo-features {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.feature-item {
-  font-size: 0.8rem;
-  padding: 0.25rem;
-}
-
-.demo-button {
-  margin-top: 1rem;
-}
-
-.upgrade-button {
-  background: var(--accent-gradient);
-  color: white;
-  padding: 0.75rem;
-  border-radius: 20px;
-  text-align: center;
-  font-weight: 600;
-}
 
 /* メインコンテンツ */
 .billing-content {
@@ -876,9 +750,145 @@
   transform: none !important;
 }
 
+/* 価格システムセクション */
+.pricing-system-section {
+  margin-bottom: 4rem;
+}
+
+.pricing-system-card {
+  background: white;
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: var(--shadow-md);
+  border: 2px solid #f59e0b;
+}
+
+.pricing-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.current-price-display {
+  text-align: center;
+}
+
+.price-label {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.price-value {
+  font-size: 3rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 1rem;
+}
+
+.price-warning {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: #fef3c7;
+  border-radius: 12px;
+  border: 1px solid #f59e0b;
+}
+
+.warning-icon {
+  font-size: 1.2rem;
+}
+
+.warning-text {
+  color: #92400e;
+  font-weight: 600;
+}
+
+.grandfather-protection {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid #10b981;
+}
+
+.protection-badge {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #065f46;
+  margin-bottom: 0.5rem;
+}
+
+.protection-message {
+  color: #047857;
+  line-height: 1.6;
+}
+
+.protection-message strong {
+  color: #064e3b;
+}
+
 /* プラン一覧セクション */
 .plans-section {
   margin-bottom: 6rem;
+}
+
+.unified-plan-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.plan-section {
+  background: white;
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: var(--shadow-md);
+  transition: all 0.3s ease;
+  position: relative;
+  border: 2px solid transparent;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.plan-section.current-plan {
+  border-color: #667eea;
+  transform: scale(1.02);
+}
+
+.plan-section.free-plan {
+  border-color: #e2e8f0;
+}
+
+.plan-section.paid-plan {
+  border-color: #f59e0b;
+}
+
+.price-warning-inline {
+  background: #fef3c7;
+  color: #92400e;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+  text-align: center;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .unified-plan-card {
+    grid-template-columns: 1fr;
+  }
+  
+  .price-value {
+    font-size: 2.5rem;
+  }
 }
 
 .plans-grid {
@@ -1335,27 +1345,8 @@
 
 /* レスポンシブ */
 @media (max-width: 768px) {
-  .hero-container {
-    grid-template-columns: 1fr;
-    text-align: center;
-  }
-
   .hero-content h1 {
     font-size: 2.5rem;
-  }
-
-  .hero-visual {
-    order: -1;
-    margin-bottom: 2rem;
-  }
-
-  .billing-phone-mockup {
-    width: 280px;
-    height: 560px;
-  }
-
-  .nav-links {
-    display: none;
   }
 
   .plans-grid {
@@ -1394,5 +1385,140 @@
   .success-notification {
     right: 1rem;
     left: 1rem;
+  }
+}
+
+/* 全画面レイアウトスタイル */
+.billing-layout {
+  display: flex;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #fafbff 0%, #f3f4f6 100%);
+}
+
+.fullscreen-layout {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.fullscreen-content {
+  width: 90%;
+  max-width: 1200px;
+  height: 90%;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: fullscreenSlideIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fullscreen-header {
+  padding: 2rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(248, 250, 252, 0.8) 100%);
+}
+
+.fullscreen-title {
+  font-size: 2rem;
+  font-weight: 800;
+  background: var(--primary-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin: 0;
+}
+
+.fullscreen-close {
+  width: 48px;
+  height: 48px;
+  border: none;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1.5rem;
+  color: var(--text-secondary);
+}
+
+.fullscreen-close:hover {
+  background: rgba(0, 0, 0, 0.2);
+  transform: scale(1.1);
+}
+
+.fullscreen-body {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.fullscreen-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  height: 100%;
+}
+
+.fullscreen-card {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  height: fit-content;
+}
+
+.fullscreen-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+}
+
+@keyframes fullscreenSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .fullscreen-content {
+    width: 95%;
+    height: 95%;
+  }
+  
+  .fullscreen-header {
+    padding: 1.5rem;
+  }
+  
+  .fullscreen-title {
+    font-size: 1.5rem;
+  }
+  
+  .fullscreen-body {
+    padding: 1.5rem;
+  }
+  
+  .fullscreen-grid {
+    grid-template-columns: 1fr;
   }
 }</style>

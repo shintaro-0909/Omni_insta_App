@@ -1,5 +1,6 @@
 <template>
-  <div class="logs-view">
+  <div class="logs-layout">
+    <div class="logs-view">
     <v-container>
       <!-- 📊 ページヘッダー -->
       <v-row class="mb-6">
@@ -549,6 +550,7 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+    </div>
   </div>
 </template>
 
@@ -887,6 +889,17 @@
 
 <style scoped>
   /* 🎨 ログダッシュボードのスタイル */
+
+  .logs-layout {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: auto;
+    background: linear-gradient(180deg, #f8f9ff 0%, #ffffff 100%);
+    z-index: 1;
+  }
 
   .logs-view {
     min-height: 100vh;

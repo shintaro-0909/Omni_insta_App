@@ -11,6 +11,15 @@ export interface FeatureFlags {
   STRIPE_BILLING: boolean; // Stripe決済
   ACCOUNT_MANAGEMENT: boolean; // アカウント管理
 
+  // === Multi-SNS機能 ===
+  ENABLE_REAL_POSTING: boolean; // 実API投稿
+  MULTI_PLATFORM: boolean; // マルチプラットフォーム
+  PLATFORM_INSTAGRAM: boolean; // Instagram
+  PLATFORM_X: boolean; // X (Twitter)
+  PLATFORM_FACEBOOK: boolean; // Facebook
+  PLATFORM_TIKTOK: boolean; // TikTok
+  PLATFORM_LINKEDIN: boolean; // LinkedIn
+
   // === 高度機能 (段階的制御) ===
   RECURRING_POSTS: boolean; // 繰り返し投稿
   RANDOM_POSTING: boolean; // ランダム投稿 (T05)
@@ -43,6 +52,15 @@ export const FEATURE_FLAGS: FeatureFlags = {
   INSTAGRAM_AUTH: true,
   STRIPE_BILLING: true,
   ACCOUNT_MANAGEMENT: true,
+
+  // Multi-SNS機能: 段階的展開
+  ENABLE_REAL_POSTING: false, // 手動制御
+  MULTI_PLATFORM: true, // UI表示は有効
+  PLATFORM_INSTAGRAM: true, // 既存機能
+  PLATFORM_X: false, // 将来対応
+  PLATFORM_FACEBOOK: false, // 将来対応
+  PLATFORM_TIKTOK: false, // 将来対応
+  PLATFORM_LINKEDIN: false, // 将来対応
 
   // 高度機能: 段階的有効化
   RECURRING_POSTS: true, // 比較的シンプル

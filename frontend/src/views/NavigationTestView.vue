@@ -1,6 +1,7 @@
 <template>
-  <div class="navigation-test-view">
-    <UnifiedNavigation />
+  <div class="navigation-test-layout">
+    <div class="navigation-test-view">
+      <UnifiedNavigation />
     
     <div class="test-content">
       <div class="test-header">
@@ -176,6 +177,7 @@
         </div>
       </div>
     </div>
+    </div>
   </div>
 </template>
 
@@ -302,6 +304,18 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* 全画面レイアウト：親コンテナからの制約を解除 */
+.navigation-test-layout {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: white;
+  z-index: 9999;
+  overflow-y: auto;
+}
+
 .navigation-test-view {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans JP', sans-serif;
   color: #2d3748;

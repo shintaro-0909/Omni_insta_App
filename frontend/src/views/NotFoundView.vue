@@ -1,6 +1,7 @@
 <template>
-  <v-container fluid class="fill-height">
-    <v-row justify="center" align="center" class="fill-height">
+  <div class="not-found-layout">
+    <v-container fluid class="fill-height">
+      <v-row justify="center" align="center" class="fill-height">
       <v-col cols="12" sm="8" md="6" class="text-center">
         <v-icon
           icon="mdi-emoticon-sad-outline"
@@ -29,6 +30,7 @@
       </v-col>
     </v-row>
   </v-container>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -36,7 +38,18 @@
 </script>
 
 <style scoped>
-  .fill-height {
-    min-height: 100vh;
-  }
+/* 全画面レイアウト：親コンテナからの制約を解除 */
+.not-found-layout {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: white;
+  z-index: 9999;
+}
+
+.fill-height {
+  min-height: 100vh;
+}
 </style>

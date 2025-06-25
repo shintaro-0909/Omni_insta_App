@@ -4,7 +4,7 @@
   "description": "Omniy Instagram予約投稿アプリ - Cloud Functions",
   "main": "lib/index.js",
   "engines": {
-    "node": ">=18"
+    "node": "18"
   },
   "scripts": {
     "build": "tsc",
@@ -37,6 +37,9 @@
     "test:firestore-rules": "jest --testMatch='**/*.rules.test.js'",
     "test:integration": "firebase emulators:exec 'jest --testMatch=**/*.integration.test.js'",
     "test:e2e": "firebase emulators:exec 'jest --testMatch=**/*.e2e.test.js'",
+    "test:grandfather": "jest --testPathPattern=grandfather",
+    "test:pricing": "jest --testPathPattern=pricing",
+    "test:plan-limits": "jest --testPathPattern=plan-limits",
     "test:all": "npm run lint:check && npm run type-check && npm run test && npm run test:rules",
     "security:audit": "npm audit",
     "security:fix": "npm audit fix",
@@ -53,6 +56,10 @@
     "health-check": "npm run lint:check && npm run type-check && npm run test",
     "db:backup": "firebase firestore:delete --all-collections --yes && gsutil cp gs://your-backup-bucket/latest.json . && firebase firestore:import latest.json",
     "db:seed": "node scripts/seed-database.js",
+    "migrate:init-stats": "npx ts-node scripts/init_stats.ts",
+    "migrate:init-prices": "npx ts-node scripts/init_price_history.ts",
+    "migrate:to-grandfather": "npx ts-node scripts/migrate_to_grandfather_pricing.ts",
+    "migrate:rollback": "npx ts-node scripts/rollback_migration.ts",
     "emulator:data:export": "firebase emulators:export ./firebase-data",
     "emulator:data:import": "firebase emulators:start --import=./firebase-data"
   },
@@ -75,12 +82,14 @@
     "@types/nodemailer": "^6.4.0",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
+    "dotenv": "^16.4.0",
     "eslint": "^8.54.0",
     "eslint-config-google": "^0.14.0",
     "eslint-plugin-import": "^2.29.0",
     "firebase-functions-test": "^3.1.0",
     "jest": "^29.0.0",
     "ts-jest": "^29.0.0",
+    "ts-node": "^10.9.0",
     "typescript": "^5.4.0"
   },
   "keywords": [
@@ -92,5 +101,26 @@
   ],
   "author": "Omniy Team",
   "license": "MIT",
-  "private": true
+  "private": true,
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/__tests__/**/*.test.ts",
+      "**/?(*.)+(spec|test).ts"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.ts",
+      "!src/**/*.d.ts",
+      "!src/__tests__/**/*"
+    ],
+    "coverageReporters": [
+      "text",
+      "lcov",
+      "html"
+    ],
+    "moduleNameMapping": {
+      "^@/(.*)$": "<rootDir>/src/$1"
+    }
+  }
 }

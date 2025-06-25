@@ -1,19 +1,9 @@
 <template>
-  <div class="accounts-view">
-    <!-- 統一ナビゲーション -->
-    <nav class="omniy-nav">
-      <div class="nav-container">
-        <div class="logo">Omniy</div>
-        <div class="nav-links">
-          <router-link to="/dashboard" class="nav-link">ダッシュボード</router-link>
-          <router-link to="/schedules" class="nav-link">予約管理</router-link>
-          <router-link to="/accounts" class="nav-link">アカウント</router-link>
-          <router-link to="/content" class="nav-link">コンテンツ</router-link>
-          <router-link to="/settings" class="nav-link">設定</router-link>
-          <router-link to="/billing" class="cta-button">プラン管理</router-link>
-        </div>
-      </div>
-    </nav>
+  <div class="accounts-layout">
+    <!-- サイドバーナビゲーション -->
+    <SidebarNavigation />
+    
+    <div class="accounts-view">
 
     <!-- ヒーローセクション -->
     <section class="hero">
@@ -31,45 +21,16 @@
             トークンの有効期限を自動監視し、最適なアカウント運用をサポートします。
           </p>
           <div class="hero-actions">
-            <button class="cta-button primary" @click="showAddDialog = true">
+            <button 
+              class="cta-button primary" 
+              @click="handleAddAccountClick"
+              data-cy="add-account-button"
+            >
               📱 新しいアカウントを追加
             </button>
           </div>
         </div>
 
-        <div class="hero-visual">
-          <div class="accounts-phone-mockup">
-            <div class="phone-screen">
-              <div class="accounts-header">
-                <span class="accounts-logo">📱 アカウント</span>
-                <span>⚙️</span>
-              </div>
-              <div class="accounts-demo-content">
-                <div class="demo-account-item">
-                  <div class="account-avatar">📷</div>
-                  <div class="account-info">
-                    <div class="account-username">@your_account</div>
-                    <div class="account-status active">✅ アクティブ</div>
-                  </div>
-                </div>
-                <div class="demo-account-item">
-                  <div class="account-avatar">📸</div>
-                  <div class="account-info">
-                    <div class="account-username">@business_acc</div>
-                    <div class="account-status warning">⚠️ 期限間近</div>
-                  </div>
-                </div>
-                <div class="demo-account-item">
-                  <div class="account-avatar">🏪</div>
-                  <div class="account-info">
-                    <div class="account-username">@shop_official</div>
-                    <div class="account-status active">✅ アクティブ</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </section>
 
@@ -184,10 +145,10 @@
               <button 
                 class="action-button refresh"
                 @click="refreshToken(account)"
-                :disabled="igAccountsStore.loading"
+                :disabled="refreshingAccounts.has(account.id)"
                 title="トークン更新"
               >
-                <span v-if="igAccountsStore.loading">🔄</span>
+                <span v-if="refreshingAccounts.has(account.id)">🔄</span>
                 <span v-else>🔃</span>
                 更新
               </button>
@@ -213,7 +174,11 @@
             最初のアカウントを追加して、Instagram予約投稿を始めましょう！<br>
             安全な公式API連携で、複数アカウントを簡単に管理できます。
           </div>
-          <button class="cta-button primary" @click="showAddDialog = true">
+          <button 
+            class="cta-button primary" 
+            @click="handleAddAccountClick"
+            data-cy="add-account-button"
+          >
             📱 最初のアカウントを追加
           </button>
         </div>
@@ -223,72 +188,30 @@
     <!-- アカウント追加ダイアログ -->
     <AddAccountDialog v-model="showAddDialog" @added="handleAccountAdded" />
 
-    <!-- 削除確認ダイアログ -->
-    <div v-if="showDeleteDialog" class="modal-overlay" @click="showDeleteDialog = false">
-      <div class="delete-dialog" @click.stop>
-        <div class="dialog-header">
-          <h3 class="dialog-title">アカウント削除</h3>
-        </div>
-        <div class="dialog-content">
-          <p class="dialog-message">
-            Instagramアカウント「@{{ deletingAccount?.username }}」を削除しますか？<br><br>
-            <strong class="warning-text">⚠️ 注意:</strong><br>
-            このアカウントに関連する予約投稿も削除されます。<br>
-            この操作は取り消せません。
-          </p>
-        </div>
-        <div class="dialog-actions">
-          <button 
-            class="dialog-button secondary" 
-            @click="showDeleteDialog = false"
-          >
-            キャンセル
-          </button>
-          <button 
-            class="dialog-button danger" 
-            @click="handleDelete"
-            :disabled="igAccountsStore.loading"
-          >
-            <span v-if="igAccountsStore.loading">削除中...</span>
-            <span v-else>削除</span>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 成功通知 -->
-    <div v-if="showSuccess" class="success-notification">
-      <div class="notification-content">
-        <span class="notification-icon">✅</span>
-        <span class="notification-text">{{ successMessage }}</span>
-        <button class="notification-close" @click="showSuccess = false">✕</button>
-      </div>
-    </div>
+  </div>
   </div>
 </template>
 
 <script setup lang="ts">
   import { ref, computed, onMounted } from 'vue';
+  import { useRoute } from 'vue-router';
   import { useIgAccountsStore, type IGAccount } from '@/stores';
   import { format, differenceInDays } from 'date-fns';
   import { ja } from 'date-fns/locale';
-  import { AddAccountDialog } from '@/components';
+  import { AddAccountDialog, SidebarNavigation } from '@/components';
+  import { refreshInstagramAccountToken } from '@/services/auth';
+  import { useNotification, useConfirm } from '@/composables';
 
+  const route = useRoute();
   const igAccountsStore = useIgAccountsStore();
+  const { notifySuccess, notifyError } = useNotification();
+  const { confirmAccountDisconnect, confirmAccountRefresh } = useConfirm();
 
   // State
   const showAddDialog = ref(false);
-  const showDeleteDialog = ref(false);
-  const deletingAccount = ref<IGAccount | null>(null);
-  const showSuccess = ref(false);
-  const successMessage = ref('');
+  const refreshingAccounts = ref<Set<string>>(new Set());
 
   // Computed
-  const showError = computed({
-    get: () => !!igAccountsStore.error,
-    set: () => igAccountsStore.clearError(),
-  });
-
   const activeAccountsCount = computed(() => {
     return igAccountsStore.accounts.filter(account => {
       const daysUntilExpiry = differenceInDays(
@@ -351,38 +274,53 @@
     return progress;
   };
 
-  const refreshToken = async (account: IGAccount) => {
-    try {
-      await igAccountsStore.refreshToken(account.id);
-      successMessage.value = `@${account.username} のトークンを更新しました`;
-      showSuccess.value = true;
-    } catch (error) {
-      console.error('トークン更新エラー:', error);
-    }
-  };
 
-  const confirmDelete = (account: IGAccount) => {
-    deletingAccount.value = account;
-    showDeleteDialog.value = true;
-  };
-
-  const handleDelete = async () => {
-    if (deletingAccount.value) {
+  const confirmDelete = async (account: IGAccount) => {
+    const confirmed = await confirmAccountDisconnect(account.username);
+    if (confirmed) {
       try {
-        await igAccountsStore.deleteAccount(deletingAccount.value.id);
-        successMessage.value = `@${deletingAccount.value.username} を削除しました`;
-        showSuccess.value = true;
-        showDeleteDialog.value = false;
-        deletingAccount.value = null;
+        await igAccountsStore.deleteAccount(account.id);
+        notifySuccess('アカウント削除完了', `@${account.username} を削除しました。関連する予約投稿も削除されました。`);
       } catch (error) {
         console.error('削除エラー:', error);
+        notifyError('削除エラー', `@${account.username} の削除中にエラーが発生しました。もう一度お試しください。`);
       }
     }
   };
 
+  const handleAddAccountClick = () => {
+    console.log('🔘 Add account button clicked');
+    showAddDialog.value = true;
+    console.log('🔘 showAddDialog set to:', showAddDialog.value);
+  };
+
   const handleAccountAdded = () => {
-    successMessage.value = 'Instagram アカウントを追加しました';
-    showSuccess.value = true;
+    notifySuccess('アカウント追加完了', 'Instagram アカウントを追加しました。');
+  };
+
+  const refreshToken = async (account: IGAccount) => {
+    const confirmed = await confirmAccountRefresh(account.username);
+    if (!confirmed) return;
+
+    try {
+      refreshingAccounts.value.add(account.id);
+      
+      const result = await refreshInstagramAccountToken(account.id);
+      
+      if (result.success) {
+        // アカウント一覧を再読み込み
+        await igAccountsStore.loadAccounts();
+        
+        notifySuccess('トークン更新完了', `@${account.username} のトークンを更新しました。有効期限が延長されました。`);
+      } else {
+        throw new Error(result.message || 'トークンの更新に失敗しました');
+      }
+    } catch (error: any) {
+      console.error('トークン更新エラー:', error);
+      notifyError('トークン更新エラー', error.message || 'トークンの更新に失敗しました。再認証が必要な場合があります。');
+    } finally {
+      refreshingAccounts.value.delete(account.id);
+    }
   };
 
   const getTokenStatusIcon = (account: IGAccount) => {
@@ -407,7 +345,21 @@
 
   // Lifecycle
   onMounted(async () => {
-    await igAccountsStore.loadAccounts();
+    console.log('🔘 AccountsView mounted');
+    console.log('🔘 Initial showAddDialog value:', showAddDialog.value);
+    
+    try {
+      await igAccountsStore.loadAccounts();
+      console.log('🔘 Accounts loaded:', igAccountsStore.accounts.length);
+    } catch (error) {
+      console.error('🔘 Error loading accounts:', error);
+    }
+    
+    // Check for query parameters to trigger actions
+    if (route.query.action === 'add') {
+      console.log('🔘 Auto-opening dialog from query parameter');
+      showAddDialog.value = true;
+    }
   });
 </script>
 
@@ -436,55 +388,11 @@
   overflow-x: hidden;
   min-height: 100vh;
   background: linear-gradient(180deg, #fafbff 0%, #f3f4f6 100%);
+  flex: 1;
+  margin-left: 72px;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* 統一ナビゲーション */
-.omniy-nav {
-  position: fixed;
-  top: 0;
-  width: 100%;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  z-index: 1000;
-  padding: 1rem 0;
-  box-shadow: var(--shadow-sm);
-  transition: all 0.3s ease;
-}
-
-.nav-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.logo {
-  font-size: 1.8rem;
-  font-weight: 800;
-  background: var(--primary-gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.nav-links {
-  display: flex;
-  gap: 2rem;
-  align-items: center;
-}
-
-.nav-link {
-  text-decoration: none;
-  color: var(--text-secondary);
-  font-weight: 500;
-  transition: color 0.3s ease;
-}
-
-.nav-link:hover,
-.nav-link.router-link-active {
-  color: var(--text-primary);
-}
 
 .cta-button {
   background: var(--primary-gradient);
@@ -507,7 +415,6 @@
 
 /* ヒーローセクション */
 .hero {
-  margin-top: 80px;
   padding: 4rem 2rem 6rem;
   background: linear-gradient(180deg, #fafbff 0%, #f3f4f6 100%);
   position: relative;
@@ -517,10 +424,10 @@
 .hero-container {
   max-width: 1200px;
   margin: 0 auto;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4rem;
+  display: flex;
+  flex-direction: column;
   align-items: center;
+  text-align: center;
 }
 
 .hero-content h1 {
@@ -601,93 +508,6 @@
   75% { transform: translate(20px, 30px) scale(1.05); }
 }
 
-/* アカウントモックアップ */
-.hero-visual {
-  position: relative;
-}
-
-.accounts-phone-mockup {
-  width: 320px;
-  height: 640px;
-  background: #000;
-  border-radius: 40px;
-  padding: 10px;
-  box-shadow: var(--shadow-xl);
-  margin: 0 auto;
-  position: relative;
-}
-
-.phone-screen {
-  width: 100%;
-  height: 100%;
-  background: white;
-  border-radius: 30px;
-  overflow: hidden;
-  position: relative;
-}
-
-.accounts-header {
-  padding: 1rem;
-  border-bottom: 1px solid #efefef;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.accounts-logo {
-  font-size: 1.2rem;
-  font-weight: 600;
-}
-
-.accounts-demo-content {
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.demo-account-item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  background: var(--bg-light);
-  border-radius: 12px;
-}
-
-.account-avatar {
-  font-size: 1.5rem;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--primary-gradient);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.account-info {
-  flex: 1;
-}
-
-.account-username {
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 0.25rem;
-  font-size: 0.9rem;
-}
-
-.account-status {
-  font-size: 0.8rem;
-}
-
-.account-status.active {
-  color: #065f46;
-}
-
-.account-status.warning {
-  color: #92400e;
-}
 
 /* メインコンテンツ */
 .accounts-content {
@@ -1071,178 +891,25 @@
   line-height: 1.6;
 }
 
-/* 削除ダイアログ */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-  backdrop-filter: blur(4px);
-}
 
-.delete-dialog {
-  background: white;
-  border-radius: 20px;
-  box-shadow: var(--shadow-xl);
-  max-width: 500px;
-  width: 90%;
-  overflow: hidden;
-}
-
-.dialog-header {
-  padding: 1.5rem;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.dialog-title {
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin: 0;
-}
-
-.dialog-content {
-  padding: 1.5rem;
-}
-
-.dialog-message {
-  color: var(--text-secondary);
-  line-height: 1.6;
-  margin: 0;
-}
-
-.warning-text {
-  color: #e53e3e;
-}
-
-.dialog-actions {
-  padding: 1.5rem;
-  border-top: 1px solid #e2e8f0;
-  display: flex;
-  gap: 1rem;
-  justify-content: flex-end;
-}
-
-.dialog-button {
-  padding: 0.75rem 1.5rem;
-  border-radius: 25px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  border: none;
-}
-
-.dialog-button.secondary {
-  background: var(--bg-light);
-  color: var(--text-primary);
-  border: 2px solid #e2e8f0;
-}
-
-.dialog-button.secondary:hover {
-  border-color: #cbd5e0;
-}
-
-.dialog-button.danger {
-  background: var(--secondary-gradient);
-  color: white;
-}
-
-.dialog-button.danger:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(240, 147, 251, 0.3);
-}
-
-.dialog-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none !important;
-}
-
-/* 成功通知 */
-.success-notification {
-  position: fixed;
-  top: 100px;
-  right: 2rem;
-  z-index: 3000;
-  animation: slideIn 0.3s ease-out;
-}
-
-.notification-content {
-  background: #d1fae5;
-  border: 1px solid #a7f3d0;
-  border-radius: 12px;
-  padding: 1rem 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  box-shadow: var(--shadow-md);
-}
-
-.notification-icon {
-  font-size: 1.2rem;
-  color: #065f46;
-}
-
-.notification-text {
-  color: #065f46;
-  font-weight: 500;
-}
-
-.notification-close {
-  background: none;
-  border: none;
-  font-size: 1.1rem;
-  color: #065f46;
-  cursor: pointer;
-  padding: 0.25rem;
-  border-radius: 4px;
-  transition: background-color 0.2s;
-}
-
-.notification-close:hover {
-  background: rgba(6, 95, 70, 0.1);
-}
-
-@keyframes slideIn {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
+/* サイドバーが開いている場合のマージン調整 */
+@media (min-width: 768px) {
+  .accounts-view {
+    margin-left: 280px;
   }
-  to {
-    transform: translateX(0);
-    opacity: 1;
+}
+
+/* スマホ用調整 */
+@media (max-width: 767px) {
+  .accounts-view {
+    margin-left: 0;
   }
 }
 
 /* レスポンシブ */
 @media (max-width: 768px) {
-  .hero-container {
-    grid-template-columns: 1fr;
-    text-align: center;
-  }
-
   .hero-content h1 {
     font-size: 2.5rem;
-  }
-
-  .hero-visual {
-    order: -1;
-    margin-bottom: 2rem;
-  }
-
-  .accounts-phone-mockup {
-    width: 280px;
-    height: 560px;
-  }
-
-  .nav-links {
-    display: none;
   }
 
   .stats-grid,
@@ -1268,5 +935,54 @@
   .success-notification {
     right: 1rem;
     left: 1rem;
+  }
+}
+
+/* フルスクリーンレイアウト用スタイル */
+.accounts-layout {
+  min-height: 100vh;
+  width: 100%;
+  position: relative;
+  overflow-x: hidden;
+  background: linear-gradient(180deg, #fafbff 0%, #f3f4f6 100%);
+  display: flex;
+}
+
+/* フルスクリーン対応のビューポート設定 */
+@media (min-height: 800px) {
+  .accounts-layout {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .accounts-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+}
+
+/* 高解像度画面対応 */
+@media (min-width: 1440px) {
+  .accounts-layout {
+    max-width: 1920px;
+    margin: 0 auto;
+  }
+}
+
+/* フルスクリーンでのコンテンツ配置最適化 */
+@media (min-height: 1000px) {
+  .hero {
+    padding: 6rem 2rem 8rem;
+  }
+  
+  .stats-section {
+    margin-bottom: 8rem;
+  }
+  
+  .accounts-list-section {
+    margin-bottom: 6rem;
   }
 }</style>

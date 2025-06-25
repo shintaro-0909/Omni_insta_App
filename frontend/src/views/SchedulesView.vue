@@ -1,19 +1,9 @@
 <template>
-  <div class="schedules-view">
-    <!-- 統一ナビゲーション -->
-    <nav class="omniy-nav">
-      <div class="nav-container">
-        <div class="logo">Omniy</div>
-        <div class="nav-links">
-          <router-link to="/dashboard" class="nav-link">ダッシュボード</router-link>
-          <router-link to="/schedules" class="nav-link">予約管理</router-link>
-          <router-link to="/accounts" class="nav-link">アカウント</router-link>
-          <router-link to="/content" class="nav-link">コンテンツ</router-link>
-          <router-link to="/settings" class="nav-link">設定</router-link>
-          <router-link to="/billing" class="cta-button">プラン管理</router-link>
-        </div>
-      </div>
-    </nav>
+  <div class="schedules-layout">
+    <!-- サイドバーナビゲーション -->
+    <SidebarNavigation />
+    
+    <div class="schedules-view">
 
     <!-- ヒーローセクション -->
     <section class="hero">
@@ -34,42 +24,12 @@
             <button class="cta-button primary" @click="openCreateDialog">
               ➕ 新しいスケジュール作成
             </button>
+            <router-link to="/schedules/grid" class="cta-button secondary">
+              📊 グリッドビューで管理
+            </router-link>
           </div>
         </div>
 
-        <div class="hero-visual">
-          <div class="schedule-phone-mockup">
-            <div class="phone-screen">
-              <div class="schedule-header">
-                <span class="schedule-logo">📅 スケジュール</span>
-                <span>⚡</span>
-              </div>
-              <div class="schedule-demo-content">
-                <div class="demo-schedule-item">
-                  <div class="schedule-status active"></div>
-                  <div class="schedule-info">
-                    <div class="schedule-title">新商品紹介投稿</div>
-                    <div class="schedule-time">今日 18:00</div>
-                  </div>
-                </div>
-                <div class="demo-schedule-item">
-                  <div class="schedule-status pending"></div>
-                  <div class="schedule-info">
-                    <div class="schedule-title">週末セール告知</div>
-                    <div class="schedule-time">明日 10:00</div>
-                  </div>
-                </div>
-                <div class="demo-schedule-item">
-                  <div class="schedule-status recurring"></div>
-                  <div class="schedule-info">
-                    <div class="schedule-title">毎週の定期投稿</div>
-                    <div class="schedule-time">月曜 09:00</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </section>
 
@@ -309,41 +269,13 @@
       @edit="onEditFromView"
     />
 
-    <!-- 削除確認ダイアログ -->
-    <div v-if="showDeleteDialog" class="modal-overlay" @click="showDeleteDialog = false">
-      <div class="delete-dialog" @click.stop>
-        <div class="dialog-header">
-          <h3 class="dialog-title">スケジュール削除</h3>
-        </div>
-        <div class="dialog-content">
-          <p class="dialog-message">
-            「{{ deletingSchedule?.title }}」を削除しますか？<br>
-            この操作は取り消せません。
-          </p>
-        </div>
-        <div class="dialog-actions">
-          <button 
-            class="dialog-button secondary" 
-            @click="showDeleteDialog = false"
-          >
-            キャンセル
-          </button>
-          <button 
-            class="dialog-button danger" 
-            @click="deleteSchedule"
-            :disabled="deleting"
-          >
-            <span v-if="deleting">削除中...</span>
-            <span v-else>削除</span>
-          </button>
-        </div>
-      </div>
-    </div>
+  </div>
   </div>
 </template>
 
 <script setup lang="ts">
   import { ref, computed, onMounted } from 'vue';
+  import { useRoute } from 'vue-router';
   import {
     useSchedulesStore,
     useIgAccountsStore,
@@ -351,11 +283,15 @@
     type ScheduleStatus,
     type ScheduleType,
   } from '@/stores';
-  import { ScheduleFormDialog, ScheduleViewDialog } from '@/components';
+  import { ScheduleFormDialog, ScheduleViewDialog, SidebarNavigation } from '@/components';
+  import { useNotification, useConfirm } from '@/composables';
 
   // Stores
+  const route = useRoute();
   const schedulesStore = useSchedulesStore();
   const igAccountsStore = useIgAccountsStore();
+  const { notifySuccess, notifyError } = useNotification();
+  const { confirmScheduleDelete } = useConfirm();
 
   // Reactive data
   const statusFilter = ref<ScheduleStatus | null>(null);
@@ -364,28 +300,14 @@
 
   const showFormDialog = ref(false);
   const showViewDialog = ref(false);
-  const showDeleteDialog = ref(false);
 
   const editingSchedule = ref<Schedule | undefined>(undefined);
   const viewingSchedule = ref<Schedule | undefined>(undefined);
-  const deletingSchedule = ref<Schedule | undefined>(undefined);
-  const deleting = ref(false);
 
   // Computed
   const schedules = computed(() => schedulesStore.schedules);
 
-  const statusItems = [
-    { title: 'アクティブ', value: 'active' },
-    { title: '一時停止', value: 'paused' },
-    { title: 'エラー', value: 'error' },
-    { title: '完了', value: 'completed' },
-  ];
-
-  const typeItems = [
-    { title: '一回限り投稿', value: 'one_time' },
-    { title: '繰返投稿', value: 'recurring' },
-    { title: 'ランダム投稿', value: 'random' },
-  ];
+  // Removed unused status and type items
 
   const igAccountItems = computed(() =>
     igAccountsStore.accounts.map((account: any) => ({
@@ -418,26 +340,19 @@
     }, 300);
   };
 
-  const confirmDelete = (schedule: Schedule) => {
-    deletingSchedule.value = schedule;
-    showDeleteDialog.value = true;
-  };
-
-  const deleteSchedule = async () => {
-    if (!deletingSchedule.value) return;
-
-    try {
-      deleting.value = true;
-      await schedulesStore.deleteSchedule(
-        deletingSchedule.value.id,
-        deletingSchedule.value.igAccount?.id || ''
-      );
-      showDeleteDialog.value = false;
-      deletingSchedule.value = undefined;
-    } catch (error) {
-      console.error('Error deleting schedule:', error);
-    } finally {
-      deleting.value = false;
+  const confirmDelete = async (schedule: Schedule) => {
+    const confirmed = await confirmScheduleDelete(schedule.title);
+    if (confirmed) {
+      try {
+        await schedulesStore.deleteSchedule(
+          schedule.id,
+          schedule.igAccount?.id || ''
+        );
+        notifySuccess('スケジュール削除完了', `「${schedule.title}」を削除しました。予約投稿が停止されました。`);
+      } catch (error) {
+        console.error('Error deleting schedule:', error);
+        notifyError('削除エラー', `「${schedule.title}」の削除中にエラーが発生しました。もう一度お試しください。`);
+      }
     }
   };
 
@@ -492,21 +407,6 @@
   };
 
   // Utility functions
-  const getStatusColor = (status: ScheduleStatus): string => {
-    switch (status) {
-      case 'active':
-        return 'success';
-      case 'paused':
-        return 'warning';
-      case 'error':
-        return 'error';
-      case 'completed':
-        return 'info';
-      default:
-        return 'grey';
-    }
-  };
-
   const getStatusIcon = (status: ScheduleStatus): string => {
     switch (status) {
       case 'active':
@@ -592,15 +492,34 @@
 
   // Lifecycle
   onMounted(async () => {
-    // データを取得
-    await Promise.all([
-      schedulesStore.fetchSchedules(true),
-      igAccountsStore.loadAccounts(),
-    ]);
+    try {
+      // データを取得
+      await Promise.all([
+        schedulesStore.fetchSchedules(true),
+        igAccountsStore.loadAccounts(),
+      ]);
+      
+      // Check for query parameters to trigger actions
+      if (route.query.action === 'create') {
+        openCreateDialog();
+      }
+    } catch (error) {
+      console.error('Error loading data:', error);
+      notifyError('データ読み込みエラー', 'スケジュールやアカウントの読み込み中にエラーが発生しました。ページを再読み込みしてください。');
+    }
   });
 </script>
 
 <style scoped>
+.schedules-layout {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  background: white;
+  overflow-x: hidden;
+  display: flex;
+}
+
 /* LP-demo.htmlと統一されたスタイルシステム */
 :root {
   --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -626,55 +545,25 @@
   overflow-x: hidden;
   min-height: 100vh;
   background: linear-gradient(180deg, #fafbff 0%, #f3f4f6 100%);
+  flex: 1;
+  margin-left: 72px;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* 統一ナビゲーション */
-.omniy-nav {
-  position: fixed;
-  top: 0;
-  width: 100%;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  z-index: 1000;
-  padding: 1rem 0;
-  box-shadow: var(--shadow-sm);
-  transition: all 0.3s ease;
+/* サイドバーが開いている場合のマージン調整 */
+@media (min-width: 768px) {
+  .schedules-view {
+    margin-left: 280px;
+  }
 }
 
-.nav-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+/* スマホ用調整 */
+@media (max-width: 767px) {
+  .schedules-view {
+    margin-left: 0;
+  }
 }
 
-.logo {
-  font-size: 1.8rem;
-  font-weight: 800;
-  background: var(--primary-gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.nav-links {
-  display: flex;
-  gap: 2rem;
-  align-items: center;
-}
-
-.nav-link {
-  text-decoration: none;
-  color: var(--text-secondary);
-  font-weight: 500;
-  transition: color 0.3s ease;
-}
-
-.nav-link:hover,
-.nav-link.router-link-active {
-  color: var(--text-primary);
-}
 
 .cta-button {
   background: var(--primary-gradient);
@@ -695,9 +584,21 @@
   box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
 }
 
+.cta-button.secondary {
+  background: white;
+  color: var(--text-primary);
+  border: 2px solid #e2e8f0;
+  text-decoration: none;
+}
+
+.cta-button.secondary:hover {
+  background: var(--bg-light);
+  border-color: #cbd5e0;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+}
+
 /* ヒーローセクション */
 .hero {
-  margin-top: 80px;
   padding: 4rem 2rem 6rem;
   background: linear-gradient(180deg, #fafbff 0%, #f3f4f6 100%);
   position: relative;
@@ -707,10 +608,10 @@
 .hero-container {
   max-width: 1200px;
   margin: 0 auto;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4rem;
+  display: flex;
+  flex-direction: column;
   align-items: center;
+  text-align: center;
 }
 
 .hero-content h1 {
@@ -791,94 +692,6 @@
   75% { transform: translate(20px, 30px) scale(1.05); }
 }
 
-/* スケジュールモックアップ */
-.hero-visual {
-  position: relative;
-}
-
-.schedule-phone-mockup {
-  width: 320px;
-  height: 640px;
-  background: #000;
-  border-radius: 40px;
-  padding: 10px;
-  box-shadow: var(--shadow-xl);
-  margin: 0 auto;
-  position: relative;
-}
-
-.phone-screen {
-  width: 100%;
-  height: 100%;
-  background: white;
-  border-radius: 30px;
-  overflow: hidden;
-  position: relative;
-}
-
-.schedule-header {
-  padding: 1rem;
-  border-bottom: 1px solid #efefef;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.schedule-logo {
-  font-size: 1.2rem;
-  font-weight: 600;
-}
-
-.schedule-demo-content {
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.demo-schedule-item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  background: var(--bg-light);
-  border-radius: 12px;
-}
-
-.schedule-status {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.schedule-status.active {
-  background: #43e97b;
-}
-
-.schedule-status.pending {
-  background: #667eea;
-}
-
-.schedule-status.recurring {
-  background: #f093fb;
-}
-
-.schedule-info {
-  flex: 1;
-}
-
-.schedule-title {
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 0.25rem;
-  font-size: 0.9rem;
-}
-
-.schedule-time {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-}
 
 /* メインコンテンツ */
 .schedules-content {
@@ -1342,118 +1155,11 @@
   box-shadow: var(--shadow-md);
 }
 
-/* 削除ダイアログ */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-  backdrop-filter: blur(4px);
-}
-
-.delete-dialog {
-  background: white;
-  border-radius: 20px;
-  box-shadow: var(--shadow-xl);
-  max-width: 400px;
-  width: 90%;
-  overflow: hidden;
-}
-
-.dialog-header {
-  padding: 1.5rem;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.dialog-title {
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin: 0;
-}
-
-.dialog-content {
-  padding: 1.5rem;
-}
-
-.dialog-message {
-  color: var(--text-secondary);
-  line-height: 1.6;
-  margin: 0;
-}
-
-.dialog-actions {
-  padding: 1.5rem;
-  border-top: 1px solid #e2e8f0;
-  display: flex;
-  gap: 1rem;
-  justify-content: flex-end;
-}
-
-.dialog-button {
-  padding: 0.75rem 1.5rem;
-  border-radius: 25px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  border: none;
-}
-
-.dialog-button.secondary {
-  background: var(--bg-light);
-  color: var(--text-primary);
-  border: 2px solid #e2e8f0;
-}
-
-.dialog-button.secondary:hover {
-  border-color: #cbd5e0;
-}
-
-.dialog-button.danger {
-  background: var(--secondary-gradient);
-  color: white;
-}
-
-.dialog-button.danger:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(240, 147, 251, 0.3);
-}
-
-.dialog-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none !important;
-}
 
 /* レスポンシブ */
 @media (max-width: 768px) {
-  .hero-container {
-    grid-template-columns: 1fr;
-    text-align: center;
-  }
-
   .hero-content h1 {
     font-size: 2.5rem;
-  }
-
-  .hero-visual {
-    order: -1;
-    margin-bottom: 2rem;
-  }
-
-  .schedule-phone-mockup {
-    width: 280px;
-    height: 560px;
-  }
-
-  .nav-links {
-    display: none;
   }
 
   .stats-grid {

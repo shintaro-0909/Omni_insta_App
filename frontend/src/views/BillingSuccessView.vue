@@ -1,5 +1,6 @@
 <template>
-  <v-container class="pa-6">
+  <div class="billing-success-layout">
+    <v-container class="pa-6">
     <div class="text-center">
       <!-- 成功アイコン -->
       <v-icon size="120" color="success" class="mb-6">
@@ -77,7 +78,8 @@
         </v-card-text>
       </v-card>
     </div>
-  </v-container>
+    </v-container>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -96,6 +98,20 @@
 </script>
 
 <style scoped>
+  .billing-success-layout {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: auto;
+    background: linear-gradient(180deg, #f8f9ff 0%, #ffffff 100%);
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .gap-4 {
     gap: 1rem;
   }

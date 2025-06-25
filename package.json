@@ -25,6 +25,8 @@
     "test": "npm run test:frontend && npm run test:functions",
     "test:frontend": "cd frontend && npm run test:unit",
     "test:functions": "cd functions && npm run test",
+    "test:firestore-rules": "cd tests && node firestore-rules.test.js",
+    "migrate:platform": "cd scripts && npx ts-node migrate_add_platform.ts",
     "test:e2e": "cd frontend && npm run test:e2e",
     "test:coverage": "npm run test:frontend:coverage && npm run test:functions:coverage",
     "test:frontend:coverage": "cd frontend && npm run test:coverage",
@@ -87,6 +89,7 @@
     "mcp-servers/*"
   ],
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^3.0.4",
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
     "docsify-cli": "^4.4.4",

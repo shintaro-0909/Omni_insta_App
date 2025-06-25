@@ -11,6 +11,11 @@ interface IGAccountData {
   accessToken: string; // 暗号化して保存
   tokenExpiresAt: FirebaseFirestore.Timestamp;
   proxyId?: string;
+  profilePictureUrl?: string;
+  followersCount?: number;
+  mediaCount?: number;
+  pageId?: string;
+  pageName?: string;
   createdAt: FirebaseFirestore.Timestamp;
   updatedAt: FirebaseFirestore.Timestamp;
 }
@@ -76,7 +81,16 @@ export const addInstagramAccount = functions.https.onCall(async (data, context) 
     );
   }
 
-  const {accessToken, instagramUserId, username} = data;
+  const {
+    accessToken, 
+    instagramUserId, 
+    username,
+    profilePictureUrl,
+    followersCount,
+    mediaCount,
+    pageId,
+    pageName
+  } = data;
 
   // 入力値検証
   if (!accessToken || !instagramUserId || !username) {
@@ -124,6 +138,11 @@ export const addInstagramAccount = functions.https.onCall(async (data, context) 
       username: username,
       accessToken: accessToken, // 実際の実装では暗号化が必要
       tokenExpiresAt: admin.firestore.Timestamp.fromDate(expiresAt),
+      profilePictureUrl: profilePictureUrl,
+      followersCount: followersCount,
+      mediaCount: mediaCount,
+      pageId: pageId,
+      pageName: pageName,
       createdAt: admin.firestore.FieldValue.serverTimestamp() as any,
       updatedAt: admin.firestore.FieldValue.serverTimestamp() as any,
     };
@@ -178,6 +197,11 @@ export const getInstagramAccounts = functions.https.onCall(async (data, context)
         username: data.username,
         tokenExpiresAt: data.tokenExpiresAt,
         proxyId: data.proxyId,
+        profilePictureUrl: data.profilePictureUrl,
+        followersCount: data.followersCount,
+        mediaCount: data.mediaCount,
+        pageId: data.pageId,
+        pageName: data.pageName,
         createdAt: data.createdAt,
         updatedAt: data.updatedAt,
         // アクセストークンは返さない（セキュリティ）

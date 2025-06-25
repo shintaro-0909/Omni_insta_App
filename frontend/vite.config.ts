@@ -70,7 +70,7 @@ export default defineConfig({
     target: 'esnext',
     minify: 'terser',
     cssCodeSplit: true,
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 500,
     rollupOptions: {
       treeshake: {
         moduleSideEffects: false,
@@ -78,81 +78,53 @@ export default defineConfig({
         annotations: true
       },
       output: {
-        experimentalMinChunkSize: 50000, // 空チャンク防止
+        experimentalMinChunkSize: 30000,
         manualChunks: (id) => {
-          // 革新的動的チャンク分割アルゴリズム - 空チャンク完全排除
-          
-          // Node modules
           if (id.includes('node_modules')) {
-            // Vue エコシステム
+            // Vue ecosystem
             if (id.includes('vue') || id.includes('pinia') || id.includes('@vue')) {
-              return 'vendor-vue'
+              return 'vendor-vue';
             }
-            
-            // Vuetify（大容量のため独立）
-            if (id.includes('vuetify')) {
-              return 'vendor-ui'
-            }
-            
-            // Firebase（大容量かつ重要度高）
+            // Firebase
             if (id.includes('firebase')) {
-              return 'vendor-firebase'
+              return 'vendor-firebase';
             }
-            
-            // その他vendor（サイズ制限で統合）
-            return 'vendor-misc'
+            // AG Grid
+            if (id.includes('ag-grid')) {
+              return 'vendor-ag-grid';
+            }
+            // Other vendors
+            return 'vendor-misc';
           }
           
-          // アプリケーション コード
-          
-          // 大容量コンポーネント（150KB以上の場合）
-          if (id.includes('/views/demos/') || id.includes('/styles/')) {
-            return 'app-demos'
+          // App code
+          if (id.includes('/views/Dashboard') || id.includes('/views/Content') || 
+              id.includes('/views/Schedules') || id.includes('/views/Accounts')) {
+            return 'app-core';
           }
           
-          // Core views（使用頻度高）
-          if (id.includes('/views/') && (
-            id.includes('Dashboard') || 
-            id.includes('Content') || 
-            id.includes('Schedules') ||
-            id.includes('Accounts')
-          )) {
-            return 'app-core'
+          if (id.includes('/views/Settings') || id.includes('/views/Billing') || 
+              id.includes('/views/Logs')) {
+            return 'app-admin';
           }
           
-          // Admin views（使用頻度低）
-          if (id.includes('/views/') && (
-            id.includes('Settings') || 
-            id.includes('Billing') || 
-            id.includes('Logs')
-          )) {
-            return 'app-admin'
-          }
-          
-          // Composables（共通ユーティリティ）
-          if (id.includes('/composables/') || id.includes('/utils/')) {
-            return 'app-utils'
-          }
-          
-          // Components（サイズに応じて分割）
           if (id.includes('/components/')) {
-            return 'app-components'
+            return 'app-components';
           }
           
-          // Default（その他すべて）
-          return 'app-main'
+          if (id.includes('/composables/') || id.includes('/stores/') || 
+              id.includes('/utils/')) {
+            return 'app-utils';
+          }
         },
         chunkFileNames: (chunkInfo) => {
-          const facadeModuleId = chunkInfo.facadeModuleId
-          if (facadeModuleId) {
-            if (facadeModuleId.includes('views/')) {
-              return 'views/[name]-[hash].js'
-            }
-            if (facadeModuleId.includes('components/')) {
-              return 'components/[name]-[hash].js'
-            }
+          if (chunkInfo.name.startsWith('vendor-')) {
+            return 'vendor/[name]-[hash].js';
           }
-          return 'chunks/[name]-[hash].js'
+          if (chunkInfo.name.startsWith('app-')) {
+            return 'app/[name]-[hash].js';
+          }
+          return 'chunks/[name]-[hash].js';
         }
       }
     },

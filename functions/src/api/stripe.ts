@@ -1,6 +1,8 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import Stripe from "stripe";
+import { GlobalStats, CheckoutMetadata } from "../types/pricing";
+import { PRICING_CONFIG, calculatePriceForSubscribers, generateLookupKey } from "../config/pricing";
 
 const db = admin.firestore();
 
@@ -21,36 +23,46 @@ export const createCheckoutSession = functions.https.onCall(async (data, context
     );
   }
 
-  const { planId, successUrl, cancelUrl } = data;
+  const { successUrl, cancelUrl } = data;
   const userId = context.auth.uid;
 
-  if (!planId || !successUrl || !cancelUrl) {
+  if (!successUrl || !cancelUrl) {
     throw new functions.https.HttpsError(
       "invalid-argument",
-      "planId, successUrl, and cancelUrl are required"
+      "successUrl and cancelUrl are required"
     );
   }
 
   try {
-    // プラン情報を取得
-    const planDoc = await db.collection("plans").doc(planId).get();
+    // グローバル統計を取得して現在の価格を決定
+    const statsDoc = await db.collection("stats").doc("global").get();
     
-    if (!planDoc.exists) {
+    if (!statsDoc.exists) {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "System not initialized. Please run initialization scripts."
+      );
+    }
+
+    const stats = statsDoc.data() as GlobalStats;
+    const currentPriceId = stats.currentPriceId;
+    
+    // 価格履歴から現在の価格情報を取得
+    const priceHistoryQuery = await db
+      .collection("price_history")
+      .where("priceId", "==", currentPriceId)
+      .where("isActive", "==", true)
+      .limit(1)
+      .get();
+      
+    if (priceHistoryQuery.empty) {
       throw new functions.https.HttpsError(
         "not-found",
-        "Plan not found"
+        "Current price configuration not found"
       );
     }
 
-    const plan = planDoc.data()!;
-
-    // Freeプランの場合はエラー
-    if (planId === "free") {
-      throw new functions.https.HttpsError(
-        "invalid-argument",
-        "Cannot create checkout session for free plan"
-      );
-    }
+    const priceRecord = priceHistoryQuery.docs[0].data();
 
     // ユーザー情報を取得
     const userDoc = await db.collection("users").doc(userId).get();
@@ -76,13 +88,20 @@ export const createCheckoutSession = functions.https.onCall(async (data, context
       });
     }
 
+    // Checkout メタデータを準備
+    const checkoutMetadata: CheckoutMetadata = {
+      priceLookupKey: priceRecord.lookupKey,
+      peakSubscribersAtCheckout: stats.peakSubscribers,
+      checkoutTimestamp: new Date().toISOString(),
+    };
+
     // Checkout セッション作成
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       payment_method_types: ["card"],
       line_items: [
         {
-          price: plan.stripePriceId,
+          price: currentPriceId,
           quantity: 1,
         },
       ],
@@ -91,12 +110,15 @@ export const createCheckoutSession = functions.https.onCall(async (data, context
       cancel_url: cancelUrl,
       metadata: {
         userId: userId,
-        planId: planId,
+        priceLookupKey: checkoutMetadata.priceLookupKey,
+        peakSubscribersAtCheckout: checkoutMetadata.peakSubscribersAtCheckout.toString(),
+        checkoutTimestamp: checkoutMetadata.checkoutTimestamp,
       },
       subscription_data: {
         metadata: {
           userId: userId,
-          planId: planId,
+          priceLookupKey: checkoutMetadata.priceLookupKey,
+          originalPrice: priceRecord.amount.toString(),
         },
       },
     });
@@ -150,9 +172,12 @@ export const getSubscription = functions.https.onCall(async (data, context) => {
         success: true,
         subscription: {
           planId: "free",
+          priceTier: "tier_000",
           status: "active",
           currentPeriodEnd: null,
           cancelAtPeriodEnd: false,
+          originalPrice: 0,
+          isGrandfathered: false,
         },
       };
     }
@@ -162,11 +187,14 @@ export const getSubscription = functions.https.onCall(async (data, context) => {
     return {
       success: true,
       subscription: {
-        planId: subscription.planId,
+        planId: subscription.planId || "legacy",
+        priceTier: subscription.priceTier || "unknown",
         status: subscription.status,
         currentPeriodStart: subscription.currentPeriodStart,
         currentPeriodEnd: subscription.currentPeriodEnd,
         cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
+        originalPrice: subscription.originalPrice || 0,
+        isGrandfathered: subscription.isGrandfathered || false,
       },
     };
 

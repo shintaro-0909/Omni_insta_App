@@ -1,0 +1,13 @@
+{
+  "facebook": {
+    "app_id": "your_facebook_app_id",
+    "app_secret": "your_facebook_app_secret"
+  },
+  "stripe": {
+    "secret_key": "sk_test_your_stripe_secret_key",
+    "webhook_secret": "whsec_your_webhook_secret"
+  },
+  "email": {
+    "api_key": "your_sendgrid_api_key"
+  }
+}

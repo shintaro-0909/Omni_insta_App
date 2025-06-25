@@ -1,19 +1,9 @@
 <template>
-  <div class="dashboard-view">
-    <!-- 統一ナビゲーション -->
-    <nav class="omniy-nav">
-      <div class="nav-container">
-        <div class="logo">Omniy</div>
-        <div class="nav-links">
-          <router-link to="/dashboard" class="nav-link">ダッシュボード</router-link>
-          <router-link to="/schedules" class="nav-link">予約管理</router-link>
-          <router-link to="/accounts" class="nav-link">アカウント</router-link>
-          <router-link to="/content" class="nav-link">コンテンツ</router-link>
-          <router-link to="/settings" class="nav-link">設定</router-link>
-          <router-link to="/billing" class="cta-button">プラン管理</router-link>
-        </div>
-      </div>
-    </nav>
+  <div class="dashboard-layout">
+    <!-- サイドバーナビゲーション -->
+    <SidebarNavigation />
+    
+    <div class="dashboard-view">
 
     <!-- ヒーローセクション -->
     <section class="hero">
@@ -40,39 +30,6 @@
           </div>
         </div>
 
-        <div class="hero-visual">
-          <div class="dashboard-phone-mockup">
-            <div class="phone-screen">
-              <div class="dashboard-header">
-                <span class="ig-logo">Omniy Dashboard</span>
-                <span>📊</span>
-              </div>
-              <div class="dashboard-stats">
-                <div class="mini-stat">
-                  <div class="stat-icon">📈</div>
-                  <div class="stat-data">
-                    <div class="stat-value">{{ stats[0].value }}</div>
-                    <div class="stat-title">今月の投稿</div>
-                  </div>
-                </div>
-                <div class="mini-stat">
-                  <div class="stat-icon">⚡</div>
-                  <div class="stat-data">
-                    <div class="stat-value">{{ stats[1].value }}</div>
-                    <div class="stat-title">アクティブ予約</div>
-                  </div>
-                </div>
-                <div class="mini-stat">
-                  <div class="stat-icon">📱</div>
-                  <div class="stat-data">
-                    <div class="stat-value">{{ stats[2].value }}</div>
-                    <div class="stat-title">連携アカウント</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </section>
 
@@ -221,6 +178,7 @@
       </section>
     </div>
   </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -229,6 +187,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore, useIgAccountsStore, useSchedulesStore } from '@/stores'
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
+import { SidebarNavigation } from '@/components'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -346,13 +305,13 @@ const currentPlan = ref({
 const handleQuickAction = (action: any) => {
   switch (action.action) {
     case 'create-schedule':
-      router.push('/schedules?action=create')
+      router.push({ path: '/schedules', query: { action: 'create' } })
       break
     case 'add-account':
-      router.push('/accounts?action=add')
+      router.push({ path: '/accounts', query: { action: 'add' } })
       break
     case 'add-content':
-      router.push('/content?action=add')
+      router.push({ path: '/content', query: { action: 'add' } })
       break
   }
 }
@@ -415,6 +374,15 @@ onMounted(async () => {
   --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
 }
 
+.dashboard-layout {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  background: white;
+  overflow-x: hidden;
+  display: flex;
+}
+
 .dashboard-view {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans JP', sans-serif;
   color: var(--text-primary);
@@ -422,6 +390,23 @@ onMounted(async () => {
   overflow-x: hidden;
   min-height: 100vh;
   background: linear-gradient(180deg, #fafbff 0%, #f3f4f6 100%);
+  flex: 1;
+  margin-left: 72px;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* サイドバーが開いている場合のマージン調整 */
+@media (min-width: 768px) {
+  .dashboard-view {
+    margin-left: 280px;
+  }
+}
+
+/* スマホ用調整 */
+@media (max-width: 767px) {
+  .dashboard-view {
+    margin-left: 0;
+  }
 }
 
 /* 統一ナビゲーション */
@@ -1108,6 +1093,224 @@ onMounted(async () => {
 
   .section-title {
     font-size: 2rem;
+  }
+}
+
+/* 全画面レイアウトスタイル */
+.fullscreen-layout {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.fullscreen-content {
+  width: 90%;
+  max-width: 1200px;
+  height: 90%;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: fullscreenSlideIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fullscreen-header {
+  padding: 2rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(248, 250, 252, 0.8) 100%);
+}
+
+.fullscreen-title {
+  font-size: 2rem;
+  font-weight: 800;
+  background: var(--primary-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin: 0;
+}
+
+.fullscreen-close {
+  width: 48px;
+  height: 48px;
+  border: none;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1.5rem;
+  color: var(--text-secondary);
+}
+
+.fullscreen-close:hover {
+  background: rgba(0, 0, 0, 0.2);
+  transform: scale(1.1);
+}
+
+.fullscreen-body {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.fullscreen-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  height: 100%;
+}
+
+.fullscreen-card {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+}
+
+.fullscreen-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+}
+
+.fullscreen-card-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.fullscreen-card-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.fullscreen-card-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+}
+
+.fullscreen-metric {
+  font-size: 3rem;
+  font-weight: 800;
+  background: var(--primary-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 0.5rem;
+}
+
+.fullscreen-description {
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.fullscreen-action {
+  background: var(--primary-gradient);
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  align-self: center;
+  min-width: 150px;
+}
+
+.fullscreen-action:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+/* アニメーション */
+@keyframes fullscreenSlideIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.9) translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.fullscreen-fade-enter-active,
+.fullscreen-fade-leave-active {
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fullscreen-fade-enter-from {
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+.fullscreen-fade-leave-to {
+  opacity: 0;
+  transform: scale(1.1);
+}
+
+/* 全画面モード時のボディスタイル調整 */
+body.fullscreen-active {
+  overflow: hidden;
+}
+
+/* 全画面レイアウトのモバイル対応 */
+@media (max-width: 768px) {
+  .fullscreen-content {
+    width: 95%;
+    height: 95%;
+    border-radius: 16px;
+  }
+
+  .fullscreen-header {
+    padding: 1.5rem;
+  }
+
+  .fullscreen-title {
+    font-size: 1.5rem;
+  }
+
+  .fullscreen-body {
+    padding: 1.5rem;
+  }
+
+  .fullscreen-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .fullscreen-card {
+    padding: 1.5rem;
+  }
+
+  .fullscreen-metric {
+    font-size: 2.5rem;
   }
 }
 </style>
