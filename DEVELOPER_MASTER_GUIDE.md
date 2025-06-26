@@ -11,7 +11,7 @@ Claude Rules :look👀
 ## 📍 **重要ファイルと開発の起点 TOP5**
 
 1.  **このファイル (`DEVELOPER_MASTER_GUIDE.md`)**: 全ての開発・運用情報の中央管理ハブ。
-2.  **AI協業ガイドライン (`CLAUDE.md`, `GEMINI.md`)**: AIと開発を進める上でのルールとベストプラクティス。
+2.  **AI協業ガイドライン (`AI_COLLABORATION_GUIDE.md`)**: AIと開発を進める上での統一ルール。
 3.  **仕様書 (`tools/docs/dev_tasks_userstories.md`)**: プロジェクトの機能要件と進捗管理。
 4.  **Firebase設定 (`firebase.json`, `firestore.rules`)**: バックエンドの根幹をなす設定とセキュリティ。
 5.  **依存関係 (`package.json` 各階層)**: プロジェクトで利用されるライブラリとスクリプトの定義。
@@ -92,6 +92,26 @@ omni-insta/
   - `feature/T123-add-new-feature`
   - `fix/T456-resolve-login-bug`
   - `docs/update-readme`
+
+### コミット戦略: アトミックコミットの徹底
+
+**一つのコミットは、一つの論理的な関心事に集中させてください。** これを「アトミックコミット」と呼びます。
+
+- **良い例 (Good):**
+  - `feat(ui): add login button` (UIコンポーネントの追加)
+  - `feat(api): create login endpoint` (APIエンドポイントの作成)
+  - `refactor(auth): improve token handling logic` (特定ロジックのリファクタリング)
+  - `docs(readme): update setup instructions` (ドキュメントの更新)
+
+- **悪い例 (Bad):**
+  - `fix: various bug fixes` (複数の無関係な修正を一つのコミットにまとめる)
+  - `feat: add login feature` (UI、API、ドキュメントの変更をすべて一つのコミットに含める)
+
+**なぜアトミックコミッが重要か？**
+- **レビューしやすい:** 変更範囲が限定的なため、レビューの質が向上します。
+- **問題の特定が容易:** バグの原因となったコミットを素早く特定できます (`git bisect`)。
+- **変更の取り消しが安全:** 特定の変更だけを安全に取り消す (`git revert`) ことができます。
+
 - **コミットメッセージ:** Conventional Commits に準拠してください。
   - `feat(auth): add Facebook login`
   - `fix(ui): correct button alignment`
