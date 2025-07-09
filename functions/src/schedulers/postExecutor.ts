@@ -4,6 +4,7 @@ import * as admin from "firebase-admin";
 import { updateNextRunAfterExecution } from "../utils/scheduleUtils";
 import { sendPostSuccessNotification, sendPostFailureNotification } from "../utils/notifications";
 import { proxyFetch, getAccountProxyConfig } from "../utils/proxyFetch";
+import { incrementTotalPosts } from "../api/updateStats";
 
 const db = admin.firestore();
 
@@ -343,6 +344,9 @@ async function handleExecutionSuccess(
 
   const logRef = db.collection("executionLogs").doc();
   batch.set(logRef, executionLog);
+  
+  // 統計情報を更新（累計投稿数をインクリメント）
+  await incrementTotalPosts();
 
   // スケジュールの更新
   const scheduleRef = scheduleDoc.ref;

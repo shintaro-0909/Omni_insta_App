@@ -195,6 +195,7 @@ export const createSchedule = functions.https.onCall(async (data, context) => {
       .collection("schedules")
       .add(completeScheduleData);
 
+
     return {
       success: true,
       scheduleId: docRef.id,

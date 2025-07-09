@@ -3,6 +3,7 @@ import * as admin from "firebase-admin";
 import Stripe from "stripe";
 import { GlobalStats } from "../types/pricing";
 import { rotatePrice } from "../cron/rotatePrice";
+import { updateActiveUsers } from "./updateStats";
 
 const db = admin.firestore();
 
@@ -230,6 +231,10 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   }
 
   console.log(`Subscription updated for user ${userId}`);
+  
+  // アクティブユーザー数を統計情報に反映
+  const activeSubscriptionsCount = await getActiveSubscriptionsCount();
+  await updateActiveUsers(activeSubscriptionsCount);
 }
 
 /**
@@ -296,6 +301,10 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   });
 
   console.log(`Subscription canceled for user ${userId}, reverted to free plan`);
+  
+  // アクティブユーザー数を統計情報に反映
+  const activeSubscriptionsCount = await getActiveSubscriptionsCount();
+  await updateActiveUsers(activeSubscriptionsCount);
 }
 
 /**
@@ -375,4 +384,15 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
   });
 
   console.log(`Payment failed for user ${userId}, amount: ${invoice.amount_due}`);
-} 
+}
+
+/**
+ * アクティブなサブスクリプション数を取得
+ */
+async function getActiveSubscriptionsCount(): Promise<number> {
+  const subscriptionsSnapshot = await db.collection('subscriptions')
+    .where('status', 'in', ['active', 'trialing'])
+    .get();
+  
+  return subscriptionsSnapshot.size;
+}

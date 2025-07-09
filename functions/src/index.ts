@@ -152,6 +152,38 @@ export {
   runTokenRefreshCheck,
 } from "./schedulers/tokenRefreshScheduler";
 
+// Stats API
+export {
+  initializeStats,
+  incrementTotalPosts,
+  updateActiveUsers,
+  updateSupportedSNSCount,
+  updateAvailableFeaturesCount,
+  updateCustomerSatisfaction,
+} from "./api/updateStats";
+
+// Reviews API
+export {
+  submitReview,
+  moderateReview,
+  recalculateCustomerSatisfaction,
+  getApprovedReviews,
+  getReviewStats,
+} from "./api/reviews";
+
+// 統計情報初期化エンドポイント
+export const initStats = functions.https.onCall(async (data, context) => {
+  // 管理者のみアクセス可能
+  if (!context.auth || !context.auth.token.admin) {
+    throw new functions.https.HttpsError('permission-denied', '管理者権限が必要です');
+  }
+  
+  const { initializeStats } = require('./api/updateStats');
+  await initializeStats();
+  
+  return { success: true, message: '統計情報を初期化しました' };
+});
+
 // 基本的なヘルスチェック関数
 export const healthCheck = functions.https.onRequest((req, res) => {
   res.status(200).json({
